@@ -2,7 +2,7 @@
 (function () {
   const PW = window.PW;
 
-  PW.SKIN = ['#FBE3D0', '#F4CBA8', '#E8B48A', '#D49A6A', '#B97B4E', '#94603A', '#6E4429', '#4A2D1C'];
+  PW.SKIN = ['#F3CDB3', '#EAB592', '#DB9E76', '#C6865B', '#AA6B44', '#8A5233', '#683C23', '#472918'];
   PW.HAIRC = ['#1E1714', '#3B2418', '#5C3920', '#8A5A2E', '#C08A4A', '#E3C07A', '#B8432F', '#D9D3CC', '#4D6FB8', '#D46A9C', '#6A4FA3', '#3E8E6A'];
   PW.CLOTH = ['#F6F4EF', '#2A2B33', '#5B6270', '#C7432F', '#E8803A', '#F2C14E', '#7FB069', '#2F7D5B', '#3E7CB1', '#22406E', '#8E6CC1', '#E58BB0', '#B5835A', '#6B4630', '#A3C4D9', '#D9B8A0'];
   PW.EYEC = ['#2B1B10', '#5A3A1E', '#3D6A3A', '#3A5F8F', '#6B6B6B'];
@@ -25,6 +25,7 @@
   av('h_buns', 'hair', 'Çift Topuz', 150, 4, 'f');
   av('h_afro', 'hair', 'Afro', 160, 4, 'u');
   av('h_braid', 'hair', 'Örgü Saç', 180, 5, 'f');
+  av('h_spiky', 'hair', 'Diken Diken', 110, 2, 'm');
   av('h_mohawk', 'hair', 'Mohawk', 220, 6, 'm');
   av('h_space', 'hair', 'Yüksek Topuz', 260, 7, 'f');
   // facial hair
@@ -144,6 +145,10 @@
   it('d_mug', 'Masaüstü', 'Kahve Kupası', 30, 1, { top: 1, fp: [0.15, 0.15] });
   it('d_monitor', 'Masaüstü', 'Çift Monitör', 380, 5, { top: 1, fp: [0.9, 0.3] });
   it('d_tomato', 'Masaüstü', 'Domates Zamanlayıcı', 120, 2, { top: 1, fp: [0.15, 0.15] });
+  it('f_candles', 'Aydınlatma', 'Mum Seti', 90, 2, { fp: [0.4, 0.3], light: 1 });
+  it('f_pendant', 'Aydınlatma', 'Sarkıt Lamba', 240, 4, { fp: [0.5, 0.5], light: 1, hang: 1 });
+  it('f_cushion', 'Oturma', 'Yer Minderi', 120, 2, { seat: 1, low: 1, fp: [0.6, 0.6] });
+  it('f_teddy', 'Dekor', 'Peluş Ayı', 160, 3, { fp: [0.3, 0.3] });
   // pets
   it('f_cat', 'Evcil', 'Tekir Kedi', 800, 6, { pet: 'cat', fp: [0.5, 0.3] });
   it('f_dog', 'Evcil', 'Golden Köpek', 900, 8, { pet: 'dog', fp: [0.7, 0.4] });
@@ -160,6 +165,9 @@
   w('w_neon', 'Neon "ODAK" Tabelası', 380, 6, { ww: 1.2, wy: 2.0, light: 1 });
   w('w_tv', 'Duvar TV', 500, 7, { ww: 1.4, wy: 1.5 });
   w('w_diploma', 'Çerçeveli Diploma', 300, 9, { ww: 0.6, wy: 1.8 });
+  w('w_frames', 'Fotoğraf Duvarı', 140, 2, { ww: 1.0, wy: 1.7 });
+  w('w_cork', 'Mantar Pano', 110, 2, { ww: 1.0, wy: 1.6 });
+  w('w_plantshelf', 'Bitkili Raf', 200, 4, { ww: 0.9, wy: 1.9 });
 
   // ---------- Themes / views / sizes ----------
   const T = [
@@ -262,27 +270,7 @@
   }
   PW.PUBLIC_ROOMS = [
     {
-      id: 'kutuphane', kind: 'study', name: 'Sessiz Kütüphane', desc: 'Uzun ahşap masa, kitap kokusu, fısıltı yok.', theme: 'th_library', view: 'v_snow', size: 9, npc: 5,
-      items: [...longTableRoom(8), ['f_shelf_tall', -2.6, -4.0, 0], ['f_shelf_tall', 0, -4.0, 0], ['f_shelf_tall', 2.6, -4.0, 0], ['f_rug_kilim', 0, 0, 0], ['f_lamp_floor', -3.8, -3.6, 0], ['f_lamp_floor', 3.8, -3.6, 0], ['f_globe', 3.6, 2.6, 0], ['f_monstera', -3.7, 3.4, 0], ['d_lamp', -0.8, 0.1, 0], ['d_lamp', 0.8, 0.1, 0], ['d_books', 0, 0.15, 1], ['w_clock', 'w1', 0.6, 0], ['w_worldmap', 'w3', 0, 0]],
-    },
-    {
-      id: 'kafe', kind: 'study', name: 'Gece Kafe', desc: 'Lo-fi, sıcak ışıklar ve şehir manzarası.', theme: 'th_brick', view: 'v_city_night', size: 9, npc: 4,
-      items: [['f_table_round', -1.6, 0.2, 0], ['f_chair_wood', -1.6, -0.6, 0], ['f_chair_wood', -1.6, 1.0, 2], ['f_chair_wood', -2.4, 0.2, 1], ['f_table_round', 1.6, 0.2, 0], ['f_chair_office', 1.6, -0.6, 0], ['f_chair_office', 1.6, 1.0, 2], ['f_chair_office', 2.4, 0.2, 3], ['f_coffee', 3.6, -3.7, 0], ['f_fridge', 2.7, -3.75, 0], ['f_sofa', -2.6, -3.6, 0], ['f_monstera', -3.9, 3.6, 0], ['f_record', 3.8, 3.4, 3], ['d_mug', -1.4, 0.0, 0], ['d_laptop', 1.6, 0.25, 0], ['w_neon', 'w1', -0.4, 0], ['w_fairy', 'w0', 1.6, 0], ['f_rug_round', 0, 0.2, 0]],
-    },
-    {
-      id: 'bogaz', kind: 'study', name: 'Boğaz Manzaralı Masa', desc: 'Köprü ışıkları eşliğinde odak.', theme: 'th_white', view: 'v_bosphorus', size: 9, npc: 3,
-      items: [['f_table_long', 0, 0.4, 0], ...[-1.2, -0.4, 0.4, 1.2].flatMap((x) => [['f_chair_office', x, -0.55, 0], ['f_chair_office', x, 1.35, 2]]), ['f_olive', -3.7, -3.6, 0], ['f_olive', 3.7, -3.6, 0], ['f_bookshelf', -3.9, 1, 1], ['f_rug_rect', 0, 0.4, 0], ['w_painting', 'w1', 0, 0], ['w_clock', 'w3', 0, 0]],
-    },
-    {
-      id: 'kapadokya', kind: 'study', name: 'Kapadokya Kampı', desc: 'Sabah balonları ve kilim sıcaklığı.', theme: 'th_cabin', view: 'v_cappadocia', size: 9, npc: 3,
-      items: [...longTableRoom(6), ['f_fireplace', -4.1, 0, 1], ['f_rug_kilim', 0, 0, 0], ['f_armchair', 3.4, 3.2, 3], ['f_bonsai', 3.8, -3.6, 0], ['f_guitar', -3.6, 3.6, 0], ['d_lamp', 0, 0, 0], ['w_fairy', 'w0', 1.8, 0]],
-    },
-    {
-      id: 'uzay', kind: 'study', name: 'Yörünge İstasyonu', desc: 'Sıfır yer çekimi, tam odak.', theme: 'th_space', view: 'v_space', size: 9, npc: 2, minLevel: 1,
-      items: [['f_desk_gaming', -1.3, 0, 0], ['f_chair_gaming', -1.3, 0.75, 2], ['f_desk_gaming', 1.3, 0, 0], ['f_chair_gaming', 1.3, 0.75, 2], ['f_desk_gaming', -1.3, -2.2, 2], ['f_chair_gaming', -1.3, -2.95, 0], ['f_desk_gaming', 1.3, -2.2, 2], ['f_chair_gaming', 1.3, -2.95, 0], ['f_rocket', 3.8, 3.5, 0], ['f_telescope', -3.7, 3.4, 1], ['d_monitor', -1.3, -0.05, 0], ['d_monitor', 1.3, -0.05, 0], ['w_tv', 'w1', 0, 0]],
-    },
-    {
-      id: 'meydan', kind: 'social', name: 'Meydan Kafe', desc: 'Moladayken uğra, sohbet et, tanış.', theme: 'th_wood', view: 'v_city_day', size: 11, npc: 6,
+      id: 'meydan', kind: 'social', name: 'Meydan Kafe', desc: 'Moladayken uğra, sohbet et, tanış.', theme: 'th_wood', view: 'v_city_day', mood: 'golden', size: 11, npc: 6,
       items: [['f_sofa', -3, -4.6, 0], ['f_sofa', 3, -4.6, 0], ['f_sofa_l', -3.4, 2.8, 0], ['f_armchair', 0, -2.4, 0], ['f_table_round', 2.8, 1.2, 0], ['f_chair_wood', 2.8, 0.4, 0], ['f_chair_wood', 2.8, 2.0, 2], ['f_coffee', 4.8, -4.7, 0], ['f_fridge', 4.0, -4.75, 0], ['f_record', -5, -1, 1], ['f_piano', 5, 3.4, 3], ['f_monstera', -5, -4.8, 0], ['f_olive', 5, 5, 0], ['f_rug_round', 0, 0, 0], ['f_cat', 0.6, 0.8, 1], ['w_neon', 'w1', 0, 0], ['w_fairy', 'w0', 0, 0], ['w_painting', 'w3', 0, 0]],
     },
     {
@@ -290,26 +278,58 @@
       items: [['f_beanbag', -2, 1.5, 0], ['f_beanbag', -1, 2.4, 2], ['f_beanbag', 1.2, 2.0, 3], ['f_sofa', 0, -4.6, 0], ['f_armchair', -4.4, -3.6, 1], ['f_table_round', 3, -1.5, 0], ['f_stool', 3, -2.3, 0], ['f_stool', 3.8, -1.5, 3], ['f_stool', 2.2, -1.5, 1], ['f_olive', -5, 5, 0], ['f_olive', 5, -5, 0], ['f_bonsai', 5, 5, 0], ['f_rug_kilim', -0.6, 1.8, 0], ['f_guitar', -4.8, 0.5, 1], ['f_dog', 1.4, 0.2, 2], ['w_fairy', 'w0', 0, 0], ['w_fairy', 'w1', 0, 0]],
     },
     {
-      id: 'oyun', kind: 'social', name: 'Oyun Salonu', desc: 'Neonlar, pikap ve dans pisti.', theme: 'th_navy', view: 'v_aurora', size: 11, npc: 4,
+      id: 'oyun', kind: 'social', name: 'Oyun Salonu', desc: 'Neonlar, pikap ve dans pisti.', theme: 'th_navy', view: 'v_aurora', mood: 'neon', size: 11, npc: 4,
       items: [['f_sofa_l', 3, 3, 3], ['f_beanbag', -3, 3, 1], ['f_beanbag', -2, 4, 2], ['f_desk_gaming', -3.5, -4.4, 0], ['f_chair_gaming', -3.5, -3.6, 2], ['f_desk_gaming', 0, -4.4, 0], ['f_chair_gaming', 0, -3.6, 2], ['f_record', 4.8, -4.5, 0], ['f_lava', 5, -3, 0], ['f_lava', -5, -1, 0], ['f_rug_round', 0, 0.5, 0], ['f_aquarium', -5, 0.5, 1], ['d_monitor', -3.5, -4.45, 0], ['d_monitor', 0, -4.45, 0], ['w_neon', 'w1', 0, 0], ['w_tv', 'w3', 0, 0]],
     },
   ];
 
   PW.DEFAULT_ROOM = () => ({
-    theme: 'th_wood', view: 'v_city_day', size: 7,
+    name: 'Odam', desc: 'Birlikte odaklanalım.', cat: 'Genel', open: true, token: Math.random().toString(36).slice(2, 8),
+    theme: 'th_wood', view: 'v_city_day', size: 7, mood: 'golden', wall: '#E9DCC8', wallPat: 'plain', floorT: 'plank', floorC: '#B07D52', curtain: '#C98FA6',
     items: [
-      { id: 'f_desk_wood', x: 0, z: -0.6, r: 0 },
-      { id: 'f_chair_wood', x: 0, z: 0.15, r: 2 },
-      { id: 'f_chair_wood', x: -1.1, z: -0.6, r: 1 },
-      { id: 'f_chair_wood', x: 1.1, z: -0.6, r: 3 },
-      { id: 'd_laptop', x: 0.3, z: -0.55, r: 0 },
-      { id: 'd_lamp', x: -0.5, z: -0.8, r: 0 },
-      { id: 'f_rug_round', x: 0, z: 0.2, r: 0 },
-      { id: 'f_cactus', x: 2.8, z: -2.8, r: 0 },
-      { id: 'w_clock', w: 'w1', x: 0.8, r: 0 },
+      { id: 'f_desk_wood', x: 0.2, z: -1.15, r: 0 },
+      { id: 'f_chair_wood', x: 0.2, z: -1.9, r: 0 },
+      { id: 'f_chair_wood', x: 1.35, z: -1.15, r: 3 },
+      { id: 'f_cushion', x: -1.4, z: 0.6, r: 1, c: '#E8803A' },
+      { id: 'd_laptop', x: 0.4, z: -1.25, r: 2 },
+      { id: 'd_lamp', x: -0.3, z: -0.95, r: 2 },
+      { id: 'd_mug', x: 0.0, z: -1.3, r: 0 },
+      { id: 'd_plant', x: 0.78, z: -0.95, r: 0 },
+      { id: 'f_rug_round', x: 0.2, z: -1.3, r: 0 },
+      { id: 'f_bookshelf', x: -3.25, z: -0.8, r: 1 },
+      { id: 'f_monstera', x: -2.9, z: -2.9, r: 0 },
+      { id: 'f_lamp_floor', x: 2.9, z: -2.9, r: 0 },
+      { id: 'f_bed_single', x: 2.85, z: 1.6, r: 2, c: '#3E7CB1' },
+      { id: 'f_teddy', x: -2.9, z: 2.9, r: 0 },
+      { id: 'w_frames', w: 'w1', x: -1.6 },
+      { id: 'w_clock', w: 'w0', x: -2.5 },
+      { id: 'w_cork', w: 'w3', x: -1.2 },
     ],
   });
-  PW.STARTER_OWNED = ['h_short', 'h_side', 'h_buzz', 'h_bald', 'h_long', 'h_pony', 'fh_none', 'fh_stubble', 't_tee', 't_blouse', 'b_jeans', 'b_jogger', 'b_skirt', 's_sneaker', 'f_desk_wood', 'f_chair_wood', 'd_laptop', 'd_lamp', 'th_wood', 'v_city_day', 'sz_s'];
+  PW.ROOM_CATS = ['Genel', 'YKS', 'LGS', 'KPSS', 'ALES/YDS', 'Üniversite', 'Yazılım', 'Dil', 'Sanat & Tasarım', 'İş'];
+  PW.TASK_CATS = [['Ders', '#E8553D'], ['Proje', '#8FB8FF'], ['Okuma', '#F2C14E'], ['Kodlama', '#6CBF6A'], ['Dil', '#E58BB0'], ['Yazı', '#B48AFF'], ['Diğer', '#C9C2DA']];
+  PW.LOGIN_REWARDS = [15, 20, 25, 30, 40, 50, 80];
+  PW.QUESTS = {
+    daily: [
+      { id: 'd_login', name: 'Günlük Giriş', desc: 'Uygulamaya giriş yap', goal: 1, xp: 10, coin: 0 },
+      { id: 'd_pomo', name: 'Isınma Turu', desc: '1 pomodoro tamamla', goal: 1, xp: 10, coin: 5 },
+      { id: 'd_together', name: 'Birlikte Çalışalım', desc: 'Başkasıyla aynı odada 1 pomodoro tamamla', goal: 1, xp: 15, coin: 10 },
+      { id: 'd_social', name: 'Sosyal Kelebek', desc: 'Sosyal alanda 3 mesaj gönder', goal: 3, xp: 10, coin: 5 },
+      { id: 'd_min', name: 'Derin Nefes', desc: 'Bugün 50 dakika odaklan', goal: 50, xp: 20, coin: 10 },
+    ],
+    weekly: [
+      { id: 'w_min', name: 'Odaklanma Maratonu', desc: '600 dakika odaklan', goal: 600, xp: 80, coin: 30 },
+      { id: 'w_days', name: 'Seri Ustası', desc: '5 gün üst üste giriş yap', goal: 5, xp: 70, coin: 20 },
+      { id: 'w_balance', name: 'Dengeli Hafta', desc: '5 farklı gün en az 25 dakika odaklan', goal: 5, xp: 70, coin: 30 },
+      { id: 'w_decor', name: 'İç Mimar', desc: 'Odana 3 eşya yerleştir', goal: 3, xp: 40, coin: 20 },
+    ],
+  };
+  PW.PLEDGE_MIN = [25, 45, 60, 90];
+  PW.PLEDGE_DAYS = [[3, 2, 60], [5, 4, 110], [7, 6, 175], [30, 30, 800]];
+  PW.STARTER_OWNED = ['h_short', 'h_side', 'h_buzz', 'h_bald', 'h_long', 'h_pony', 'h_bob', 'fh_none', 'fh_stubble', 't_tee', 't_blouse', 't_hoodie', 'b_jeans', 'b_jogger', 'b_skirt', 's_sneaker', 'th_wood', 'v_city_day', 'sz_s'];
+  // premium surfaces (level gates); everything else is free to recolor
+  PW.SURFACE_LVL = { brick: 3, wainscot: 4, shoji: 5, logs: 5, cini: 6, panel: 8, floral: 2, wave: 2, tatami: 5, checker: 3, concrete: 4, carpet: 2, herring: 2 };
+  PW.MOOD_LVL = { day: 1, golden: 1, night: 1, candle: 3, neon: 5 };
 
   PW.NPC_NAMES = ['Ece', 'Mert', 'Zeynep', 'Kerem', 'Elif', 'Can', 'Defne', 'Arda', 'Selin', 'Emir', 'Nehir', 'Baran', 'Ada', 'Deniz', 'Lara', 'Yiğit', 'İpek', 'Kaan', 'Asya', 'Efe'];
   PW.NPC_TOPICS = ['YKS matematik', 'KPSS tarih', 'Tez yazımı', 'React projesi', 'İngilizce kelime', 'Fizik ödevi', 'Sunum hazırlığı', 'Organik kimya', 'Python kursu', 'ALES sayısal', 'Roman okuma', 'Tasarım işi'];

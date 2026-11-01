@@ -1,6 +1,16 @@
 /* Pomodoro World — shared helpers */
 (function () {
   const PW = (window.PW = window.PW || {});
+  /* colour management: author colours in sRGB, light & shade in linear space (renderer outputs sRGB) */
+  if (window.THREE && !THREE.Color.prototype.__pwCM) {
+    const C = THREE.Color.prototype; C.__pwCM = true;
+    const sh = C.setHex, ss = C.setStyle, shsl = C.setHSL, gh = C.getHex, ghsl = C.getHSL;
+    let depth = 0;
+    const wrap = (fn) => function (...a) { depth++; try { fn.apply(this, a); } finally { depth--; } if (!depth) this.convertSRGBToLinear(); return this; };
+    C.setHex = wrap(sh); C.setStyle = wrap(ss); C.setHSL = wrap(shsl);
+    C.getHex = function () { return gh.call(this.clone().convertLinearToSRGB()); };
+    C.getHSL = function (t) { return ghsl.call(this.clone().convertLinearToSRGB(), t); };
+  }
 
   PW.util = {
     clamp: (v, a, b) => Math.max(a, Math.min(b, v)),
@@ -50,6 +60,7 @@
       opacity: opt.opacity || 1,
       side: opt.double ? THREE.DoubleSide : THREE.FrontSide,
       flatShading: !!opt.flat,
+      envMapIntensity: opt.env != null ? opt.env : 0.35,
     });
     if (opt.map) m.map = opt.map;
     matCache.set(key, m);
@@ -57,7 +68,7 @@
   };
   // unique (non-cached) material for things whose colour changes
   PW.matU = function (color, opt = {}) {
-    return new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: opt.rough != null ? opt.rough : 0.8, metalness: opt.metal || 0, emissive: new THREE.Color(opt.emissive || 0), emissiveIntensity: opt.ei != null ? opt.ei : 1, transparent: !!opt.opacity, opacity: opt.opacity || 1 });
+    return new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: opt.rough != null ? opt.rough : 0.8, metalness: opt.metal || 0, emissive: new THREE.Color(opt.emissive || 0), emissiveIntensity: opt.ei != null ? opt.ei : 1, transparent: !!opt.opacity, opacity: opt.opacity || 1, envMapIntensity: 0.3 });
   };
 
   const geoCache = new Map();
