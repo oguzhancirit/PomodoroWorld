@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pomodoro World</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Pomodoro World: 3D sanal odalarda birlikte pomodoro yap, XP ve jeton kazan, karakterini ve odanı dekore et.">
+<meta name="theme-color" content="#1C1A2E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: full-bleed 3D stage; HUD floats in four corners; dock anchors bottom centre. Single dusk theme (a game world), colours set explicitly. */
+:root {
+  --ink: #1C1A2E; --ink2: #262340; --panel: rgba(30, 27, 50, .86); --panel2: rgba(44, 40, 72, .92);
+  --line: rgba(255, 245, 235, .12); --text: #F6F0E8; --muted: #B9B1CC; --dim: #8C84A3;
+  --tomato: #E8553D; --tomato2: #FF7A5C; --leaf: #6CBF6A; --gold: #F2C14E; --sky: #8FB8FF; --rose: #E58BB0;
+  --f-display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif; --f-body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  --r: 16px; --gut: max(16px, env(safe-area-inset-left, 0px)); --gutR: max(16px, env(safe-area-inset-right, 0px));
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--ink); color: var(--text); font: 15px/1.45 var(--f-body); overflow: hidden; -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+[hidden] { display: none !important; }
+#app { position: fixed; inset: 0; }
+#stage { position: absolute; inset: 0; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+#tags { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.tag { position: absolute; left: 0; top: 0; will-change: transform; }
+.tag .nm { position: absolute; left: 0; bottom: 0; transform: translate(-50%, 0); display: flex; align-items: center; gap: 5px; white-space: nowrap; background: rgba(20, 18, 34, .72); border: 1px solid var(--line); padding: 2px 8px 2px 3px; border-radius: 999px; font: 700 12px/1.2 var(--f-body); backdrop-filter: blur(4px); }
+.tag .lv { display: grid; place-items: center; min-width: 18px; height: 18px; border-radius: 50%; background: var(--sky); color: #1C1A2E; font-size: 10.5px; font-weight: 800; }
+.tag.me .nm { border-color: rgba(242, 193, 78, .7); }
+.tag.me .lv { background: var(--gold); }
+.tag.npc .nm { opacity: .82; }
+.tag.npc .lv { background: #C9C2DA; }
+.tag .st { font-size: 10.5px; padding: 1px 6px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.tag .st.focus { background: var(--tomato); color: #fff; }
+.tag .st.break { background: var(--leaf); color: #12301A; }
+.tag .st.paused { background: #5B5675; }
+.tag .bubble { position: absolute; left: 0; bottom: 30px; transform: translateX(-50%); max-width: 220px; width: max-content; background: #FFFDF8; color: #2A2440; padding: 7px 12px; border-radius: 14px; font: 700 13px/1.35 var(--f-body); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); }
+.tag .bubble::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; background: #FFFDF8; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
+.tag .bubble.pop { animation: pop .28s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pop { from { transform: translateX(-50%) scale(.4); opacity: 0; } to { transform: translateX(-50%) scale(1); opacity: 1; } }
+
+/* top bar */
+.top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px var(--gutR) 0 var(--gut); pointer-events: none; z-index: 5; }
+.top > * { pointer-events: auto; }
+.hud-me { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 8px 14px 8px 8px; backdrop-filter: blur(10px); min-width: 0; }
+.logo { width: 44px; height: 44px; flex: none; }
+.me-txt { min-width: 0; display: grid; gap: 2px; }
+.me-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.brand { font: 800 13px/1 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--tomato2); }
+#hud-name { font: 700 17px/1.1 var(--f-display); }
+#hud-title { color: var(--muted); font-size: 12.5px; }
+.xp { display: flex; align-items: center; gap: 8px; }
+.lvb { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px; background: var(--gold); color: #2A2440; font: 800 14px/1 var(--f-display); }
+.bar { position: relative; width: 140px; height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--gold), var(--tomato2)); border-radius: 99px; transition: width .6s; }
+#hud-xp { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pills { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 99px; background: rgba(255, 255, 255, .07); border: 1px solid var(--line); font-size: 12px; font-weight: 700; white-space: nowrap; }
+#hud-coins b { font-variant-numeric: tabular-nums; }
+.coin { width: 16px; height: 16px; flex: none; }
+.coin circle { fill: var(--gold); stroke: #B5862A; stroke-width: 1.4; }
+.coin path { stroke: #7A5A15; stroke-width: 1.7; stroke-linecap: round; }
+#hud-league { color: var(--lg, #C98B5A); }
+#hud-goal.done { color: var(--leaf); }
+nav.main { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 6px; backdrop-filter: blur(10px); }
+nav.main button { display: grid; justify-items: center; gap: 2px; background: none; border: 0; border-radius: 12px; padding: 6px 10px; color: var(--muted); font: 700 11.5px/1 var(--f-body); }
+nav.main button:hover { background: rgba(255, 255, 255, .07); color: var(--text); }
+nav.main svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* room card + people */
+.side { position: absolute; left: var(--gut); top: 140px; width: 250px; display: grid; gap: 10px; z-index: 4; }
+.roomcard { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; backdrop-filter: blur(10px); }
+.roomcard h2 { margin: 2px 0 6px; font: 700 20px/1.1 var(--f-display); text-wrap: balance; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+#room-kind { color: #1C1A2E; background: var(--sky); border: 0; }
+#room-kind[data-kind="study"] { background: var(--tomato2); }
+#room-kind[data-kind="social"] { background: var(--leaf); }
+#room-kind[data-kind="home"], #room-kind[data-kind="visit"] { background: var(--gold); }
+#net[data-mode="local"] { color: var(--gold); }
+#net[data-mode="p2p"], #net[data-mode="claude"] { color: var(--leaf); }
+.rc-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.people { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); backdrop-filter: blur(10px); overflow: hidden; }
+.people header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; }
+.people h3 { margin: 0; font: 700 14px/1 var(--f-display); letter-spacing: .02em; }
+.people.collapsed #people-list { display: none; }
+.icon-btn { background: rgba(255, 255, 255, .06); border: 1px solid var(--line); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: 700; }
+#people-list { list-style: none; margin: 0; padding: 0 8px 8px; max-height: 32vh; overflow: auto; display: grid; gap: 2px; }
+#people-list li { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 10px; font-size: 13px; }
+#people-list li.me { background: rgba(242, 193, 78, .1); }
+#people-list li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#people-list li em { font-style: normal; font-size: 10px; margin-left: 6px; color: var(--dim); border: 1px solid var(--line); border-radius: 6px; padding: 0 4px; }
+#people-list .lv, .community .lv { display: grid; place-items: center; min-width: 22px; height: 22px; border-radius: 7px; background: rgba(143, 184, 255, .22); color: var(--sky); font: 800 11px/1 var(--f-display); font-style: normal; }
+#people-list .st { font-size: 11px; font-weight: 700; color: var(--dim); }
+#people-list .st.focus { color: var(--tomato2); } #people-list .st.break { color: var(--leaf); }
+
+/* chat */
+.chat { position: absolute; right: var(--gutR); bottom: 16px; width: 330px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); backdrop-filter: blur(10px); z-index: 4; max-height: 46vh; }
+.chat header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; }
+.chat h3 { margin: 0; font: 700 14px/1 var(--f-display); }
+#chat-hint { margin: 0 12px; font-size: 11.5px; color: var(--dim); }
+#chat-log { flex: 1; overflow: auto; padding: 6px 12px; display: grid; align-content: start; gap: 6px; min-height: 120px; }
+.msg { font-size: 13.5px; line-height: 1.35; overflow-wrap: anywhere; }
+.msg .who { font-weight: 800; color: var(--sky); margin-right: 6px; }
+.msg .who i { font-style: normal; font-size: 10px; background: rgba(143, 184, 255, .2); border-radius: 5px; padding: 0 4px; margin-right: 4px; }
+.msg.me .who { color: var(--gold); }
+.msg.npc .who { color: #C9C2DA; }
+.msg.sys { color: var(--dim); font-size: 12px; font-style: italic; }
+#chat-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--line); }
+#chat-in { flex: 1; min-width: 0; background: rgba(0, 0, 0, .25); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+.chat.collapsed #chat-log, .chat.collapsed #chat-hint, .chat.collapsed #chat-form { display: none; }
+#chat-toggle.ping { background: var(--tomato); }
+
+/* dock */
+.dock { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; background: var(--panel2); border: 1px solid var(--line); border-radius: 26px; padding: 12px 18px 12px 12px; backdrop-filter: blur(12px); z-index: 4; box-shadow: 0 16px 40px rgba(0, 0, 0, .35); max-width: calc(100% - 32px); }
+.ring { position: relative; width: 118px; height: 118px; flex: none; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 9; }
+.ring .bg { stroke: rgba(255, 255, 255, .08); }
+#t-ring { stroke: var(--tomato); stroke-linecap: round; transition: stroke-dashoffset .3s linear, stroke .3s; }
+.dock[data-phase="break"] #t-ring { stroke: var(--leaf); }
+.ring .in { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+#t-time { font: 800 30px/1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+#t-phase { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.dock[data-phase="focus"] #t-phase { color: var(--tomato2); } .dock[data-phase="break"] #t-phase { color: var(--leaf); }
+.dctl { display: grid; gap: 8px; min-width: 0; }
+.drow { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--tomato); color: #fff; border: 0; border-radius: 12px; padding: 9px 16px; font: 800 14px/1 var(--f-body); box-shadow: 0 3px 0 #A5321F; transition: transform .1s; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #A5321F; }
+.btn.ghost { background: rgba(255, 255, 255, .08); box-shadow: none; border: 1px solid var(--line); }
+.btn.sm { padding: 6px 11px; font-size: 12.5px; border-radius: 10px; }
+.btn.wide { width: 100%; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+#t-main { min-width: 112px; font-size: 16px; padding: 12px 18px; }
+.dock[data-phase="break"] #t-main { background: var(--leaf); color: #12301A; box-shadow: 0 3px 0 #3B7A3A; }
+.chip { background: rgba(255, 255, 255, .06); border: 1px solid var(--line); border-radius: 99px; padding: 4px 10px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.chip.on { background: var(--text); color: var(--ink); border-color: var(--text); }
+.chip small { font-weight: 600; opacity: .7; margin-left: 3px; }
+#t-round { font-size: 12px; color: var(--dim); font-weight: 700; font-variant-numeric: tabular-nums; }
+.lbl { font-size: 11px; color: var(--dim); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-right: 2px; }
+.dock.social #presets, .dock.social #styles { display: none; }
+
+/* edit bar */
+#editbar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(980px, calc(100% - 32px)); background: var(--panel2); border: 1px solid var(--line); border-radius: 22px; padding: 10px; z-index: 6; backdrop-filter: blur(12px); box-shadow: 0 16px 40px rgba(0, 0, 0, .35); display: grid; gap: 8px; }
+body.editing .dock, body.editing .chat { display: none; }
+.e-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; }
+#e-tabs { display: flex; gap: 4px; }
+#e-sel { font-weight: 800; font-size: 13px; color: var(--gold); margin-right: 4px; }
+#e-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
+.eit { position: relative; flex: none; width: 92px; display: grid; justify-items: center; gap: 3px; padding: 6px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); border-radius: 14px; font-size: 11px; font-weight: 700; color: var(--muted); scroll-snap-align: start; }
+.eit img { width: 64px; height: 64px; object-fit: contain; }
+.eit span { text-align: center; line-height: 1.15; max-height: 2.3em; overflow: hidden; }
+.eit i { position: absolute; top: 5px; right: 6px; font-style: normal; background: var(--gold); color: #2A2440; border-radius: 7px; padding: 0 5px; font-size: 11px; }
+.eit i.p { background: rgba(0, 0, 0, .55); color: var(--gold); display: flex; align-items: center; gap: 2px; }
+.eit.on { border-color: var(--gold); background: rgba(242, 193, 78, .12); }
+.eit.none { opacity: .55; }
+.eit.shop { display: grid; place-items: center; border-style: dashed; color: var(--gold); }
+
+/* modals */
+.modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 16px var(--gutR) 16px var(--gut); background: rgba(12, 10, 24, .55); backdrop-filter: blur(3px); z-index: 20; }
+.modal.open { display: flex; animation: fade .18s; }
+@keyframes fade { from { opacity: 0; } }
+.sheet { position: relative; width: min(980px, 100%); max-height: 100%; overflow: auto; background: var(--ink2); border: 1px solid var(--line); border-radius: 24px; padding: 22px; box-shadow: 0 30px 80px rgba(0, 0, 0, .5); }
+.sheet.narrow { width: min(460px, 100%); }
+.sheet > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.sheet h2 { margin: 0; font: 800 28px/1.05 var(--f-display); text-wrap: balance; }
+.sheet h2 + p { margin: 4px 0 0; color: var(--muted); }
+.sheet h3 { font: 700 18px/1.2 var(--f-display); margin: 18px 0 10px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.sheet h3 small, .sheet h4 small { font: 600 13px/1.3 var(--f-body); color: var(--dim); }
+.sheet h4 { font: 700 16px/1.2 var(--f-display); margin: 20px 0 8px; display: flex; gap: 8px; align-items: baseline; }
+.x { background: rgba(255, 255, 255, .07); border: 1px solid var(--line); border-radius: 12px; width: 38px; height: 38px; font-size: 18px; flex: none; }
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.room-card { display: flex; gap: 12px; align-items: stretch; text-align: left; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); border-radius: 16px; padding: 8px; transition: border-color .15s, transform .15s; }
+.room-card:hover { border-color: rgba(242, 193, 78, .6); transform: translateY(-1px); }
+.rc-img { width: 96px; flex: none; border-radius: 11px; background-size: cover; background-position: center; min-height: 76px; }
+.rc-t { display: grid; gap: 2px; align-content: center; min-width: 0; }
+.rc-t b { font: 700 16px/1.15 var(--f-display); }
+.rc-t small { color: var(--muted); font-size: 12.5px; }
+.rc-t em { font-style: normal; color: var(--dim); font-size: 11.5px; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+input:not([type="checkbox"]), select { background: rgba(0, 0, 0, .25); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; min-width: 0; }
+#group-code { flex: 1; }
+.community { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.community li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(255, 255, 255, .04); border-radius: 12px; padding: 8px 10px; }
+.community b { font-weight: 800; } .community small { color: var(--dim); flex: 1; }
+/* wardrobe */
+.wardrobe { display: grid; grid-template-columns: minmax(240px, 340px) 1fr; gap: 18px; }
+.pv { position: relative; border-radius: 20px; background: radial-gradient(120% 90% at 50% 20%, #4A4372 0%, #2C2848 60%, #221F3A 100%); min-height: 420px; overflow: hidden; }
+.pv canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; cursor: grab; }
+.pv .hint { position: absolute; left: 12px; bottom: 10px; font-size: 11.5px; color: var(--muted); pointer-events: none; }
+.pv .btn { position: absolute; right: 10px; bottom: 10px; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+.tabs button { background: rgba(255, 255, 255, .05); border: 1px solid var(--line); border-radius: 11px; padding: 7px 12px; font-weight: 800; font-size: 13px; color: var(--muted); }
+.tabs button.on { background: var(--tomato); border-color: var(--tomato); color: #fff; }
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.it { position: relative; display: grid; justify-items: center; gap: 4px; padding: 8px 6px; background: rgba(255, 255, 255, .04); border: 1.5px solid var(--line); border-radius: 14px; font-size: 12px; font-weight: 700; color: var(--text); }
+.it img { width: 80px; height: 80px; object-fit: contain; }
+.it.on { border-color: var(--gold); background: rgba(242, 193, 78, .1); }
+.it.locked img { filter: grayscale(.7) brightness(.8); }
+.it.buyable { border-style: dashed; }
+.it em { display: inline-flex; align-items: center; gap: 3px; font-style: normal; font-size: 11px; color: var(--gold); }
+.ico { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.pal { display: grid; gap: 6px; margin-top: 14px; }
+.pal > span, .gsel > span { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+.pal > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.sw { width: 30px; height: 30px; border-radius: 50%; background: var(--c); border: 2px solid rgba(255, 255, 255, .15); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .15); }
+.sw.on { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(242, 193, 78, .35); }
+.gsel { display: grid; gap: 6px; }
+.seg { display: inline-flex; background: rgba(0, 0, 0, .25); border: 1px solid var(--line); border-radius: 12px; padding: 3px; gap: 2px; }
+.seg button { background: none; border: 0; border-radius: 9px; padding: 6px 14px; font-weight: 800; font-size: 13px; color: var(--muted); }
+.seg button.on { background: var(--text); color: var(--ink); }
+.note { color: var(--dim); font-size: 12.5px; margin: 12px 0 0; }
+.foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+/* shop */
+.shop-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+#shop-sub { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 4px 0 12px; }
+#shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.card { display: grid; justify-items: center; text-align: center; gap: 4px; padding: 10px; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); border-radius: 16px; }
+.card img { width: 110px; height: 110px; object-fit: contain; }
+.card h4 { margin: 2px 0 0; font: 700 14.5px/1.15 var(--f-display); }
+.card p { margin: 0; font-size: 11.5px; color: var(--dim); }
+.card .own { font-size: 12px; font-weight: 800; color: var(--leaf); padding: 6px; }
+.card .lock { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800; color: var(--muted); padding: 6px; }
+.card.is-lock img { filter: grayscale(.8) brightness(.7); }
+.card .buy .coin { width: 14px; height: 14px; }
+/* buy confirm */
+#m-buy .sheet { text-align: center; display: grid; justify-items: center; gap: 6px; }
+.b-img { width: 140px; height: 140px; object-fit: contain; }
+.b-name { font: 800 22px/1.1 var(--f-display); margin: 0; }
+.b-price { display: inline-flex; gap: 6px; align-items: center; font: 800 20px/1 var(--f-display); color: var(--gold); }
+.b-after { color: var(--muted); font-size: 13px; margin: 0; }
+/* level up */
+#m-level .sheet { text-align: center; overflow: hidden; }
+.lvbig { display: grid; place-items: center; width: 110px; height: 110px; margin: 6px auto 8px; border-radius: 30px; background: linear-gradient(140deg, var(--gold), var(--tomato2)); color: #2A2440; font: 800 56px/1 var(--f-display); box-shadow: 0 10px 30px rgba(232, 85, 61, .4); }
+.unlocks { list-style: none; padding: 0; margin: 14px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.unlocks li { width: 84px; display: grid; justify-items: center; gap: 2px; font-size: 11px; font-weight: 700; color: var(--muted); }
+.unlocks img { width: 64px; height: 64px; object-fit: contain; }
+.confetti { position: absolute; inset: 0; pointer-events: none; }
+.confetti i { position: absolute; top: -10px; width: 8px; height: 14px; border-radius: 2px; animation: fall 2.2s ease-in forwards; }
+@keyframes fall { to { top: 110%; transform: rotate(720deg); } }
+/* profile */
+.pf-head { display: flex; gap: 16px; align-items: center; }
+.pf-head h3 { margin: 0; }
+.pf-head p { margin: 2px 0 6px; color: var(--muted); }
+.pf-head .bar { width: min(320px, 60vw); }
+.pf-head small { color: var(--dim); font-size: 12px; }
+.pf-lv { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 24px; background: linear-gradient(140deg, var(--gold), var(--tomato2)); color: #2A2440; flex: none; }
+.pf-lv b { font: 800 38px/1 var(--f-display); } .pf-lv span { font-size: 11px; font-weight: 800; margin-top: -14px; }
+.lg { color: var(--lg); font-weight: 800; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 16px; }
+.tiles div { background: rgba(255, 255, 255, .04); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; }
+.tiles b { font: 800 20px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.tiles span { color: var(--dim); font-size: 12px; }
+.chart { width: 100%; max-width: 440px; height: auto; }
+.chart rect { fill: rgba(143, 184, 255, .55); } .chart rect.today { fill: var(--tomato); }
+.chart .grid { stroke: rgba(255, 255, 255, .08); } .chart .axis { fill: var(--dim); font-size: 10px; } .chart .val { fill: var(--text); font-size: 10px; font-weight: 700; }
+.board { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; max-width: 520px; }
+.board li { display: flex; gap: 10px; align-items: center; padding: 7px 10px; border-radius: 10px; background: rgba(255, 255, 255, .04); font-size: 13.5px; }
+.board li.me { background: rgba(242, 193, 78, .12); }
+.board i { font-style: normal; font-weight: 800; color: var(--dim); width: 18px; } .board span { flex: 1; } .board em { font-style: normal; color: var(--dim); font-size: 12px; } .board b { font-variant-numeric: tabular-nums; }
+.ach { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.ach li { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .03); border: 1px dashed var(--line); opacity: .65; }
+.ach li.got { opacity: 1; border-style: solid; border-color: rgba(108, 191, 106, .5); background: rgba(108, 191, 106, .08); }
+.ach b { font-size: 13.5px; } .ach span { font-size: 12px; color: var(--muted); } .ach em { display: inline-flex; gap: 3px; align-items: center; font-style: normal; font-size: 11.5px; color: var(--gold); }
+.settings { display: grid; gap: 10px; max-width: 560px; }
+.settings label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.settings label.ck { display: flex; align-items: center; gap: 8px; }
+.settings .custom label { display: inline-flex; align-items: center; gap: 4px; }
+.settings .custom input { width: 66px; }
+.settings .btn { justify-self: start; }
+/* help */
+.help-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.help-grid section { background: rgba(255, 255, 255, .04); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.help-grid h3 { margin: 0 0 6px; }
+.help-grid p, .help-grid li { color: var(--muted); font-size: 13.5px; }
+.help-grid ul { margin: 0; padding-left: 18px; }
+table.econ { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.econ td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+table.econ td:last-child { text-align: right; font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* onboarding */
+.ob { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
+.ob .pv { min-height: 380px; }
+.ob-form { display: grid; gap: 14px; align-content: center; }
+.ob-form h2 { font-size: 34px; }
+.ob-form .lead { color: var(--muted); margin: 0; }
+.ob-form label { display: grid; gap: 6px; font-weight: 800; font-size: 13px; color: var(--muted); }
+#ob-err { color: var(--tomato2); font-size: 12.5px; margin: -6px 0 0; }
+.steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+.steps li { display: flex; gap: 8px; align-items: baseline; }
+.steps b { color: var(--tomato2); font-family: var(--f-display); }
+/* toasts */
+#toasts { position: fixed; top: 86px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; z-index: 30; pointer-events: none; width: min(360px, calc(100% - 32px)); }
+.toast { background: #FFFDF8; color: #2A2440; border-radius: 14px; padding: 10px 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, .3); display: grid; gap: 2px; animation: tin .3s cubic-bezier(.2, 1.4, .4, 1); transition: opacity .5s, transform .5s; }
+.toast b { font: 800 15px/1.2 var(--f-display); } .toast span { font-size: 13px; color: #5B5470; }
+.toast.ach { background: linear-gradient(120deg, #FFF3C9, #FFE0D6); }
+.toast.out { opacity: 0; transform: translateY(-10px); }
+@keyframes tin { from { transform: translateY(-14px) scale(.96); opacity: 0; } }
+#loading { position: fixed; inset: 0; display: grid; place-content: center; text-align: center; background: var(--ink); z-index: 50; gap: 8px; }
+#loading b { font: 800 28px/1 var(--f-display); } #loading span { color: var(--muted); }
+
+/* responsive */
+@media (max-width: 900px) {
+  .side { width: 220px; }
+  .chat { width: 290px; }
+  .dock { left: var(--gut); transform: none; bottom: 16px; }
+}
+@media (max-width: 720px) {
+  .top { padding-top: 8px; }
+  .hud-me { padding: 6px 12px 6px 6px; gap: 8px; border-radius: 16px; }
+  .logo { width: 34px; height: 34px; }
+  .brand, #hud-title, #hud-league, #hud-goal { display: none; }
+  .bar { width: 84px; }
+  .me-txt { gap: 3px; }
+  nav.main { position: fixed; top: auto; bottom: 0; left: 0; right: 0; border-radius: 18px 18px 0 0; justify-content: space-around; padding: 6px var(--gutR) calc(6px + env(safe-area-inset-bottom, 0px)) var(--gut); z-index: 8; gap: 0; }
+  nav.main button { padding: 6px 4px; font-size: 10.5px; }
+  .top { right: auto; }
+  .side { top: 106px; width: auto; left: var(--gut); right: var(--gutR); grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px; }
+  .roomcard { padding: 8px 10px; } .roomcard h2 { font-size: 16px; margin: 4px 0 0; }
+  #net { display: none; }
+  .rc-actions { margin-top: 6px; } .rc-actions .btn { padding: 5px 9px; font-size: 12px; }
+  .people { max-width: 170px; } .people header { padding: 7px 10px; gap: 8px; } .people h3 { font-size: 13px; }
+  #people-list { max-height: 30vh; }
+  .dock { left: var(--gut); right: var(--gutR); transform: none; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); padding: 8px 10px 8px 8px; gap: 10px; border-radius: 20px; align-items: center; }
+  .ring { width: 78px; height: 78px; } #t-time { font-size: 21px; } #t-phase { font-size: 8.5px; letter-spacing: .06em; }
+  .dctl { gap: 6px; flex: 1; }
+  .drow { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } .drow::-webkit-scrollbar { display: none; }
+  .drow > * { flex: none; }
+  #t-main { min-width: 0; padding: 10px 14px; font-size: 14px; }
+  #t-round, .lbl { display: none; }
+  #styles, #emotes { display: none; }
+  .dock.more #styles, .dock.more #emotes { display: flex; }
+  #t-more { display: inline-flex !important; }
+  .dock.social #emotes { display: flex; }
+  .chat { right: var(--gutR); left: var(--gut); width: auto; bottom: calc(176px + env(safe-area-inset-bottom, 0px)); max-height: 38vh; }
+  .chat.collapsed { left: auto; width: auto; }
+  .chat.collapsed header { padding: 7px 10px; gap: 8px; }
+  #editbar { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  .e-top .row { flex-wrap: nowrap; overflow-x: auto; }
+  .eit { width: 80px; } .eit img { width: 52px; height: 52px; }
+  .wardrobe, .ob, .split { grid-template-columns: 1fr; }
+  .pv { min-height: 260px; } .ob .pv { min-height: 220px; }
+  .items { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); } .it img { width: 62px; height: 62px; }
+  #shop-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); } .card img { width: 90px; height: 90px; }
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+  .sheet { padding: 16px; border-radius: 20px; } .sheet h2 { font-size: 23px; }
+  .ob-form h2 { font-size: 26px; }
+  #toasts { top: 76px; }
+  .tag .bubble { max-width: 160px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<div id="loading"><b>Pomodoro World</b><span>Dünya yükleniyor…</span></div>
+<div id="app">
+  <div id="stage" aria-label="3D oda görünümü"></div>
+  <div id="tags"></div>
+
+  <div class="top">
+    <div class="hud-me">
+      <svg class="logo" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="27" r="17" fill="#E8553D"/><ellipse cx="18" cy="21" rx="5" ry="3.2" fill="#FF8C70" opacity=".8"/><path d="M24 11c-3-4-8-4-10-2 4 0 6 2 7 4-4-1-8 1-9 4 4-2 8-2 12-1 4-1 8-1 12 1-1-3-5-5-9-4 1-2 3-4 7-4-2-2-7-2-10 2z" fill="#4E9A49"/><path d="M24 8v6" stroke="#3B7A3A" stroke-width="2.4" stroke-linecap="round"/><path d="M15 33c3 3 6 4 9 4s6-1 9-4" stroke="#B83A26" stroke-width="2" fill="none" stroke-linecap="round" opacity=".5"/></svg>
+      <div class="me-txt">
+        <div class="me-row"><span class="brand">Pomodoro World</span></div>
+        <div class="me-row"><span id="hud-name">Misafir</span><span id="hud-title">Çaylak</span></div>
+        <div class="xp"><span class="lvb" id="hud-lv">1</span><div class="bar"><i id="hud-xpbar"></i></div><span id="hud-xp">0 / 60 XP</span></div>
+        <div class="pills"><span class="pill" id="hud-coins"></span><span class="pill" id="hud-league">Bronz Lig</span><span class="pill" id="hud-goal">Bugün 0/4</span></div>
+      </div>
+    </div>
+    <nav class="main" aria-label="Ana menü">
+      <button data-open="world"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Dünya</button>
+      <button id="nav-home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Odam</button>
+      <button data-open="char"><svg viewBox="0 0 24 24"><path d="M8 3l-5 3 2 5 2-1v11h10V10l2 1 2-5-5-3c-1 2-2.5 3-4 3S9 5 8 3z"/></svg>Karakter</button>
+      <button data-open="shop"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Mağaza</button>
+      <button data-open="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Profil</button>
+      <button data-open="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg>Rehber</button>
+    </nav>
+  </div>
+
+  <div class="side">
+    <div class="roomcard">
+      <div class="chips"><span class="pill" id="room-kind">Çalışma odası</span><span class="pill" id="net" data-mode="off">Bağlanıyor…</span><span class="pill" id="room-code" hidden></span></div>
+      <h2 id="room-name">Sessiz Kütüphane</h2>
+      <div class="rc-actions"><button class="btn sm ghost" id="btn-sit">Kalk</button><button class="btn sm ghost" id="btn-cam">Kamera</button><button class="btn sm" id="btn-edit" hidden>Odamı düzenle</button><button class="btn sm ghost" id="btn-home">Odama git</button></div>
+    </div>
+    <div class="people" id="people">
+      <header><h3>Odadakiler <span id="people-count">1</span></h3><button class="icon-btn" id="people-toggle" aria-label="Listeyi aç/kapat">–</button></header>
+      <ul id="people-list"></ul>
+    </div>
+  </div>
+
+  <section class="chat" id="chat" aria-label="Sohbet">
+    <header><h3>Sohbet</h3><button class="icon-btn" id="chat-toggle" aria-label="Sohbeti aç/kapat">–</button></header>
+    <p id="chat-hint"></p>
+    <div id="chat-log" aria-live="polite"></div>
+    <form id="chat-form"><input id="chat-in" maxlength="200" placeholder="Bir şey yaz, karakterinden balon çıksın…" autocomplete="off" aria-label="Mesaj"><button class="btn sm">Gönder</button></form>
+  </section>
+
+  <section class="dock" id="dock" data-phase="idle" aria-label="Pomodoro sayacı">
+    <div class="ring"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle id="t-ring" cx="60" cy="60" r="52"/></svg><div class="in"><span id="t-time">25:00</span><span id="t-phase">Hazır</span></div></div>
+    <div class="dctl">
+      <div class="drow"><button class="btn" id="t-main">Başlat</button><button class="btn sm ghost" id="t-skip" title="Bu aşamayı atla">Atla</button><button class="btn sm ghost" id="t-stop" title="Sıfırla">Sıfırla</button><button class="btn sm ghost" id="t-more" style="display:none" aria-label="Diğer seçenekler">Seçenekler</button><span id="t-round">Tur 1 / 4</span></div>
+      <div class="drow" id="presets"><span class="lbl">Süre</span><button class="chip" data-preset="p25">25/5<small>dengeli</small></button><button class="chip" data-preset="p50">50/10<small>derin</small></button><button class="chip" data-preset="p90">90/20<small>maraton</small></button><button class="chip" data-preset="custom">Özel</button></div>
+      <div class="drow" id="styles"><span class="lbl">Çalışma</span><button class="chip" data-style="write">Defter</button><button class="chip" data-style="type">Laptop</button><button class="chip" data-style="read">Kitap</button></div>
+      <div class="drow" id="emotes"><span class="lbl">İfade</span><button class="chip" data-emote="wave">El salla</button><button class="chip" data-emote="clap">Alkış</button><button class="chip" data-emote="cheer">Yaşasın</button><button class="chip" data-emote="dance">Dans</button></div>
+    </div>
+  </section>
+
+  <section id="editbar" hidden aria-label="Oda düzenleyici">
+    <div class="e-top">
+      <div id="e-tabs" class="tabs" style="margin:0"><button data-etab="furn" class="on">Eşyalar</button><button data-etab="theme">Tema</button><button data-etab="view">Manzara</button><button data-etab="size">Boyut</button></div>
+      <div class="row"><span id="e-sel">Seçili eşya yok</span><button class="btn sm ghost" id="e-rot">Döndür (R)</button><button class="btn sm ghost" id="e-move">Taşı</button><button class="btn sm ghost" id="e-del">Kaldır</button><button class="btn sm" id="e-done">Bitti</button></div>
+    </div>
+    <div id="e-list"></div>
+  </section>
+</div>
+
+<!-- World map -->
+<div class="modal" id="m-world"><div class="sheet"><header><div><h2>Dünya</h2><p>Bir odaya gir. Çalışma odalarında masaya oturursun, sosyal odalarda gezersin.</p></div><button class="x" data-close aria-label="Kapat">×</button></header><div id="world-body"></div></div></div>
+<!-- Wardrobe -->
+<div class="modal" id="m-char"><div class="sheet"><header><div><h2>Karakter</h2><p>Sahip olduğun parçaları giy. Kilitli olanları jeton ve seviye ile açarsın.</p></div><button class="x" data-close aria-label="Kapat">×</button></header>
+  <div class="wardrobe"><div class="pv" id="char-preview"><span class="hint">Döndürmek için sürükle</span><button class="btn sm ghost" id="char-wave">El salla</button></div><div><div class="tabs" id="char-tabs"></div><div id="char-body"></div><div class="foot"><button class="btn ghost" id="char-cancel">Vazgeç</button><button class="btn" id="char-save">Kaydet</button></div></div></div>
+</div></div>
+<!-- Shop -->
+<div class="modal" id="m-shop"><div class="sheet"><header><div><h2>Mağaza</h2><p>Odaklandıkça jeton kazanırsın. Seviye atladıkça yeni eşyalar açılır.</p></div><div class="row"><span class="pill" id="shop-coins"></span><button class="x" data-close aria-label="Kapat">×</button></div></header>
+  <div class="tabs" id="shop-tabs"></div><div id="shop-sub"></div><div id="shop-grid"></div>
+</div></div>
+<!-- Buy confirm -->
+<div class="modal" id="m-buy"><div class="sheet narrow"><img class="b-img" alt=""><h3 class="b-name"></h3><span class="b-price"></span><p class="b-after"></p><div class="foot" style="justify-content:center"><button class="btn ghost b-no">Vazgeç</button><button class="btn b-ok">Satın al</button></div></div></div>
+<!-- Level up -->
+<div class="modal" id="m-level"><div class="sheet narrow"><div class="confetti"></div><p class="lbl">Seviye atladın</p><div class="lvbig lvnum">2</div><h2 class="lvtitle">Tomurcuk</h2><p style="color:var(--muted);margin:6px 0 0">Bu seviyede açılanlar</p><ul class="unlocks"></ul><button class="btn" data-close>Harika</button></div></div>
+<!-- Profile -->
+<div class="modal" id="m-profile"><div class="sheet"><header><div><h2>Profil</h2><p>İlerlemen, ligin ve ayarların.</p></div><button class="x" data-close aria-label="Kapat">×</button></header><div id="profile-body"></div></div></div>
+<!-- Help -->
+<div class="modal" id="m-help"><div class="sheet"><header><div><h2>Nasıl oynanır?</h2><p>Pomodoro World, odaklanmayı oyuna çevirir: çalıştıkça XP ve jeton kazan, karakterini ve odanı büyüt.</p></div><button class="x" data-close aria-label="Kapat">×</button></header>
+  <div class="help-grid">
+    <section><h3>1 · Masaya otur</h3><p>Bir çalışma odasına girdiğinde karakterin boş bir masaya oturur. Süreyi seç (25/5, 50/10, 90/20 ya da özel) ve <b>Başlat</b>'a bas. Karakterin defter, laptop ya da kitapla çalışmaya başlar.</p></section>
+    <section><h3>2 · Molada sosyalleş</h3><p>Her odak turundan sonra mola gelir, 4 turda bir uzun mola. Sohbete yazdığın her mesaj karakterinin üstünde balon olarak çıkar. Sosyal odalarda yere tıklayıp yürü, koltuklara oturup dans et.</p></section>
+    <section><h3>3 · Puan kazan</h3><table class="econ"><tbody>
+      <tr><td>Her odak dakikası</td><td>+1 XP · +1 jeton</td></tr>
+      <tr><td>Tamamlanan pomodoro</td><td>+10 XP · +5 jeton</td></tr>
+      <tr><td>4'lü set bonusu</td><td>+25 XP · +15 jeton</td></tr>
+      <tr><td>Günlük hedef (4 pomodoro)</td><td>+40 jeton</td></tr>
+      <tr><td>Günün ilk turu (seri)</td><td>+2 jeton × seri günü</td></tr>
+      <tr><td>Birlikte odak (odadaki her gerçek kişi)</td><td>+%10 · en çok %30</td></tr>
+    </tbody></table></section>
+    <section><h3>4 · Seviye ve lig</h3><ul><li>Seviyeler XP ile gelir; her seviye mağazada yeni eşyaların kilidini açar.</li><li>Unvanlar: Çaylak → Tomurcuk → Odak Çırağı → Masa Kurdu → Derin Odak → Zaman Bükücü → Pomodoro Ustası → Efsane.</li><li>Haftalık XP ligini belirler: Bronz, Gümüş (300), Altın (900), Platin (1800), Elmas (3000).</li></ul></section>
+    <section><h3>5 · Odanı tasarla</h3><p>Mağazadan mobilya, bitki, halı, duvar süsü, evcil hayvan, oda teması, pencere manzarası ve oda boyutu al. <b>Odam → Odamı düzenle</b> ile yerleştir, döndür, taşı. Masa üstü eşyalar masaya oturur.</p></section>
+    <section><h3>6 · Arkadaşlarınla</h3><p><b>Dünya → Özel çalışma grubu</b>'nda bir kod oluştur ve paylaş. Aynı kodu giren herkes aynı masada buluşur. Çevrimiçi oyuncuların odalarını da gezebilirsin. Gri “NPC” etiketli karakterler, odalar boşken eşlik eden sanal çalışma arkadaşlarıdır.</p></section>
+  </div>
+</div></div>
+<!-- Onboarding -->
+<div class="modal" id="m-onboard"><div class="sheet"><div class="ob">
+  <div class="pv" id="ob-preview"><span class="hint">Döndürmek için sürükle</span></div>
+  <form class="ob-form" id="ob-form">
+    <div><p class="lbl" style="color:var(--tomato2)">Pomodoro World'e hoş geldin</p><h2>Karakterini oluştur</h2></div>
+    <p class="lead">Karakterin odaya girdiğinde masaya oturur ve sen odaklandıkça çalışır. Kazandığın her dakika seni yeni eşyalara yaklaştırır.</p>
+    <div class="gsel"><span>Karakter</span><div class="seg" id="ob-g"><button type="button" data-g="f">Kadın</button><button type="button" data-g="m">Erkek</button></div></div>
+    <div class="pal" style="margin:0"><span>Ten rengi</span><div id="ob-skin"></div></div>
+    <div class="pal" style="margin:0"><span>Saç rengi</span><div id="ob-hairc"></div></div>
+    <label>Kullanıcı adın <input id="ob-name" maxlength="20" placeholder="ör. Oğuzhan" autocomplete="nickname" required></label>
+    <p id="ob-err" hidden>En az 2 karakterlik bir ad yaz.</p>
+    <ol class="steps"><li><b>1</b>Masaya otur, Başlat'a bas</li><li><b>2</b>Molada sohbet et, balonlar uçuşsun</li><li><b>3</b>Jetonlarla karakterini ve odanı süsle</li></ol>
+    <button class="btn wide">Dünyaya gir</button>
+  </form>
+</div></div></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/models.js"></script>
+<script src="js/avatar.js"></script>
+<script src="js/world.js"></script>
+<script src="js/net.js"></script>
+<script src="js/app.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  (function start() {
+    if (!window.THREE) { document.querySelector('#loading span').textContent = '3D motoru yüklenemedi. Bağlantını kontrol edip sayfayı yenile.'; return; }
+    try { PW.app.boot(); } catch (e) { console.error(e); document.querySelector('#loading span').textContent = 'Başlatılamadı: ' + e.message; return; }
+    setTimeout(() => { const l = document.getElementById('loading'); if (l) l.remove(); }, 300);
+  })();
+</script>
+</body>
+</html>
