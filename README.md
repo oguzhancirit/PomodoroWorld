@@ -23,6 +23,12 @@ Yeni sürüm eski uygulamanın yanında, ayrı klasörlerde büyüyor. Eski sür
 - **Yeni karakterler:** Quaternius "Ultimate Modular Men/Women" (CC0). Kafa/saç, üst, alt ve ayakkabı parça parça seçilir; ten, saç ve kıyafet rengi değiştirilebilir.
 - **Gerçek hareketler:** Quaternius "Universal Animation Library" (CC0) oturma ve konuşma hareketleri bu karakterlere uyarlandı (`tools/retarget.mjs`). Bunlardan masada **yazı yazma, klavyede çalışma ve kitap okuma** hareketleri türetildi. Molada karakterler rahatlar, mesaj yazınca konuşur.
 - **Oda eşyaları:** KayKit Furniture Bits (CC0): masa, sandalye, lamba, raf, bitki, halı, koltuk.
+- **Ekonomi (taşıma adım 1):** XP, seviye, unvan, jeton, başarımlar ve mağaza. Ödülü sunucu verir: yalnızca odada gerçekten geçirdiğin süre sayılır; odağın başından sonuna kadar oradaysan pomodoro bonusu da gelir. Fiyatlar sunucunun kendi listesinden okunur. Kimliğin tarayıcında üretilen bir oyuncu kimliği ve gizli anahtardır; sunucu anahtarın yalnızca özetini saklar.
+- Karakter parçalarının ilk ikisi ücretsiz, diğerleri jeton ve seviye ister. Sahip olmadığın parçayla odaya girilemez.
+
+**Taşıma sırası:** 1) Ekonomi ve mağaza ✔ 2) Kişisel oda ve eşya yerleştirme 3) Görevler, yapılacaklar, sesler, istatistikler 4) Dünya'daki sosyal alanlar ve arkadaşlar 5) Tanıtım filmi ve yedekleme. (İnternetsiz çalışma yeni sürüme alınmayacak.)
+
+**Not:** Sunucu oyuncu bilgilerini şimdilik tek bir dosyada tutar (`PW_DATA`). Render'ın ücretsiz planında bu dosya yeniden kurulumda sıfırlanır; kalıcı kullanım için ileride küçük bir veritabanı eklenecek.
 
 **Bilgisayarında çalıştırmak:**
 

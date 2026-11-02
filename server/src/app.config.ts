@@ -1,6 +1,8 @@
 import { defineServer, defineRoom } from '@colyseus/core';
 import { WebSocketTransport } from '@colyseus/ws-transport';
+import express from 'express';
 import { StudyRoom } from './rooms/StudyRoom';
+import { routes } from './http';
 
 export const server = defineServer({
   transport: new WebSocketTransport(),
@@ -9,5 +11,6 @@ export const server = defineServer({
     study_room: defineRoom(StudyRoom).filterBy(['preset']),
   },
   greet: false,
+  express: (app) => routes(app, express.json({ limit: '8kb' })),
 });
 export default server;

@@ -7,8 +7,13 @@ import {
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter,
   decodeAvatar, encodeAvatar, firstFreeSeat, isSeatFree, STUDY_ROOM,
   ChatMsg, EmoteMsg, SitMsg, ActivityMsg, parseJoin,
+  rewardFocus, avatarAllowed, levelFromXP, defaultAvatar, durationOf,
 } from '@pw/shared';
 import { StudyRoomState, Player } from './state';
+import { profiles, type Profile } from '../profiles';
+
+// how long each player was really here during the current focus
+interface FocusTrack { since: number | null; accMs: number; fromStart: boolean; intact: boolean }
 
 const BUBBLE_MS = 6000;
 const RECONNECT_SECONDS = 30;
@@ -22,6 +27,9 @@ export class StudyRoom extends Room {
   private chatLimit = new RateLimiter(1, 3000);       // 1 message / 3 s per player
   private emoteLimit = new RateLimiter(6, 10_000);
   private timeLimit = new RateLimiter(5, 10_000);
+  private scale = 1;
+  private track = new Map<string, FocusTrack>();
+  private profileOf = new Map<string, Profile>();
 
   messages = {
     chat: validate(ChatMsg, (client: Client, { text }) => {
@@ -59,38 +67,53 @@ export class StudyRoom extends Room {
     this.preset = presetById(parseJoin(options).preset);
     // ops/testing only: PW_TIME_SCALE=60 makes a 25-minute focus last 25 seconds (never set in production)
     const scale = Number(process.env.PW_TIME_SCALE) || 1;
+    this.scale = scale;
     if (scale !== 1) this.preset = { ...this.preset, focusMin: this.preset.focusMin / scale, shortMin: this.preset.shortMin / scale, longMin: this.preset.longMin / scale };
     this.state.preset = this.preset.id;
     this.setTimer(startTimer(Date.now(), this.preset));
+    this.startTracking();
     this.setMetadata({ preset: this.preset.id });
   }
 
   onJoin(client: Client, options: unknown) {
     const o = parseJoin(options);
+    let prof: Profile | null = null;
+    if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.profileOf.set(client.sessionId, prof); }
     const p = new Player();
     p.name = cleanName(o.name) || 'Misafir';
-    p.avatar = encodeAvatar(decodeAvatar(o.avatar));
+    // you can only wear parts you own (free ones are always yours)
+    const look = decodeAvatar(o.avatar);
+    p.avatar = encodeAvatar(prof && !avatarAllowed(prof.wallet, look) ? defaultAvatar(look.g) : look);
+    p.level = prof ? levelFromXP(prof.wallet.xp).level : 1;
     p.activity = o.activity ?? 'type';
     p.seatIndex = firstFreeSeat(this.takenSeats(), STUDY_ROOM.seats.length);
     p.pose = 'sit';
     p.bubble = '';
     p.connected = true;
     this.state.players.set(client.sessionId, p);
+    const inFocus = this.state.timer.phase === 'focus';
+    this.track.set(client.sessionId, { since: inFocus ? Date.now() : null, accMs: 0, fromStart: false, intact: true });
+    if (prof) client.send('wallet', { wallet: prof.wallet });
   }
 
   onDrop(client: Client) {
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = false;
+    const t = this.track.get(client.sessionId);
+    if (t) { if (t.since) t.accMs += Date.now() - t.since; t.since = null; t.intact = false; }
     this.allowReconnection(client, RECONNECT_SECONDS);
   }
 
   onReconnect(client: Client) {
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = true;
+    const t = this.track.get(client.sessionId);
+    if (t && this.state.timer.phase === 'focus') t.since = Date.now();
   }
 
   onLeave(client: Client) {
     this.state.players.delete(client.sessionId);
+    this.track.delete(client.sessionId); this.profileOf.delete(client.sessionId);
     this.chatLimit.forget(client.sessionId); this.emoteLimit.forget(client.sessionId); this.timeLimit.forget(client.sessionId);
   }
 
@@ -119,11 +142,40 @@ export class StudyRoom extends Room {
   private onPhaseEnd() {
     const before = this.current();
     const next = settle(before, this.preset, Date.now());
+    if (before.phase === 'focus' && next.phaseEndsAt !== before.phaseEndsAt) this.payFocus(before);
     this.setTimer(next);
+    if (next.phase === 'focus' && before.phase !== 'focus') this.startTracking();
     if (next.phase !== before.phase || next.round !== before.round) {
       // a fresh focus closes the chat: clear the bubbles so nobody is left "talking"
       if (next.phase === 'focus') this.state.players.forEach((p) => { p.bubble = ''; });
       this.broadcast('phase', { phase: next.phase, round: next.round, endsAt: next.phaseEndsAt });
+    }
+  }
+
+  /** everyone present right now starts a fresh focus "from the start" */
+  private startTracking() {
+    const now = Date.now();
+    this.state.players.forEach((p, id) => this.track.set(id, { since: p.connected ? now : null, accMs: 0, fromStart: p.connected, intact: p.connected }));
+  }
+
+  /** the server decides the reward: only time really spent in the room counts */
+  private payFocus(ended: TimerState) {
+    const now = Math.min(Date.now(), ended.phaseEndsAt + 5000);
+    const results: [string, number, boolean][] = [];
+    this.track.forEach((t, id) => {
+      const ms = t.accMs + (t.since ? Math.max(0, now - t.since) : 0);
+      results.push([id, ms, t.fromStart && t.intact]);
+      t.accMs = 0; t.since = null;
+    });
+    const day = new Date().toISOString().slice(0, 10);
+    const focusMin = durationOf('focus', this.preset) * this.scale / 60_000;
+    for (const [id, ms, completed] of results) {
+      const prof = this.profileOf.get(id); if (!prof) continue;
+      const others = results.filter(([o, oms]) => o !== id && oms > 30_000 / this.scale).length;
+      const r = rewardFocus(prof.wallet, { minutes: (ms * this.scale) / 60_000, completed, round: ended.round + 1, others, day, longFocus: focusMin >= 90 });
+      profiles.update(prof, r.wallet);
+      const pl = this.state.players.get(id); if (pl) pl.level = levelFromXP(r.wallet.xp).level;
+      this.clients.getById(id)?.send('reward', { gained: r.gained, lines: r.lines, levelUp: r.levelUp, wallet: r.wallet });
     }
   }
 
@@ -137,5 +189,5 @@ export class StudyRoom extends Room {
   /** End the current phase after `ms` milliseconds. */
   endPhaseIn(ms: number) { this.state.timer.phaseEndsAt = Date.now() + ms; this.schedule(); }
   /** Jump straight into a phase (used by tests). */
-  forcePhase(phase: Phase) { this.setTimer({ phase, phaseEndsAt: Date.now() + 60_000, round: this.state.timer.round }); }
+  forcePhase(phase: Phase) { this.setTimer({ phase, phaseEndsAt: Date.now() + 60_000, round: this.state.timer.round }); if (phase === 'focus') this.startTracking(); }
 }

@@ -4,10 +4,10 @@ import { encodeAvatar, activityFor, type Activity, type Phase } from '@pw/shared
 import { useStore } from './store';
 import { LocalRoom } from './localRoom';
 
-const CONFIGURED = import.meta.env.VITE_SERVER_URL as string | undefined;
-const SERVER = CONFIGURED || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:2567`;
-// no server configured and not running locally (e.g. opened as a Claude artifact) → demo mode right away
-export const DEMO_ONLY = new URLSearchParams(location.search).has('demo') || (!CONFIGURED && !/^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname));
+import { SERVER, DEMO_ONLY } from './config';
+import { identity } from './identity';
+import { sanitizeWallet } from '@pw/shared';
+export { DEMO_ONLY };
 let room: Room | null = null;
 let local: LocalRoom | null = null;
 
@@ -29,7 +29,7 @@ export async function joinStudyRoom() {
   try {
     const client = new Client(SERVER);
     room = await client.joinOrCreate('study_room', {
-      name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category),
+      ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category),
     });
   } catch (e) {
     console.warn('join failed, falling back to demo mode', e);
@@ -44,7 +44,7 @@ export async function joinStudyRoom() {
   const syncTimer = (t: any) => useStore.getState().set({ timer: { phase: t.phase as Phase, phaseEndsAt: t.phaseEndsAt, round: t.round } });
   cb.listen('timer', (t: any) => { if (!t) return; syncTimer(t); cb.onChange(t, () => syncTimer(t)); });
   cb.onAdd('players', (p: any, id: string) => {
-    const put = () => useStore.getState().upsertPlayer(id, { name: p.name, avatar: p.avatar, seatIndex: p.seatIndex, pose: p.pose, activity: p.activity as Activity, bubble: p.bubble, connected: p.connected });
+    const put = () => useStore.getState().upsertPlayer(id, { level: p.level, name: p.name, avatar: p.avatar, seatIndex: p.seatIndex, pose: p.pose, activity: p.activity as Activity, bubble: p.bubble, connected: p.connected });
     put(); cb.onChange(p, put);
   });
   cb.onRemove('players', (_p: unknown, id: string) => useStore.getState().removePlayer(id));
@@ -54,6 +54,9 @@ export async function joinStudyRoom() {
     useStore.setState((s) => ({ emotes: { ...s.emotes, [m.id]: { e: m.e, until } } }));
     setTimeout(() => useStore.setState((s) => { if (s.emotes[m.id]?.until !== until) return s; const emotes = { ...s.emotes }; delete emotes[m.id]; return { emotes }; }), 2700);
   });
+  r.onMessage('wallet', (m: { wallet: unknown }) => useStore.getState().set({ wallet: sanitizeWallet(m.wallet) }));
+  r.onMessage('reward', (m: { gained: { xp: number; coins: number }; lines: string[]; levelUp: number; wallet: unknown }) =>
+    useStore.getState().set({ wallet: sanitizeWallet(m.wallet), reward: { ...m.gained, lines: m.lines, levelUp: m.levelUp, at: Date.now() } }));
   r.onMessage('notice', (m: { code: string }) => useStore.getState().flash(NOTICES[m.code] ?? m.code));
   r.onMessage('phase', (m: { phase: Phase }) => {
     const text = m.phase === 'focus' ? 'Odak başladı. Sohbet kapandı.' : m.phase === 'long_break' ? 'Uzun mola! Sohbet açık.' : 'Mola zamanı. Sohbet açık.';

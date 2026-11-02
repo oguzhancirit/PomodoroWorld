@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { isChatAllowed, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
 import { leaveRoom, sendChat, sendEmote, sendActivity } from '../net';
+import { WalletChip, ShopModal, RewardToast } from './Wallet';
 
 const PHASE: Record<Phase, string> = { focus: 'Odak', short_break: 'Mola', long_break: 'Uzun mola', idle: 'Hazır' };
 const fmt = (ms: number) => { const s = Math.ceil(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
@@ -15,6 +16,8 @@ export function RoomUI() {
       <EmoteBar />
       <NetBanner />
       <Notice />
+      <RewardToast />
+      <ShopModal />
     </div>
   );
 }
@@ -29,6 +32,7 @@ function TopBar() {
       <div className="brand"><span className="dot" />Çalışma odası · {preset.name}</div>
       {demo && <div className="people-pill demo" title="Sunucu olmadan, bot arkadaşlarla">Deneme modu{profile.fast ? ' · hızlı' : ''}</div>}
       <div className="people-pill">{n} / 12 kişi</div>
+      <WalletChip />
       <select aria-label="Ne çalışıyorsun?" value={profile.category} onChange={(e) => { setProfile({ category: e.target.value }); sendActivity(activityFor(e.target.value)); }}>
         {CATEGORIES.map(([id, nm]) => <option key={id} value={id}>{nm}</option>)}
       </select>

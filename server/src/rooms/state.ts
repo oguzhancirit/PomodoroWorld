@@ -8,6 +8,7 @@ export const Player = schema({
   activity: t.string(),      // "type" | "write" | "read" (desk animation while focusing)
   bubble: t.string(),        // last chat line, cleared after a few seconds
   connected: t.boolean().default(true),
+  level: t.number(),
 }, 'Player');
 export type Player = SchemaType<typeof Player>;
 

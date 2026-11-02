@@ -20,7 +20,7 @@ const Tag = memo(function Tag({ id }: { id: string }) {
       ref={(el) => { if (el) tagEls.set(id, el); else tagEls.delete(id); }}>
       {emote && <span className="emo3d" key={emote.until}>{EMOJI[emote.e] ?? '✨'}</span>}
       {p.bubble && <span className="bubble3d" key={p.bubble}>{p.bubble}</span>}
-      <b>{p.name}{p.connected ? '' : ' · bağlantı bekleniyor'}</b>
+      <b>{p.level ? <i className="lv-dot">{p.level}</i> : null}{p.name}{p.connected ? '' : ' · bağlantı bekleniyor'}</b>
     </div>
   );
 });

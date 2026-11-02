@@ -160,6 +160,52 @@ describe('StudyRoom', () => {
     expect(room.state.players.size).toBe(0);
   });
 
+  it('a full focus pays XP and coins to the player, decided by the server', async () => {
+    const room = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const c = await colyseus.connectTo(room, { name: 'Ali', pid: 'pidreward0001', secret: 'r'.repeat(32) });
+    await wait(50);
+    room.forcePhase('focus');                 // a fresh focus with Ali present from the start
+    const got = c.waitForMessage('reward');
+    room.endPhaseIn(30);
+    const m = await got;
+    expect(m.gained.xp).toBeGreaterThanOrEqual(10);
+    expect(m.wallet.stats.pomos).toBe(1);
+    expect(room.state.players.get(c.sessionId)!.level).toBeGreaterThanOrEqual(1);
+  });
+
+  it('joining in the middle of a focus pays minutes but not the pomodoro bonus', async () => {
+    const room = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const c = await colyseus.connectTo(room, { name: 'Geç', pid: 'pidreward0002', secret: 'r'.repeat(32) });
+    const got = c.waitForMessage('reward');
+    room.endPhaseIn(30);
+    expect((await got).wallet.stats.pomos).toBe(0);
+  });
+
+  it('a wrong secret for a known player id is refused', async () => {
+    const room = await colyseus.createRoom<StudyRoom>('study_room', {});
+    await colyseus.connectTo(room, { name: 'A', pid: 'pidsecret0001', secret: 'a'.repeat(32) });
+    await expect(colyseus.connectTo(room, { name: 'B', pid: 'pidsecret0001', secret: 'b'.repeat(32) })).rejects.toBeTruthy();
+  });
+
+  it('wearing a paid part you do not own falls back to the default look', async () => {
+    const room = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const c = await colyseus.connectTo(room, { name: 'A', pid: 'pidwear000001', secret: 'w'.repeat(32), avatar: 'f.0.4.0.0.0.0.0.0' });
+    await wait(50);
+    expect(room.state.players.get(c.sessionId)!.avatar).toBe(encodeAvatar(defaultAvatar('f')));
+  });
+
+  it('the shop sells over HTTP with the server price list', async () => {
+    const id = 'pidshop000001', secret = 'q'.repeat(32);
+    const prof = await colyseus.http.post('/api/profile', { body: { pid: id, secret } });
+    expect(prof.data.wallet.coins).toBe(150);
+    const ok = await colyseus.http.post('/api/buy', { body: { pid: id, secret, itemId: 'furn.lamp_table' } });
+    expect(ok.data.ok).toBe(true); expect(ok.data.wallet.coins).toBe(110);
+    const no = await colyseus.http.post('/api/buy', { body: { pid: id, secret, itemId: 'furn.couch_pillows' } }).catch((e) => e);
+    expect(no.data?.ok ?? no.response?.data?.ok).toBe(false);
+    const bad = await colyseus.http.post('/api/buy', { body: { pid: id, secret: 'z'.repeat(32), itemId: 'furn.lamp_table' } }).catch((e) => e);
+    expect(bad.statusCode ?? bad.status).toBe(403);
+  });
+
   it('rooms are grouped by preset', async () => {
     const r25 = await colyseus.sdk.joinOrCreate('study_room', { preset: 'p25', name: 'x' });
     const r50 = await colyseus.sdk.joinOrCreate('study_room', { preset: 'p50', name: 'y' });

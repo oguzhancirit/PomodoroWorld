@@ -8,3 +8,4 @@ client/dist/
 .env.*
 *.log
 client/dist-artifact/
+server/data/

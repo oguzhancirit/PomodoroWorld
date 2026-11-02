@@ -7,6 +7,8 @@ import {
   PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, encodeAvatar, activityFor, ACTIVITIES, type Activity, type Gender,
 } from '@pw/shared';
 import { useStore, type PlayerView } from './store';
+import { rewardFocus, avatarAllowed, levelFromXP, defaultAvatar } from '@pw/shared';
+import { loadLocalWallet, saveLocalWallet } from './economy';
 
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
 const BREAK_LINES = ['Mola! Su içmeyi unutmayın.', 'Bu turda 3 soru çözdüm.', 'Gözlerimi biraz dinlendireyim.', 'Kim kahve alıyor?', 'Bir tur daha, hadi!', 'Okuduğum bölüm çok iyiydi.', 'Biraz esneyelim mi?', 'Odaklanmak bugün kolay geldi.'];
@@ -24,6 +26,7 @@ function randomAvatar(g: Gender): string {
 
 export class LocalRoom {
   private preset: Preset;
+  private baseFocusMin: number;
   private timer: TimerState;
   private loop = 0;
   private timeouts: number[] = [];
@@ -32,20 +35,23 @@ export class LocalRoom {
   constructor(speed: number) {
     const st = useStore.getState();
     const base = presetById(st.profile.preset);
+    this.baseFocusMin = base.focusMin;
+    const wallet = loadLocalWallet();
+    const look = avatarAllowed(wallet, st.profile.avatar) ? st.profile.avatar : defaultAvatar(st.profile.avatar.g);
     this.preset = speed === 1 ? base : { ...base, focusMin: base.focusMin / speed, shortMin: base.shortMin / speed, longMin: base.longMin / speed };
     this.timer = startTimer(Date.now(), this.preset);
     const players: Record<string, PlayerView> = {};
     const me: PlayerView = {
-      id: 'me', name: cleanName(st.profile.name) || 'Sen', avatar: encodeAvatar(st.profile.avatar), seatIndex: 5,
+      id: 'me', name: cleanName(st.profile.name) || 'Sen', avatar: encodeAvatar(look), level: levelFromXP(wallet.xp).level, seatIndex: 5,
       pose: 'sit', activity: activityFor(st.profile.category), bubble: '', connected: true,
     };
     players.me = me;
     const taken = [5];
     BOTS.forEach(([n, g], i) => {
       const seat = firstFreeSeat(taken, STUDY_ROOM.seats.length); taken.push(seat);
-      players['bot' + i] = { id: 'bot' + i, name: n, avatar: randomAvatar(g), seatIndex: seat, pose: 'sit', activity: pick(ACTIVITIES), bubble: '', connected: true };
+      players['bot' + i] = { id: 'bot' + i, level: 2 + i * 3, name: n, avatar: randomAvatar(g), seatIndex: seat, pose: 'sit', activity: pick(ACTIVITIES), bubble: '', connected: true };
     });
-    st.set({ net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'room', timer: { ...this.timer } });
+    st.set({ wallet, net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'room', timer: { ...this.timer } });
     this.loop = window.setInterval(() => this.tick(), 250);
     this.later(1200, () => this.botSay('bot0', `Hoş geldin ${me.name}! Odak sırasında sohbet kapalı, molada konuşuruz.`, true));
   }
@@ -59,6 +65,7 @@ export class LocalRoom {
     this.timer = next;
     const st = useStore.getState();
     st.set({ timer: { ...next } });
+    if (before.phase === 'focus') this.pay(before.round + 1);
     if (next.phase === 'focus') {
       for (const id of Object.keys(st.players)) st.upsertPlayer(id, { bubble: '' });
       st.addChat({ id: 'sys', name: '', text: 'Odak başladı. Sohbet kapandı.', at: Date.now(), system: true });
@@ -72,6 +79,15 @@ export class LocalRoom {
       this.later(breakMs * 0.45, () => this.botSay(ids[1], lines[1]));
       this.later(breakMs * 0.3, () => this.emote(ids[2], pick(['wave', 'coffee', 'cheer'])));
     }
+  }
+
+  /** same reward rule as the server; in demo mode the wallet lives in this browser */
+  private pay(round: number) {
+    const st = useStore.getState();
+    const r = rewardFocus(st.wallet ?? loadLocalWallet(), { minutes: this.baseFocusMin, completed: true, round, others: Object.keys(st.players).length - 1, day: new Date().toISOString().slice(0, 10), longFocus: this.baseFocusMin >= 90 });
+    saveLocalWallet(r.wallet);
+    st.set({ wallet: r.wallet, reward: { ...r.gained, lines: r.lines, levelUp: r.levelUp, at: Date.now() } });
+    st.upsertPlayer('me', { level: levelFromXP(r.wallet.xp).level });
   }
 
   private isChatOpen() { return isChatAllowed(this.timer.phase as Phase); }

@@ -3,3 +3,4 @@ export * from './chat';
 export * from './seats';
 export * from './avatar';
 export * from './protocol';
+export * from './economy';

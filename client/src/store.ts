@@ -1,10 +1,10 @@
 // The shared notebook (zustand): UI state + a copy of what the server says.
 // 3D components read small slices of it with selectors.
 import { create } from 'zustand';
-import { defaultAvatar, type Avatar, type Activity, type Phase } from '@pw/shared';
+import { defaultAvatar, type Avatar, type Activity, type Phase, type Wallet } from '@pw/shared';
 
 export interface PlayerView {
-  id: string; name: string; avatar: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
+  id: string; name: string; level?: number; avatar: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
 }
 export interface ChatLine { id: string; name: string; text: string; at: number; system?: boolean }
 export interface Profile { name: string; avatar: Avatar; preset: string; category: string; fast: boolean }
@@ -34,6 +34,9 @@ interface State {
   chat: ChatLine[];
   emotes: Record<string, { e: string; until: number }>;
   notice: { text: string; until: number } | null;
+  wallet: Wallet | null;
+  reward: { xp: number; coins: number; lines: string[]; levelUp: number; at: number } | null;
+  shop: boolean;
   setProfile(p: Partial<Profile>): void;
   set(partial: Partial<State>): void;
   upsertPlayer(id: string, p: Partial<PlayerView>): void;
@@ -56,6 +59,9 @@ export const useStore = create<State>((set, get) => ({
   chat: [],
   emotes: {},
   notice: null,
+  wallet: null,
+  reward: null,
+  shop: false,
   setProfile(p) {
     const profile = { ...get().profile, ...p };
     try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch { /* ignore */ }

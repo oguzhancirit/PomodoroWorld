@@ -86,7 +86,8 @@ input:focus, select:focus { border-color: var(--acc2); }
 .notice { position: absolute; top: 140px; left: 50%; transform: translateX(-50%); padding: 10px 16px; border-radius: 12px; background: var(--surf2); border: 1px solid var(--line); font-weight: 700; }
 
 /* name tags and bubbles above the 3D characters */
-.tags { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.tags { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; isolation: isolate; }
+.room-ui { z-index: 2; }
 .tag3d { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; white-space: nowrap; user-select: none; will-change: transform; }
 .tag3d b { padding: 3px 9px; border-radius: 999px; background: rgba(22, 20, 31, .78); font: 700 12px var(--f-body); color: #fff; }
 .tag3d.me b { background: var(--acc); }
@@ -113,3 +114,45 @@ input:focus, select:focus { border-color: var(--acc2); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
 .canvas-failed { height: 100%; min-height: 200px; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
+
+/* ---------- wallet, shop, rewards ---------- */
+.lobby-top { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.wallet { display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 6px; border-radius: 999px; background: rgba(0, 0, 0, .25); border: 1px solid var(--line); }
+.wallet .lv, .lv-dot { display: inline-grid; place-items: center; min-width: 26px; height: 26px; border-radius: 9px; background: linear-gradient(180deg, #ffd977, #f2a93e); color: #3a2400; font: 800 13px var(--f-display); font-style: normal; }
+.lv-dot { min-width: 18px; height: 18px; border-radius: 6px; font-size: 11px; margin-right: 5px; vertical-align: -3px; }
+.wallet .xpbar { width: 64px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.wallet .xpbar i { display: block; height: 100%; background: var(--gold); }
+.coins { display: inline-flex; align-items: center; gap: 4px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.coins.big { font-size: 15px; padding: 6px 10px; border-radius: 999px; background: rgba(242, 193, 78, .14); }
+.coin { width: 16px; height: 16px; fill: #f2c14e; stroke: #8a5a0b; stroke-width: 1.4; stroke-linecap: round; }
+.ghost.sm { padding: 5px 10px; font-size: 12.5px; border-radius: 999px; }
+.chips button.lock { opacity: .75; border-style: dashed; } .chips button small { color: var(--gold); font-weight: 700; }
+.buy-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(239, 90, 60, .1); border: 1px solid rgba(239, 90, 60, .35); text-transform: none; letter-spacing: 0; color: var(--text); font-weight: 600; }
+.buy-bar span { flex-basis: 100%; font-size: 13px; }
+.buy-bar button { padding: 7px 11px; border-radius: 10px; background: var(--acc); font-weight: 800; font-size: 12.5px; }
+.buy-bar button.ghost { background: rgba(255, 255, 255, .06); } .buy-bar em { font-size: 12.5px; color: var(--gold); }
+.modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(8, 7, 14, .6); backdrop-filter: blur(4px); }
+.sheet { width: min(860px, 100%); max-height: min(86vh, 900px); overflow: auto; background: #1d1a2c; border: 1px solid var(--line); border-radius: 22px; padding: 18px; box-shadow: var(--sh); display: grid; gap: 12px; }
+.sheet header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.sheet h2 { margin: 0; font: 800 22px var(--f-display); } .sheet header p { margin: 4px 0 0; color: var(--muted); }
+.sheet .row { display: flex; gap: 8px; align-items: center; }
+.sheet h4 { margin: 6px 0 8px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.x { width: 36px; height: 36px; border-radius: 12px; background: rgba(255, 255, 255, .06); font-size: 20px; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.shop-card { display: grid; gap: 4px; align-content: start; padding: 12px; border-radius: 14px; background: rgba(255, 255, 255, .04); border: 1px solid var(--line); }
+.shop-card .meta { font-size: 12px; color: var(--muted); }
+.shop-card .tag { justify-self: start; margin-top: 4px; padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(255, 255, 255, .07); }
+.shop-card .tag.ok { background: rgba(47, 191, 127, .18); color: #8ff0c2; }
+.shop-card .buy { justify-self: start; margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; padding: 6px 11px; border-radius: 10px; background: var(--acc); font-weight: 800; }
+.shop-card.locked { opacity: .55; } .shop-card.own { border-color: rgba(47, 191, 127, .4); }
+.shop-msg { margin: 0; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, .06); font-weight: 700; }
+.note { margin: 0; color: var(--muted); font-size: 13px; }
+.ach { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ach li { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .04); opacity: .6; }
+.ach li.got { opacity: 1; border: 1px solid rgba(242, 193, 78, .4); } .ach li span { grid-column: 1; font-size: 12.5px; color: var(--muted); }
+.ach li em { grid-row: 1 / 3; grid-column: 2; align-self: center; display: inline-flex; gap: 4px; font-style: normal; font-weight: 800; }
+.reward { position: absolute; top: 80px; right: 14px; width: 260px; padding: 14px; border-radius: 16px; background: linear-gradient(180deg, #2b2540, #1f1b30); border: 1px solid rgba(242, 193, 78, .45); box-shadow: var(--sh); animation: pop .3s ease-out; }
+.reward b { font: 800 18px var(--f-display); color: var(--gold); }
+.reward ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.lvup { font: 800 20px var(--f-display); margin-bottom: 4px; } .lvup span { font-size: 13px; color: var(--muted); font-weight: 700; margin-left: 6px; }
+@media (max-width: 860px) { .reward { top: auto; bottom: 214px; left: 8px; right: 8px; width: auto; } .wallet .xpbar { display: none; } }

@@ -16,7 +16,13 @@ export function activityFor(category: string): Activity {
   return CATEGORIES.find((c) => c[0] === category)?.[2] ?? 'type';
 }
 
+/** a player's id and secret, made once in the browser; the secret proves the id belongs to them */
+export const PlayerId = z.string().regex(/^[a-z0-9]{12,24}$/);
+export const PlayerSecret = z.string().regex(/^[A-Za-z0-9_-]{32,64}$/);
+
 export const JoinOptions = z.object({
+  pid: PlayerId.optional(),
+  secret: PlayerSecret.optional(),
   name: z.string().max(40).optional(),
   avatar: z.string().max(60).optional(),
   preset: z.string().max(8).optional(),
@@ -29,6 +35,8 @@ export function parseJoin(input: unknown): JoinOptions {
   const o = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
   const pick = <T>(schema: z.ZodType<T>, v: unknown): T | undefined => { const r = schema.safeParse(v); return r.success ? r.data : undefined; };
   return {
+    pid: pick(PlayerId, o.pid),
+    secret: pick(PlayerSecret, o.secret),
     name: pick(z.string().max(40), o.name),
     avatar: pick(z.string().max(60), o.avatar),
     preset: pick(z.string().max(8), o.preset),
@@ -42,3 +50,6 @@ export const SitMsg = z.object({ seatIndex: z.number().int().min(0).max(63) });
 export const ActivityMsg = z.object({ activity: ActivityEnum });
 
 export const EMOTES = EmoteMsg.shape.e.options;
+
+export const BuyRequest = z.object({ pid: PlayerId, secret: PlayerSecret, itemId: z.string().max(80) });
+export const ProfileRequest = z.object({ pid: PlayerId, secret: PlayerSecret });
