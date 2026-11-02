@@ -4,6 +4,44 @@
 
 **Canlı:** https://oguzhancirit.github.io/PomodoroWorld/
 
+## Pomodoro World v2 (yapım aşamasında): gerçek sunucu + React 3D
+
+Yeni sürüm eski uygulamanın yanında, ayrı klasörlerde büyüyor. Eski sürüm (kökteki `index.html` ve `js/`) olduğu gibi çalışmaya devam ediyor.
+
+| Klasör | Ne işe yarar |
+| --- | --- |
+| `shared/` | Oyunun kuralları: pomodoro aşamaları, sohbet temizliği, koltuklar, karakter kodu. Sunucu ve tarayıcı aynı kuralları kullanır. |
+| `server/` | Colyseus 0.18 oyun sunucusu, yani "hakem". Ortak sayacı, sohbetin açık/kapalı olmasını, koltukları ve yeniden bağlanmayı yönetir. |
+| `client/` | Vite + React + three.js (React Three Fiber). 3D çalışma odası, karakter oluşturma, sohbet balonları. |
+| `tools/` | Karakter modellerini küçülten ve animasyonları uyarlayan araçlar. |
+
+**Neler var:**
+
+- **Ortak çalışma odası:** Aynı süreyi (25/5, 50/10…) seçenler aynı odaya düşer; oda en fazla 12 kişi alır. Sayacı sunucu tutar, herkes aynı saniyeyi görür (saat farkı otomatik düzeltilir).
+- **Sohbet kuralı:** Odakta sohbet kapalıdır, molada açılır. Mesajlar temizlenir, küfür maskelenir, en fazla 3 saniyede bir mesaj atılabilir. Mesaj karakterin üstünde balon olarak görünür.
+- **Yeniden bağlanma:** İnternet koparsa koltuğun 30 saniye korunur, bağlantı dönünce kaldığın yerden devam edersin.
+- **Yeni karakterler:** Quaternius "Ultimate Modular Men/Women" (CC0). Kafa/saç, üst, alt ve ayakkabı parça parça seçilir; ten, saç ve kıyafet rengi değiştirilebilir.
+- **Gerçek hareketler:** Quaternius "Universal Animation Library" (CC0) oturma ve konuşma hareketleri bu karakterlere uyarlandı (`tools/retarget.mjs`). Bunlardan masada **yazı yazma, klavyede çalışma ve kitap okuma** hareketleri türetildi. Molada karakterler rahatlar, mesaj yazınca konuşur.
+- **Oda eşyaları:** KayKit Furniture Bits (CC0): masa, sandalye, lamba, raf, bitki, halı, koltuk.
+
+**Bilgisayarında çalıştırmak:**
+
+```
+npm install --legacy-peer-deps
+npm run dev:server      # oyun sunucusu  → ws://localhost:2567
+npm run dev:client      # oyun ekranı    → http://localhost:5173
+npm test                # kurallar ve sunucu testleri
+```
+
+Sunucuyu hızlı denemek için `PW_TIME_SCALE=30 npm run dev:server` yaz: 25 dakika 50 saniyeye iner. Bu ayar yalnızca deneme içindir.
+
+**İnternete açmak:**
+
+- Sunucu: `render.yaml` hazır (Render.com ücretsiz plan, kimse yokken uyur).
+- Ekran: `VITE_SERVER_URL=wss://<sunucu-adresi> npm run build -w client`; çıkan `client/dist` herhangi bir statik barındırmaya konabilir (GitHub Pages dahil).
+
+**Lisanslar:** Kod MIT. Modeller ve animasyonlar CC0 (Quaternius, Kay Lousberg); ayrıntılar `client/public/avatars/LICENSE-Quaternius.txt` ve `client/public/models/LICENSE-KayKit-Furniture.txt` dosyalarında.
+
 ## Akış
 
 1. **Tanıtım filmi (ilk açılışta bir kez)**: Oyunun kendi 3D motorunda oynanır.
