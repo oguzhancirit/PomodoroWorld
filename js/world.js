@@ -173,8 +173,8 @@
       this.animated = []; this.itemGroups = []; this.wallGroups = {}; this.lightSpots = []; this.flickers = [];
       const G = this.roomGroup;
       // plinth under the diorama
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.98, size * 1.04, 0.5, 64), PW.mat('#24223A', { rough: 1 })); base.position.y = -0.26; base.receiveShadow = true; G.add(base);
-      const rim = new THREE.Mesh(new THREE.TorusGeometry(size * 0.99, 0.03, 8, 96), PW.mat('#E8553D', { emissive: '#E8553D', ei: 0.6 })); rim.rotation.x = Math.PI / 2; rim.position.y = -0.01; G.add(rim);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(size * 0.98, size * 1.04, 0.5, 64), PW.mat('#1D1B2C', { rough: 0.95 })); base.position.y = -0.26; base.receiveShadow = true; G.add(base);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(size * 0.99, 0.03, 8, 96), PW.mat('#4A4566', { emissive: '#FF8466', ei: 0.12, rough: 0.4 })); rim.rotation.x = Math.PI / 2; rim.position.y = -0.01; G.add(rim);
       // floor (+ thin trim edge)
       const fm = new THREE.MeshStandardMaterial({ map: PW.floorTex(S, size), roughness: S.pat === 'carpet' ? 1 : 0.7, envMapIntensity: 0.4 });
       const floor = new THREE.Mesh(new THREE.BoxGeometry(size + WALL_T * 2, 0.14, size + WALL_T * 2), fm); floor.position.y = -0.07; floor.receiveShadow = true; G.add(floor);

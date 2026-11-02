@@ -201,7 +201,7 @@
     const rows = []; for (const [id, a] of w.avatars) rows.push({ id, name: a.info.name, lv: a.info.level, st: a.info.status, me: id === 'me', npc: id.startsWith('npc-'), fr: id.startsWith('p-') && (() => { const p = A().peers.get(id.slice(2)); return p && A().S.friends[p.uid]; })() });
     rows.sort((a, b) => (b.me - a.me) || (a.npc - b.npc) || (b.lv - a.lv));
     $('#people-count').textContent = rows.length;
-    list.innerHTML = rows.map((r) => `<li class="${r.me ? 'me' : ''} ${r.npc ? 'npc' : ''}" ${r.id.startsWith('p-') ? `data-av="${esc(r.id)}" tabindex="0" role="button"` : ''}><i class="lv">${r.lv}</i><span>${esc(r.name)}${r.me ? ' (sen)' : ''}${r.npc ? '<em>NPC</em>' : ''}${r.fr ? '<em class="fr">arkadaş</em>' : ''}</span><b class="st ${r.st}">${r.st === 'focus' ? 'odak' : r.st === 'break' ? 'mola' : r.st === 'paused' ? 'durdu' : ''}</b></li>`).join('');
+    list.innerHTML = rows.map((r) => `<li class="${r.me ? 'me' : ''} ${r.npc ? 'npc' : ''}" data-st="${r.st || 'idle'}" ${r.id.startsWith('p-') ? `data-av="${esc(r.id)}" tabindex="0" role="button"` : ''}><span class="ava" style="--h:${U.hashStr(r.name || '?') % 360}">${esc((r.name || '?').charAt(0).toLocaleUpperCase('tr'))}</span><span>${esc(r.name)}${r.me ? ' (sen)' : ''}${r.npc ? '<em>NPC</em>' : ''}${r.fr ? '<em class="fr">arkadaş</em>' : ''}</span><i class="lv">Sv ${r.lv}</i><b class="st ${r.st}">${r.st === 'focus' ? 'odak' : r.st === 'break' ? 'mola' : r.st === 'paused' ? 'durdu' : ''}</b></li>`).join('');
   };
   document.addEventListener('click', (e) => { const li = e.target.closest && e.target.closest('#people-list [data-av]'); if (li && ui.openPerson) ui.openPerson(li.dataset.av); });
   ui.onWorldClick = (ev) => {
@@ -245,13 +245,13 @@
 
   /* ---------------- onboarding ---------------- */
   ui.startOnboarding = (invite) => {
-    ui.ob = { step: 0, invite, draft: JSON.parse(JSON.stringify(A().S.av)) };
+    ui.ob = { step: 1, invite, draft: JSON.parse(JSON.stringify(A().S.av)) };
     const m = $('#m-onboard'); m.dataset.locked = '1'; m.classList.add('open');
     PW.world.hideTags = true; ui.renderOnboard();
   };
   ui.renderOnboard = () => {
     const o = ui.ob, body = $('#ob-body');
-    $('#ob-steps').innerHTML = [0, 1, 2].map((i) => `<i class="${i <= o.step ? 'on' : ''}"></i>`).join('');
+    $('#ob-steps').innerHTML = [1, 2].map((i) => `<i class="${i <= o.step ? 'on' : ''}"></i>`).join('');
     if (o.step === 0) {
       const arrow = '<svg class="ob-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
       body.innerHTML = `<div class="ob-welcome">${MASCOT('big')}<h2>Odaklan, birlikte büyü.</h2>
@@ -261,12 +261,11 @@
       $('#ob-next').onclick = () => { o.step = 1; ui.renderOnboard(); };
     } else if (o.step === 1) {
       body.innerHTML = `<header style="margin-bottom:10px"><div><h2>Sen kimsin?</h2></div></header>
-        <div class="wardrobe"><div class="pv" id="ob-preview"><span class="hint">Döndürmek için sürükle</span><button class="btn sm ghost" id="ob-wave" type="button">El salla</button></div><div><div class="tabs" id="ob-tabs"></div><div id="ob-wbody"></div><div class="foot"><button class="btn ghost" id="ob-back">Geri</button><button class="btn" id="ob-next">Devam</button></div></div></div>`;
+        <div class="wardrobe"><div class="pv" id="ob-preview"><span class="hint">Döndürmek için sürükle</span><button class="btn sm ghost" id="ob-wave" type="button">El salla</button></div><div><div class="tabs" id="ob-tabs"></div><div id="ob-wbody"></div><div class="foot"><button class="btn" id="ob-next">Devam</button></div></div></div>`;
       const pv = (ui.obPreview = new PW.Preview($('#ob-preview')));
       ui.wardrobe({ tabs: $('#ob-tabs'), body: $('#ob-wbody'), preview: pv, draft: o.draft, onboarding: true });
       setTimeout(() => pv.wave(), 600);
       $('#ob-wave').onclick = () => pv.wave();
-      $('#ob-back').onclick = () => { o.step = 0; ui.renderOnboard(); };
       $('#ob-next').onclick = () => { o.step = 2; ui.renderOnboard(); };
     } else {
       const S = A().S;
@@ -287,8 +286,10 @@
         const m = $('#m-onboard'); delete m.dataset.locked; m.classList.remove('open');
         PW.world.hideTags = false;
         ui.refreshHUD();
-        // first-run trailer in the real engine, then straight into the first pomodoro (or the invited room)
-        PW.cinema.play().then(() => { S.toured = true; A().save(); if (o.invite) { A().visitCode(o.invite); setTimeout(() => ui.openFocus(), 1200); } else ui.openFocus(); });
+        // the trailer already played before character creation: go straight to the room and the first pomodoro
+        S.toured = true; S.introSeen = true; A().saveNow();
+        if (o.invite) { A().visitCode(o.invite); setTimeout(() => ui.openFocus(), 1200); }
+        else { A().enterHome(); PW.world.flyIn(); setTimeout(() => ui.openFocus(), 1600); }
       };
     }
   };

@@ -6,9 +6,13 @@
 
 ## Akış
 
-1. **Karşılama**: yazı yerine dört animasyonlu kart (Odaklan → Kazan → Odanı kur → Birlikte).
+1. **Tanıtım filmi (ilk açılışta bir kez)**: Oyunun kendi 3D motorunda oynanır.
+   - Arkadaşın Elif seni odasına çağırır; içeri girip masaya oturursun, "Birlikte başlat" ile sayaçlarınız eşitlenir.
+   - Molada Dünya'dan Meydan Kafe'ye gidip sohbete yazarsın; diğerleri cevap verir.
+   - Hızlandırılmış bölüm: Günler akarken (gündüz → akşam → gece) XP ve jeton toplanır, seviye atlanır. Jetonlar harcandıkça boş oda adım adım dolar: halı, lamba, kitaplık, bitki, duvar kâğıdı, parke, puf, fotoğraflar ve Boğaz manzarası eklenir.
+   - Film "Karakterimi oluştur" ile biter. İstenirse "Geç" ile atlanabilir, Profil'den tekrar izlenebilir.
 2. **Karakter oluşturma**: vücut, boy, tavır (yürüyüş/duruş), yüz, saç, sakal, 66 kıyafet ve aksesuar parçası, desen ve renkler. Zar düğmesi yalnızca seçili kategoriyi rastgele değiştirir.
-3. **İsim ve oda adı** → **tanıtım filmi**: Oyunun kendi 3D motorunda, senin karakterinle oynanan kısa bir fragman. Önce arkadaşın Elif seni odasına çağırır; içeri girip masaya oturursun ve birlikte başlattığınız sayaç eşitlenir. Sonra molada Dünya'dan Meydan Kafe'ye gidip sohbete yazarsın, diğerleri cevap verir. Son olarak kazandığın jetonlarla odana yeni bir eşya düşer. İstediğin an "Geç" diyebilirsin; Profil'den tekrar izlenebilir.
+3. **İsim ve oda adı** → kamera odana süzülür → ilk pomodoro ekranı.
 4. **Odak ekranı**: tek halka, süre ve tek bir Başlat düğmesi. Süre, çalışma şekli ve kategori küçük bir menünün içinde.
 
 ## The Sims serisinden alınanlar
@@ -25,6 +29,7 @@
 - **Masaüstü (≥1100 px)**: Profil kartı, oda kartı ve "Odadakiler" sol sütunda aynı genişlikte (300 px) hizalanır. Sohbet sağda aynı genişlikte ayna sütundur. Alt çubuk iki sütunun arasındaki boşlukta durur, hiçbir panelle çakışmaz.
 - **Tablet (720–1099 px)**: Sol sütun 280 px. Alt çubuk ekran boyunca uzanır, sohbet onun üstünde sağdadır.
 - **Telefon (<720 px)**: Üstte tek satırlık profil, altında tam genişlikte oda kartı (yatay kaydırılan düğmeler) ve "Odadakiler". Altta sırasıyla sohbet, sayaç çubuğu ve menü bulunur.
+- **Görsel dil**: Outfit (başlık ve rakamlar) ile Plus Jakarta Sans (arayüz) yazı tipleri kullanılır. Paneller ince üst ışıklı katmanlı cam yüzeylerdir. Tüm düğmelerin üzerine gelme, basma ve klavye odağı durumları vardır. Sohbet mesaj balonu biçimindedir; kişiler listesinde baş harf ve durum noktası, menüde bulunduğun yerin vurgusu yer alır. Hareket ikonları emoji yerine çizim ikonlardır.
 - **Renk paleti**: tek koyu nötr yüzey ailesi. Turuncu-kırmızı yalnızca ana eylemler için, yeşil mola ve çevrimiçi durumu için, altın yalnızca ödül (jeton, seviye) için kullanılır.
 
 ## v4: beş büyük özellik

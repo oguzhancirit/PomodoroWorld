@@ -21,6 +21,7 @@
   const FRIEND = () => Object.assign(PW.defaultAvatar('f'), { hs: 'h_bob', hc: 6, top: 't_sweater', tc: 7, bot: 'b_jeans', bc: 9, ey: 'almond', mo: 'smile', ps: 'calm' });
 
   let run = null; // the active playback (cancellable)
+  let firstRun = false;
   const sleep = (ms) => new Promise((res, rej) => { const t = setTimeout(res, ms / (PW.cinemaSpeed || 1)); run && run.timers.push([t, rej]); });
   const alive = () => { if (!run || run.stopped) throw new Error('skip'); };
 
@@ -47,10 +48,12 @@
   const typeInto = async (el, text, speed = 55) => { el.textContent = ''; for (const ch of text) { el.textContent += ch; await sleep(speed); } };
 
   /* ---------- camera helpers ---------- */
-  let camFollow = null;
+  let camFollow = null, camOrbit = 0, lastT = 0;
   function camTick() {
     if (!run || run.stopped) return;
     const w = PW.world;
+    const now = performance.now(), dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 0; lastT = now;
+    if (camOrbit) { w.cam.tTheta = null; w.cam.theta += dt * camOrbit; }
     if (camFollow) { const a = w.avatars.get(camFollow.id); if (a) { const p = a.av.root.position; w.cam.tTarget.set(p.x + (camFollow.dx || 0), camFollow.y || 0.9, p.z + (camFollow.dz || 0)); } }
     requestAnimationFrame(camTick);
   }
@@ -62,6 +65,7 @@
   /* ---------- the film ---------- */
   async function film() {
     const w = PW.world, S = A().S, me = 'c-me', myName = S.name || 'Sen';
+    camOrbit = 0;
     // ---- 1. friend's room ----
     chapter(0);
     w.clearAvatars(); w.loadRoom(FRIEND_ROOM);
@@ -113,30 +117,72 @@
     w.emote(me, 'clap');
     await sleep(2200); alive();
     // ---- 3. focus → coins → your room grows ----
-    chapter(2); await fade(true); alive();
-    const home = A().homeDef(); const extra = PW.ITEM.f_lamp_floor ? { id: 'f_monstera', x: 2.6, z: 0.4, r: 0 } : null;
-    w.clearAvatars(); w.loadRoom(home);
-    w.addAvatar(me, S.av, { name: myName, level: A().levelInfo().level, isMe: true }); const ds = w.freeSeat(true); if (ds != null) w.sitAvatar(me, ds); w.setAct(me, 'type');
-    shot({ target: [0, 0.6, 0], r: 11, theta: 0.62, phi: 0.98, snap: true });
+    chapter(2); await fade(true); stage(''); alive();
+    await timelapse(me, myName);
+  }
+
+  /* ---------- chapter 3: a time-lapse of your own room growing ---------- */
+  const TL_BASE = {
+    theme: 'th_wood', view: 'v_city_day', size: 7, mood: 'day', wall: '#ECE6DA', wallPat: 'plain', floorT: 'plank', floorC: '#B9926A', trim: '#F6F4EF', curtain: '#C9C2B4',
+    items: [{ id: 'f_desk_wood', x: 0.2, z: -1.15, r: 0 }, { id: 'f_chair_wood', x: 0.2, z: -1.9, r: 0 }, { id: 'd_laptop', x: 0.4, z: -1.25, r: 2 }, { id: 'f_bed_single', x: 2.85, z: 1.6, r: 2, c: '#9AA3B5' }],
+  };
+  const TL_STEPS = [
+    { n: 'Yuvarlak halı', cost: 60, add: { id: 'f_rug_round', x: 0.2, z: -1.3, r: 0 } },
+    { n: 'Masa lambası', cost: 40, add: { id: 'd_lamp', x: -0.3, z: -0.95, r: 2 } },
+    { n: 'Kitaplık', cost: 120, add: { id: 'f_bookshelf', x: -3.25, z: -0.8, r: 1 } },
+    { n: 'Deve tabanı', cost: 90, add: { id: 'f_monstera', x: -2.9, z: -2.9, r: 0 } },
+    { n: 'Çiçekli duvar kâğıdı', cost: 150, set: { wallPat: 'floral', wall: '#DDE8D2', curtain: '#2F7D5B' } },
+    { n: 'Lambader', cost: 80, add: { id: 'f_lamp_floor', x: 2.9, z: -2.9, r: 0 } },
+    { n: 'Balıksırtı parke', cost: 180, set: { floorT: 'herring', floorC: '#C49A6C' } },
+    { n: 'Puf', cost: 70, add: { id: 'f_beanbag', x: -1.5, z: 1.1, r: 1, c: '#E8803A' } },
+    { n: 'Fotoğraf duvarı', cost: 60, add: { id: 'w_frames', w: 'w1', x: -1.4 } },
+    { n: 'Boğaz manzarası', cost: 350, set: { view: 'v_bosphorus' } },
+    { n: 'Peluş ayı', cost: 40, add: { id: 'f_teddy', x: -2.9, z: 2.9, r: 0 } },
+    { n: 'Duvar saati', cost: 50, add: { id: 'w_clock', w: 'w0', x: -2.5 } },
+  ].filter((st) => !st.add || PW.ITEM[st.add.id]);
+  const DAY = ['day', 'golden', 'night'];
+  function pop(g) { if (!g) return; g.scale.setScalar(0.01); const t0 = performance.now(); const f = () => { const k = Math.min(1, (performance.now() - t0) / 520); const e = 1 + 2.4 * Math.pow(k - 1, 3) + 1.4 * Math.pow(k - 1, 2); g.scale.setScalar(Math.max(0.01, e)); if (k < 1) requestAnimationFrame(f); }; f(); }
+  async function timelapse(me, myName) {
+    const w = PW.world, S = A().S;
+    const def = JSON.parse(JSON.stringify(TL_BASE)); def.items = def.items.filter((it) => PW.ITEM[it.id]);
+    const load = (mood) => { def.mood = mood; w.loadRoom(def); const i = w.seats.findIndex((s) => s.desk); w.addAvatar(me, S.av, { name: myName, level: lv, isMe: true }); if (i >= 0) w.sitAvatar(me, i); w.setAct(me, mood === 'night' ? 'read' : 'type'); };
+    let lv = 1, xp = 0, coins = 150, day = 1;
+    w.clearAvatars(); load('day');
+    shot({ target: [0, 0.5, 0], r: 11.5, theta: 0.2, phi: 0.92, snap: true }); camOrbit = 0.16;
     cap('3 · Odanı kur', 'Her odak dakikası XP ve jeton kazandırır');
-    stage(`<div class="cn-coins"><b>+25 XP</b><b class="g">+25 jeton</b></div>`);
-    await fade(false); await sleep(1800); alive();
-    if (extra && PW.ITEM[extra.id]) {
-      cap('3 · Odanı kur', 'Jetonlarla eşya al, odanı sana göre düzenle');
-      w.loadRoom(Object.assign({}, home, { items: home.items.concat([extra]) })); if (ds != null) w.sitAvatar(me, ds);
-      const g = w.itemGroups[w.itemGroups.length - 1]; if (g) { g.scale.setScalar(0.01); const t0 = performance.now(); const pop = () => { const k = Math.min(1, (performance.now() - t0) / 600); const e = 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2); g.scale.setScalar(Math.max(0.01, e)); if (k < 1) requestAnimationFrame(pop); }; pop(); }
-      shot({ target: [1.6, 0.6, 0.2], r: 6.5, theta: 0.9, phi: 1.0 });
+    stage(`<div class="tl-hud"><div class="tl-clock"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17"/><path class="h" d="M20 20V9"/><path class="m" d="M20 20l7 4"/></svg><div><small>Hızlandırılmış</small><b id="tl-day">1. gün</b></div></div>
+      <div class="tl-row"><span class="tl-lv" id="tl-lv">1</span><div class="tl-bar"><i id="tl-xp"></i></div></div>
+      <div class="tl-coins"><span>Jeton</span><b id="tl-c">150</b></div></div><div class="tl-feed" id="tl-feed"></div>`);
+    await fade(false); await sleep(900); alive();
+    const $d = $('#tl-day'), $c = $('#tl-c'), $x = $('#tl-xp'), $l = $('#tl-lv'), feed = $('#tl-feed');
+    const note = (html, cls) => { const n = document.createElement('div'); n.className = 'tl-note ' + (cls || ''); n.innerHTML = html; feed.prepend(n); while (feed.children.length > 3) feed.lastChild.remove(); };
+    const count = async (to, ms) => { const from = coins, t0 = performance.now(); for (;;) { const k = Math.min(1, (performance.now() - t0) / ms); $c.textContent = Math.round(from + (to - from) * k).toLocaleString('tr-TR'); if (k >= 1) break; await sleep(30); } coins = to; };
+    for (let i = 0; i < TL_STEPS.length; i++) {
+      alive(); const st = TL_STEPS[i];
+      if (i === 3) cap('3 · Odanı kur', 'Jetonları harca; odan her gün biraz daha senin olsun');
+      // a few focused days pass: light cycles day → evening → night
+      day += 2 + (i % 2); $d.textContent = day + '. gün';
+      const earn = 4 * 25 + (i % 3) * 25; xp += earn; if (xp >= 60 * lv) { xp -= 60 * lv; lv++; $l.textContent = lv; $l.classList.remove('up'); void $l.offsetWidth; $l.classList.add('up'); note(`<b>Seviye ${lv}</b>`, 'lv'); }
+      $x.style.width = Math.min(100, (xp / (60 * lv)) * 100) + '%';
+      note(`+${earn} XP · <b>+${earn} jeton</b>`, 'earn'); await count(coins + earn, 380);
+      // spend
+      note(`−${st.cost} · ${st.n}`, 'spend'); await count(Math.max(0, coins - st.cost), 260);
+      if (st.add) def.items.push(st.add); if (st.set) Object.assign(def, st.set);
+      load(DAY[i % 3]);
+      if (st.add) pop(w.itemGroups[w.itemGroups.length - 1]);
+      await sleep(820); alive();
     }
-    await sleep(2200); alive();
-    stage(`<div class="cn-end"><b>Hazırsan ilk pomodoronu başlat</b><button class="btn" id="cn-go" type="button">Başlayalım</button></div>`);
-    cap('', '');
+    // final: the finished room in warm evening light
+    load('golden'); camOrbit = 0.08; shot({ r: 9.5, phi: 0.98 });
+    cap('', ''); stage(`<div class="cn-end"><small>Pomodoro World</small><b>Odaklan. Kazan.<br>Odanı kendin gibi yap.</b><button class="btn" id="cn-go" type="button">${firstRun ? 'Karakterimi oluştur' : 'Kapat'}</button></div>`);
     await new Promise((res) => { $('#cn-go').onclick = res; run.timers.push([0, res]); });
   }
 
   PW.cinema = {
     playing: () => !!run,
-    async play() {
+    async play(opts = {}) {
       if (run) return;
+      firstRun = !!opts.first;
       const el = overlay(); el.classList.add('open', 'black'); document.body.classList.add('cinema');
       run = { stopped: false, timers: [] }; A().cinema = true; PW.world.hideTags = false;
       if (A().chan) { try { A().chan.leave(); } catch (e) {} A().chan = null; }
@@ -145,7 +191,7 @@
       requestAnimationFrame(camTick);
       try { await film(); } catch (e) { if (e && e.message !== 'skip') console.warn('cinema', e); }
       // back to the real game
-      const was = run; run = null; camFollow = null; if (was) was.timers.forEach(([t]) => t && clearTimeout(t));
+      const was = run; run = null; camFollow = null; camOrbit = 0; if (was) was.timers.forEach(([t]) => t && clearTimeout(t));
       el.classList.add('black'); await new Promise((r) => setTimeout(r, 300));
       A().cinema = false; document.body.classList.remove('cinema');
       await A().enterHome(); el.classList.remove('open', 'black'); stage('');

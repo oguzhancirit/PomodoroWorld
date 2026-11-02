@@ -562,7 +562,12 @@
     PW.ui.init();
     if (App._restored) PW.ui.toast('Kayıt yedekten kurtarıldı', 'Ana kayıt bozulmuştu; günlük yedeğin yüklendi.', 'warn');
     const inviteHash = location.hash.startsWith('#oda-') ? location.hash.slice(5) : null;
-    if (!App.S.onboarded) { App.enterHome(); PW.ui.startOnboarding(inviteHash); }
+    if (!App.S.onboarded) {
+      // first open: the trailer plays once, then character creation
+      App.enterHome();
+      if (!App.S.introSeen && PW.cinema) { setTimeout(() => PW.cinema.play({ first: true }).then(() => { App.S.introSeen = true; App.saveNow(); PW.ui.startOnboarding(inviteHash); }), 400); }
+      else PW.ui.startOnboarding(inviteHash);
+    }
     else if (inviteHash) App.visitCode(inviteHash);
     else { App.enterHome(); PW.world.flyIn(); setTimeout(() => PW.ui.openFocus(), 900); }
     setInterval(App.tick, 250);

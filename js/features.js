@@ -293,3 +293,18 @@
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }
 })();
+
+/* nav: highlight where you are (open panel, otherwise your room / the World) */
+(function () {
+  const PW = window.PW, ui = PW.ui;
+  const mark = () => {
+    const open = document.querySelector('.modal.open'); const name = open ? open.id.replace('m-', '') : null;
+    document.querySelectorAll('nav.main button').forEach((b) => b.classList.remove('on'));
+    let el = name && document.querySelector(`nav.main [data-open="${name}"]`);
+    if (!el && !name) { const k = PW.app.room && PW.app.room.kind; el = k === 'home' ? document.getElementById('nav-home') : k ? document.getElementById('nav-world') : null; }
+    if (el) el.classList.add('on');
+  };
+  const o = ui.open, c = ui.close, rc = ui.onRoomChange;
+  ui.open = (n) => { o(n); mark(); }; ui.close = (s) => { c(s); mark(); }; ui.onRoomChange = (a, b) => { rc(a, b); mark(); };
+  setTimeout(mark, 0);
+})();
