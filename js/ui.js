@@ -286,8 +286,9 @@
         S.name = n; S.av = o.draft; S.room.name = (rm.value.trim() || `${n}'in Odası`).slice(0, 32); S.onboarded = true; A().saveNow();
         const m = $('#m-onboard'); delete m.dataset.locked; m.classList.remove('open');
         PW.world.hideTags = false;
-        A().enterHome(); PW.world.flyIn(); ui.refreshHUD();
-        setTimeout(() => ui.startTour(o.invite), 2300);
+        ui.refreshHUD();
+        // first-run trailer in the real engine, then straight into the first pomodoro (or the invited room)
+        PW.cinema.play().then(() => { S.toured = true; A().save(); if (o.invite) { A().visitCode(o.invite); setTimeout(() => ui.openFocus(), 1200); } else ui.openFocus(); });
       };
     }
   };
@@ -640,10 +641,10 @@
         <label class="ck"><input type="checkbox" id="set-share" ${S.settings.shareTask ? 'checked' : ''}> Görevimi odadakilere göster</label>
         <label class="ck"><input type="checkbox" id="set-filter" ${S.settings.filter !== false ? 'checked' : ''}> Sohbette küfür filtresi</label>
         ${PW.DEV ? '<label>Demo hızı <select id="set-speed"><option value="1">Gerçek zaman</option><option value="10">×10</option><option value="60">×60</option></select></label>' : ''}
-        <div class="row"><button class="btn">Kaydet</button><button type="button" class="btn ghost" id="set-tour">Tanıtım turunu tekrar izle</button></div>
+        <div class="row"><button class="btn">Kaydet</button><button type="button" class="btn ghost" id="set-tour">Tanıtım filmini izle</button></div>
       </form>`;
     if ($('#set-speed')) $('#set-speed').value = String(S.settings.speed || 1); $('#set-gfx').value = S.settings.gfx || 'high';
-    $('#set-tour').onclick = () => { ui.close(); if (!A().room || A().room.kind !== 'home') A().enterHome(); setTimeout(() => ui.startTour(), 600); };
+    $('#set-tour').onclick = () => { ui.close(); PW.cinema.play(); };
     $('#set-form').onsubmit = (e) => {
       e.preventDefault(); const n = PW.safe.str($('#set-name').value, 20); if (n.length >= 2) { if (PW.safe.isBadName(n)) return ui.toast('Bu ad kullanılamaz', 'Başka bir ad dene.', 'warn'); S.name = n; }
       S.settings.notify = $('#set-notify').checked; S.settings.shareTask = $('#set-share').checked; S.settings.filter = $('#set-filter').checked;

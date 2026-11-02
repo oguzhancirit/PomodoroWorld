@@ -272,7 +272,7 @@
     if (spec.kind === 'visit') history.replaceState(null, '', '#oda-' + spec.code.toLowerCase()); else if (location.hash.startsWith('#oda-')) history.replaceState(null, '', location.pathname + location.search);
   };
   App.joinChannel = async (spec) => {
-    if (!App.net || App.room !== spec) return;
+    if (!App.net || App.room !== spec || App.cinema) return;
     if (App.chan) { try { App.chan.leave(); } catch (e) {} App.chan = null; }
     try {
       const ch = await App.net.join(spec.key);
@@ -354,7 +354,7 @@
   };
   App.realPeersFocusing = () => { let n = 0; for (const p of App.peers.values()) if (p.presence && p.presence.st === 'focus') n++; return n; };
   App.onPeers = (rawList) => {
-    if (App.inactive) return;
+    if (App.inactive || App.cinema) return;
     const w = PW.world, seen = new Set(); let myPeer = null;
     const SF = PW.safe;
     const list = rawList.map((p) => (p.isMe ? p : Object.assign({}, p, { presence: SF.presence(p.presence) }))).filter((p) => p.isMe || p.presence);
@@ -460,7 +460,7 @@
     PW.world.emote(p.avId, m.e);
   };
   App.onRemoteChat = (m) => {
-    if (App.inactive) return;
+    if (App.inactive || App.cinema) return;
     if (!m.retry) { m = Object.assign({}, m, { text: PW.safe.chat(m.text) }); if (!m.text || !PW.safe.chatIn(m.peer) || PW.safe.isRepeat(m.peer, m.text)) return; m.text = PW.safe.clean(m.text); }
     const p = App.peers.get(m.peer);
     if (p && App.S.blocked[p.uid]) return;

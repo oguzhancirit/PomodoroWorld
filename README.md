@@ -8,7 +8,7 @@
 
 1. **Karşılama**: yazı yerine dört animasyonlu kart (Odaklan → Kazan → Odanı kur → Birlikte).
 2. **Karakter oluşturma**: vücut, boy, tavır (yürüyüş/duruş), yüz, saç, sakal, 66 kıyafet ve aksesuar parçası, desen ve renkler. Zar düğmesi yalnızca seçili kategoriyi rastgele değiştirir.
-3. **İsim ve oda adı** → kamera odana süzülür → 6 adımlık, kısa başlıklı ve animasyonlu tur.
+3. **İsim ve oda adı** → **tanıtım filmi**: Oyunun kendi 3D motorunda, senin karakterinle oynanan kısa bir fragman. Önce arkadaşın Elif seni odasına çağırır; içeri girip masaya oturursun ve birlikte başlattığınız sayaç eşitlenir. Sonra molada Dünya'dan Meydan Kafe'ye gidip sohbete yazarsın, diğerleri cevap verir. Son olarak kazandığın jetonlarla odana yeni bir eşya düşer. İstediğin an "Geç" diyebilirsin; Profil'den tekrar izlenebilir.
 4. **Odak ekranı**: tek halka, süre ve tek bir Başlat düğmesi. Süre, çalışma şekli ve kategori küçük bir menünün içinde.
 
 ## The Sims serisinden alınanlar
@@ -18,6 +18,14 @@
 - **Durum taşı**: karakterinin üstünde dönen ve odak/mola durumuna göre renk değiştiren bir kristal.
 - **Yapı modu**: geri al/yinele (Ctrl+Z / Ctrl+Y), eşyanın sığmadığı yerde kırmızı uyarı, Kopyala (aynı eşyadan bir tane daha), duvarlar kesik/açık/alçak, kuşbakışı (T), tek tıkla 9 hazır oda stili.
 - **Görüntü**: ekran-uzayı ortam gölgesi (SAO), eşya altı temas gölgeleri, duvar-zemin köşe gölgeleri, karakterlerde kenar ışığı, kumaşlarda parlaklık, yüzeylerde kabartma.
+
+## Arayüz düzeni (telefon / tablet / masaüstü)
+
+- Tüm paneller aynı yüzeyi, kenarlığı, köşe yuvarlaklığını (18 px), iç boşluğu (14 px) ve aralığı (12 px) kullanır.
+- **Masaüstü (≥1100 px)**: Profil kartı, oda kartı ve "Odadakiler" sol sütunda aynı genişlikte (300 px) hizalanır. Sohbet sağda aynı genişlikte ayna sütundur. Alt çubuk iki sütunun arasındaki boşlukta durur, hiçbir panelle çakışmaz.
+- **Tablet (720–1099 px)**: Sol sütun 280 px. Alt çubuk ekran boyunca uzanır, sohbet onun üstünde sağdadır.
+- **Telefon (<720 px)**: Üstte tek satırlık profil, altında tam genişlikte oda kartı (yatay kaydırılan düğmeler) ve "Odadakiler". Altta sırasıyla sohbet, sayaç çubuğu ve menü bulunur.
+- **Renk paleti**: tek koyu nötr yüzey ailesi. Turuncu-kırmızı yalnızca ana eylemler için, yeşil mola ve çevrimiçi durumu için, altın yalnızca ödül (jeton, seviye) için kullanılır.
 
 ## v4: beş büyük özellik
 
@@ -91,6 +99,7 @@ js/safety.js    gelen verinin denetimi, küfür filtresi, hız sınırları, mak
 js/sound.js     prosedürel ortam sesleri
 js/app.js       oyun mantığı (sayaç, XP, görevler, odalar, davet)
 js/ui.js        arayüz (odak ekranı, karşılama, tur, gardırop, mağaza…)
+js/cinema.js    ilk açılış tanıtım filmi (gerçek 3D motorda, atlanabilir)
 js/features.js  ortak seans, yapılacaklar, ses karıştırıcı, arkadaşlar, içgörüler, kişi kartı, yedek
 sw.js, manifest.webmanifest, icons/   uygulama olarak yükleme ve çevrimdışı çalışma
 build.py        tek dosyalık sürüm üretir (dist/)
