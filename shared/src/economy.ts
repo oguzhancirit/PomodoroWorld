@@ -1,5 +1,6 @@
 // Economy rules: XP, levels, coins, achievements and the shop. Pure functions; the server (or the
 // demo room) is the only one that applies them, so a player can never write their own coins.
+import { ROOM_FURN, ROOM_THEMES, ROOM_VIEWS, ROOM_SIZES, OLD_STARTER } from './roomCatalog';
 import { PARTS, type Avatar, type Gender, type Slot } from './avatar';
 
 export const ECON = {
@@ -27,7 +28,9 @@ export interface Wallet {
   stats: { focusMin: number; pomos: number; streak: number; lastDay: string | null; days: Record<string, number>; dayPomos: Record<string, number> };
   ach: Record<string, number>;
 }
-export const newWallet = (): Wallet => ({ xp: 0, coins: ECON.startCoins, owned: {}, stats: { focusMin: 0, pomos: 0, streak: 0, lastDay: null, days: {}, dayPomos: {} }, ach: {} });
+/** Like the original game: a desk, a chair, the wood theme, the city view and the small room. */
+export const STARTER: Record<string, number> = { f_desk_wood: 1, f_chair_wood: 1, ...Object.fromEntries(OLD_STARTER.map((id) => [id, 1])) };
+export const newWallet = (): Wallet => ({ xp: 0, coins: ECON.startCoins, owned: { ...STARTER }, stats: { focusMin: 0, pomos: 0, streak: 0, lastDay: null, days: {}, dayPomos: {} }, ach: {} });
 const clone = (w: Wallet): Wallet => ({ ...w, owned: { ...w.owned }, ach: { ...w.ach }, stats: { ...w.stats, days: { ...w.stats.days }, dayPomos: { ...w.stats.dayPomos } } });
 
 export const ACHIEVEMENTS: { id: string; name: string; desc: string; coin: number; test: (w: Wallet, ctx: { longFocus: boolean }) => boolean }[] = [
@@ -39,7 +42,7 @@ export const ACHIEVEMENTS: { id: string; name: string; desc: string; coin: numbe
   { id: 's3', name: 'Isınma Turu', desc: '3 günlük seri yap', coin: 50, test: (w) => w.stats.streak >= 3 },
   { id: 's7', name: 'Haftalık Seri', desc: '7 günlük seri yap', coin: 140, test: (w) => w.stats.streak >= 7 },
   { id: 'deep', name: 'Derin Dalış', desc: '90 dakikalık bir oturum tamamla', coin: 80, test: (_w, c) => c.longFocus },
-  { id: 'collect', name: 'Koleksiyoncu', desc: '15 farklı eşyaya sahip ol', coin: 150, test: (w) => Object.keys(w.owned).length >= 15 },
+  { id: 'collect', name: 'Koleksiyoncu', desc: '20 farklı eşyaya sahip ol', coin: 150, test: (w) => Object.keys(w.owned).length >= 20 },
 ];
 
 const prevDay = (d: string) => { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); };
@@ -70,7 +73,7 @@ export function rewardFocus(w0: Wallet, r: FocusResult) {
 }
 
 /* ---------- catalog ---------- */
-export interface Item { id: string; name: string; cat: 'avatar' | 'furn'; price: number; lvl: number; g?: Gender; slot?: Slot; part?: string; piece?: string }
+export interface Item { id: string; name: string; cat: 'avatar' | 'furn' | 'theme' | 'view' | 'size'; price: number; lvl: number; g?: Gender; slot?: Slot; part?: string; sub?: string; wall?: number; size?: number }
 const PART_NAMES: Record<string, string> = {
   Casual: 'Günlük', Casual_Hoodie: 'Kapüşonlu', Casual_2: 'Rahat', Formal: 'Şık', Suit: 'Takım', Punk: 'Punk', SciFi: 'Bilimkurgu',
   Adventurer: 'Gezgin', Soldier: 'Kısa saç', Medieval: 'Ortaçağ', Witch: 'Cadı şapkası', Worker: 'İşçi', Beach: 'Plaj', Farmer: 'Çiftçi', King: 'Taç',
@@ -84,25 +87,31 @@ const avatarItems: Item[] = (['f', 'm'] as Gender[]).flatMap((g) => (['head', 'b
     price: i < 2 ? 0 : 60 + (i - 2) * 30, lvl: i < 3 ? 1 : Math.min(12, i),
   }))));
 
-const FURN: [string, string, number, number][] = [
-  ['lamp_table', 'Masa lambası', 40, 1], ['book_set', 'Kitap seti', 30, 1], ['cactus_small_A', 'Küçük kaktüs', 35, 1], ['cactus_medium_A', 'Saksı kaktüs', 90, 2],
-  ['rug_oval_A', 'Oval halı', 60, 1], ['rug_rectangle_stripes_A', 'Çizgili halı', 90, 2], ['chair_B_wood', 'Ahşap sandalye', 50, 1], ['armchair_pillows', 'Berjer', 220, 4],
-  ['couch_pillows', 'Kanepe', 320, 6], ['table_low', 'Sehpa', 120, 3], ['shelf_B_small_decorated', 'Küçük raf', 110, 2], ['shelf_B_large_decorated', 'Büyük raf', 180, 4],
-  ['cabinet_medium_decorated', 'Dolap', 240, 5], ['lamp_standing', 'Lambader', 140, 3], ['pictureframe_large_A', 'Büyük tablo', 150, 4], ['pictureframe_medium', 'Çerçeve', 70, 2],
+// The first v2 shop sold a few KayKit pieces before the personal room existed.
+// They are replaced by the original room catalog; whoever bought one gets the coins back.
+const KAYKIT_REFUND: Record<string, number> = {
+  lamp_table: 40, book_set: 30, cactus_small_A: 35, cactus_medium_A: 90, rug_oval_A: 60, rug_rectangle_stripes_A: 90, chair_B_wood: 50, armchair_pillows: 220,
+  couch_pillows: 320, table_low: 120, shelf_B_small_decorated: 110, shelf_B_large_decorated: 180, cabinet_medium_decorated: 240, lamp_standing: 140, pictureframe_large_A: 150, pictureframe_medium: 70,
+};
+const roomItems: Item[] = [
+  ...ROOM_FURN.map((f) => ({ ...f, cat: 'furn' as const })),
+  ...ROOM_THEMES.map((t) => ({ ...t, cat: 'theme' as const })),
+  ...ROOM_VIEWS.map((t) => ({ ...t, cat: 'view' as const })),
+  ...ROOM_SIZES.map((t) => ({ ...t, cat: 'size' as const })),
 ];
-const furnItems: Item[] = FURN.map(([piece, name, price, lvl]) => ({ id: `furn.${piece}`, name, cat: 'furn', price, lvl, piece }));
 
-export const CATALOG: readonly Item[] = [...avatarItems, ...furnItems];
+export const CATALOG: readonly Item[] = [...avatarItems, ...roomItems];
 const BY_ID = new Map(CATALOG.map((i) => [i.id, i]));
 export const itemById = (id: string) => BY_ID.get(id);
 export const isFree = (i: Item) => i.price === 0;
-export const owns = (w: Wallet, id: string) => { const i = BY_ID.get(id); return !!i && (isFree(i) || (w.owned[id] ?? 0) > 0); };
+/** Avatar parts that cost nothing are everyone's; room things (even free ones) are counted copies. */
+export const owns = (w: Wallet, id: string) => { const i = BY_ID.get(id); return !!i && ((i.cat === 'avatar' && isFree(i)) || (w.owned[id] ?? 0) > 0); };
 
 export type BuyResult = { ok: true; wallet: Wallet; item: Item } | { ok: false; reason: 'unknown' | 'owned' | 'level' | 'coins' };
 export function buy(w0: Wallet, id: string): BuyResult {
   const item = BY_ID.get(id);
   if (!item) return { ok: false, reason: 'unknown' };
-  if (item.cat === 'avatar' && owns(w0, id)) return { ok: false, reason: 'owned' };
+  if (item.cat !== 'furn' && owns(w0, id)) return { ok: false, reason: 'owned' };
   if (levelFromXP(w0.xp).level < item.lvl) return { ok: false, reason: 'level' };
   if (w0.coins < item.price) return { ok: false, reason: 'coins' };
   const w = clone(w0); w.coins -= item.price; w.owned[id] = (w.owned[id] ?? 0) + 1;
@@ -121,9 +130,13 @@ export function sanitizeWallet(v: unknown): Wallet {
   const o = v as Partial<Wallet>; const n = (x: unknown, def = 0) => (typeof x === 'number' && Number.isFinite(x) && x >= 0 ? Math.floor(x) : def);
   const rec = (r: unknown) => Object.fromEntries(Object.entries(r && typeof r === 'object' ? r : {}).filter(([, x]) => typeof x === 'number' && Number.isFinite(x) && x >= 0)) as Record<string, number>;
   const s = (o.stats ?? {}) as Partial<Wallet['stats']>;
+  const owned0 = rec(o.owned); let refund = 0;
+  for (const [k, c] of Object.entries(owned0)) if (k.startsWith('furn.')) refund += (KAYKIT_REFUND[k.slice(5)] ?? 0) * Math.floor(c);
+  const owned = Object.fromEntries(Object.entries(owned0).filter(([k]) => BY_ID.has(k)).map(([k, c]) => [k, Math.floor(c)]));
+  for (const [k, c] of Object.entries(STARTER)) if (!owned[k]) owned[k] = c;
   return {
-    xp: n(o.xp), coins: n(o.coins, d.coins),
-    owned: Object.fromEntries(Object.entries(rec(o.owned)).filter(([k]) => BY_ID.has(k))),
+    xp: n(o.xp), coins: n(o.coins, d.coins) + refund,
+    owned,
     ach: rec(o.ach),
     stats: { focusMin: n(s.focusMin), pomos: n(s.pomos), streak: n(s.streak), lastDay: typeof s.lastDay === 'string' ? s.lastDay : null, days: rec(s.days), dayPomos: rec(s.dayPomos) },
   };

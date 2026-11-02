@@ -4,3 +4,5 @@ export * from './seats';
 export * from './avatar';
 export * from './protocol';
 export * from './economy';
+export * from './roomCatalog';
+export * from './room';

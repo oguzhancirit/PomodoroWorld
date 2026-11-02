@@ -108,11 +108,11 @@ describe('shop', () => {
   });
 });
 
-import { sanitizeWallet } from '../src/economy';
+import { sanitizeWallet, STARTER } from '../src/economy';
 describe('sanitizeWallet', () => {
   it('repairs broken stored wallets', () => {
     expect(sanitizeWallet(null).coins).toBe(150);
-    const w = sanitizeWallet({ xp: -4, coins: 'x', owned: { 'furn.lamp_table': 2, 'hack': 9, 'furn.book_set': -1 }, stats: { pomos: 3.7 } });
-    expect(w.xp).toBe(0); expect(w.coins).toBe(150); expect(w.owned).toEqual({ 'furn.lamp_table': 2 }); expect(w.stats.pomos).toBe(3);
+    const w = sanitizeWallet({ xp: -4, coins: 'x', owned: { f_cactus: 2, 'hack': 9, f_sofa: -1 }, stats: { pomos: 3.7 } });
+    expect(w.xp).toBe(0); expect(w.coins).toBe(150); expect(w.owned).toEqual({ ...STARTER, f_cactus: 2 }); expect(w.stats.pomos).toBe(3);
   });
 });

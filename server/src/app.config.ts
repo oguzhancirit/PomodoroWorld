@@ -11,6 +11,6 @@ export const server = defineServer({
     study_room: defineRoom(StudyRoom).filterBy(['preset']),
   },
   greet: false,
-  express: (app) => routes(app, express.json({ limit: '8kb' })),
+  express: (app) => routes(app, express.json({ limit: '48kb' })),
 });
 export default server;

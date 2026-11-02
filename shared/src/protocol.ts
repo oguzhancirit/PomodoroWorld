@@ -53,3 +53,4 @@ export const EMOTES = EmoteMsg.shape.e.options;
 
 export const BuyRequest = z.object({ pid: PlayerId, secret: PlayerSecret, itemId: z.string().max(80) });
 export const ProfileRequest = z.object({ pid: PlayerId, secret: PlayerSecret });
+export const RoomRequest = z.object({ pid: PlayerId, secret: PlayerSecret, room: z.record(z.string(), z.unknown()) });

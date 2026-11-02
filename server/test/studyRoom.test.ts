@@ -198,11 +198,27 @@ describe('StudyRoom', () => {
     const id = 'pidshop000001', secret = 'q'.repeat(32);
     const prof = await colyseus.http.post('/api/profile', { body: { pid: id, secret } });
     expect(prof.data.wallet.coins).toBe(150);
-    const ok = await colyseus.http.post('/api/buy', { body: { pid: id, secret, itemId: 'furn.lamp_table' } });
-    expect(ok.data.ok).toBe(true); expect(ok.data.wallet.coins).toBe(110);
-    const no = await colyseus.http.post('/api/buy', { body: { pid: id, secret, itemId: 'furn.couch_pillows' } }).catch((e) => e);
+    const ok = await colyseus.http.post('/api/buy', { body: { pid: id, secret, itemId: 'f_cactus' } });
+    expect(ok.data.ok).toBe(true); expect(ok.data.wallet.coins).toBe(100); // f_cactus costs 50, as in the original shop
+    const no = await colyseus.http.post('/api/buy', { body: { pid: id, secret, itemId: 'f_sofa_l' } }).catch((e) => e);
     expect(no.data?.ok ?? no.response?.data?.ok).toBe(false);
-    const bad = await colyseus.http.post('/api/buy', { body: { pid: id, secret: 'z'.repeat(32), itemId: 'furn.lamp_table' } }).catch((e) => e);
+    const bad = await colyseus.http.post('/api/buy', { body: { pid: id, secret: 'z'.repeat(32), itemId: 'f_cactus' } }).catch((e) => e);
+    expect(bad.statusCode ?? bad.status).toBe(403);
+  });
+
+  it('saves the personal room, keeping only what the player owns', async () => {
+    const id = 'pidroom000001', secret = 'r'.repeat(32);
+    const prof = await colyseus.http.post('/api/profile', { body: { pid: id, secret } });
+    expect(prof.data.room.items.map((i: { id: string }) => i.id)).toEqual(['f_desk_wood', 'f_chair_wood']);
+    const items = [{ id: 'f_desk_wood', x: 1, z: 1, r: 1 }, { id: 'f_sofa', x: 0, z: 0, r: 0 }, ...Array.from({ length: 300 }, () => ({ id: 'f_chair_wood', x: 0, z: 0, r: 0 }))];
+    const saved = await colyseus.http.post('/api/room', { body: { pid: id, secret, room: { name: 'Benim <b>odam</b>', theme: 'th_space', items } } });
+    expect(saved.data.ok).toBe(true);
+    expect(saved.data.room.name).not.toContain('<');
+    expect(saved.data.room.theme).toBe('th_wood');
+    expect(saved.data.room.items).toEqual([{ id: 'f_desk_wood', x: 1, z: 1, r: 1 }, { id: 'f_chair_wood', x: 0, z: 0, r: 0 }]);
+    const again = await colyseus.http.post('/api/profile', { body: { pid: id, secret } });
+    expect(again.data.room.items[0]).toEqual({ id: 'f_desk_wood', x: 1, z: 1, r: 1 });
+    const bad = await colyseus.http.post('/api/room', { body: { pid: id, secret: 'z'.repeat(32), room: {} } }).catch((e) => e);
     expect(bad.statusCode ?? bad.status).toBe(403);
   });
 
