@@ -156,3 +156,5 @@ input:focus, select:focus { border-color: var(--acc2); }
 .reward ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
 .lvup { font: 800 20px var(--f-display); margin-bottom: 4px; } .lvup span { font-size: 13px; color: var(--muted); font-weight: 700; margin-left: 6px; }
 @media (max-width: 860px) { .reward { top: auto; bottom: 214px; left: 8px; right: 8px; width: auto; } .wallet .xpbar { display: none; } }
+
+.home-room { position: fixed; inset: 0; } .home-canvas { position: absolute; inset: 0; } .home-canvas canvas { display: block; width: 100%; height: 100%; } .home-tags { position: absolute; inset: 0; pointer-events: none; }

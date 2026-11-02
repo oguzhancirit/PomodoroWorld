@@ -64,6 +64,18 @@
         gl_FragColor = vec4(col, c.a); }`,
   };
 
+  const ToneShader = {
+    uniforms: { tDiffuse: { value: null }, uExp: { value: 1.05 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float uExp; varying vec2 vUv;
+      vec3 RRTAndODTFit(vec3 v){ vec3 a = v*(v+0.0245786)-0.000090537; vec3 b = v*(0.983729*v+0.4329510)+0.238081; return a/b; }
+      void main(){ vec4 c = texture2D(tDiffuse, vUv); vec3 col = c.rgb * uExp / 0.6;
+        const mat3 IN = mat3(vec3(0.59719,0.07600,0.02840), vec3(0.35458,0.90834,0.13383), vec3(0.04823,0.01566,0.83777));
+        const mat3 OUT = mat3(vec3(1.60475,-0.10208,-0.00327), vec3(-0.53108,1.10813,-0.07276), vec3(-0.07367,-0.00605,1.07602));
+        col = OUT * RRTAndODTFit(IN * col);
+        gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a); }`,
+  };
+
   class World {
     constructor(host, tagsHost, opts = {}) {
       this.host = host; this.tagsHost = tagsHost; this.quality = opts.quality || 'high';
@@ -98,7 +110,7 @@
       this.neonLights = [new THREE.PointLight('#FF3FA4', 0, 9, 2), new THREE.PointLight('#26D8FF', 0, 9, 2)]; this.neonLights.forEach((l) => this.scene.add(l));
     }
     setupEnv() {
-      try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(this.renderer); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; } } catch (e) {}
+      try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(this.renderer); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; if (THREE.OutputPass) this.scene.environmentIntensity = 0.3; /* r186 RoomEnvironment is ~3x brighter than r128's */ } } catch (e) {}
     }
     setupPost() {
       this.post = null;
@@ -109,9 +121,11 @@
         if (r.capabilities.isWebGL2 && THREE.WebGLMultisampleRenderTarget) { rt = new THREE.WebGLMultisampleRenderTarget(size.x || 1, size.y || 1, { format: THREE.RGBAFormat, type: THREE.HalfFloatType }); }
         const comp = new THREE.EffectComposer(r, rt || undefined);
         comp.addPass(new THREE.RenderPass(this.scene, this.camera));
+        // three r150+: tone mapping is no longer applied when rendering into a render target, so do it here (same ACES as r128)
+        let tone = null; if (THREE.OutputPass) { tone = new THREE.ShaderPass(ToneShader); comp.addPass(tone); }
         const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.35, 0.55, 0.86); comp.addPass(bloom);
         const grade = new THREE.ShaderPass(GradeShader); comp.addPass(grade);
-        this.post = { comp, bloom, grade };
+        this.post = { comp, bloom, grade, tone };
       } catch (e) { console.warn('post fx off', e); this.post = null; }
     }
     setQuality(q) { if (q === this.quality) return; this.quality = q; this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q === 'high' ? 2 : 1.25)); this.setupPost(); this.resize(); if (this.def) this.applyMood(); }
@@ -452,7 +466,7 @@
         if (vis) { const x = (this.tmpV.x * 0.5 + 0.5) * this.w, y = (-this.tmpV.y * 0.5 + 0.5) * this.h; a.tag.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`; a.tag.style.zIndex = String(1000 - Math.round(this.tmpV.z * 500)); }
       }
       if (this.selBox) this.selBox.update();
-      if (this.post) this.post.comp.render(dt); else this.renderer.render(this.scene, this.camera);
+      if (this.post) { if (this.post.tone) this.post.tone.uniforms.uExp.value = this.renderer.toneMappingExposure; this.post.comp.render(dt); } else this.renderer.render(this.scene, this.camera);
     }
   }
   PW.World = World;
@@ -465,7 +479,7 @@
       r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.95; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
       host.appendChild(r.domElement);
       this.scene = new THREE.Scene();
-      try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(r); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; } } catch (e) {}
+      try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(r); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; if (THREE.OutputPass) this.scene.environmentIntensity = 0.3; /* r186 RoomEnvironment is ~3x brighter than r128's */ } } catch (e) {}
       this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
       this.scene.add(new THREE.HemisphereLight('#FFF6EC', '#6A5A7A', 0.42));
       const d = new THREE.DirectionalLight('#FFE9D6', 1.15); d.position.set(2, 4, 3); d.castShadow = true; d.shadow.mapSize.set(1024, 1024); d.shadow.radius = 4; this.scene.add(d);

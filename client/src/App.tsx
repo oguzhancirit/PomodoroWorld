@@ -8,7 +8,11 @@ import { SafeCanvas } from './ui/SafeCanvas';
 import { useEffect } from 'react';
 import { refreshWallet } from './economy';
 
-export function App() {
+import { HomeRoom } from './home/HomeRoom';
+
+const HOME = new URLSearchParams(location.search).has('home');
+export function App() { return HOME ? <HomeRoom /> : <Main />; }
+function Main() {
   useEffect(() => { refreshWallet(); }, []);
   const screen = useStore((s) => s.screen);
   return screen === 'room' ? (
