@@ -13,7 +13,8 @@
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w client",
-    "avatars": "cd tools && node strip-models.mjs && node retarget.mjs"
+    "avatars": "cd tools && node strip-models.mjs && node retarget.mjs",
+    "build:artifact": "cd client && VITE_MODEL_EXT=glb.json npx vite build && cd ../tools && for f in avatars/body-m avatars/body-f models/furniture; do node glb-to-json.mjs ../client/dist/$f.glb ../client/dist/$f.glb.json; done && node artifact-page.mjs"
   },
   "license": "MIT",
   "devDependencies": {

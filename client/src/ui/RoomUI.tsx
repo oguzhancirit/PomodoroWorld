@@ -23,9 +23,11 @@ function TopBar() {
   const n = useStore((s) => Object.keys(s.players).length);
   const preset = presetById(useStore((s) => s.preset));
   const profile = useStore((s) => s.profile), setProfile = useStore((s) => s.setProfile);
+  const demo = useStore((s) => s.mode === 'demo');
   return (
     <header className="topbar">
       <div className="brand"><span className="dot" />Çalışma odası · {preset.name}</div>
+      {demo && <div className="people-pill demo" title="Sunucu olmadan, bot arkadaşlarla">Deneme modu{profile.fast ? ' · hızlı' : ''}</div>}
       <div className="people-pill">{n} / 12 kişi</div>
       <select aria-label="Ne çalışıyorsun?" value={profile.category} onChange={(e) => { setProfile({ category: e.target.value }); sendActivity(activityFor(e.target.value)); }}>
         {CATEGORIES.map(([id, nm]) => <option key={id} value={id}>{nm}</option>)}

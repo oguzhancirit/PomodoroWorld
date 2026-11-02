@@ -43,6 +43,11 @@ input:focus, select:focus { border-color: var(--acc2); }
 .durs button.on { border-color: var(--acc2); background: rgba(239, 90, 60, .18); }
 .go { margin-top: 4px; padding: 15px; border-radius: 16px; font: 800 17px var(--f-body); background: linear-gradient(180deg, #3fd99a, #26b377); color: #08281b; box-shadow: 0 12px 30px -10px rgba(38, 179, 119, .8); }
 .err { color: #ffb3a1; margin: 0; }
+.demo-note { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; background: rgba(242, 193, 78, .1); border: 1px solid rgba(242, 193, 78, .35); }
+.demo-note p { margin: 0; color: var(--text); font-size: 13px; }
+.demo-note .ck { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; font-weight: 600; }
+.demo-note .ck input { margin-top: 2px; accent-color: var(--acc); }
+.people-pill.demo { background: rgba(242, 193, 78, .18); color: #f8d98a; }
 
 /* ---------- room ---------- */
 .room-screen { position: fixed; inset: 0; }
@@ -106,3 +111,5 @@ input:focus, select:focus { border-color: var(--acc2); }
   .emotes { bottom: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+.canvas-failed { height: 100%; min-height: 200px; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }

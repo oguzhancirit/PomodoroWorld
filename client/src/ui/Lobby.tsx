@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, PRESETS, CATEGORIES, encodeAvatar, defaultAvatar, cleanName, type Slot, type Avatar } from '@pw/shared';
 import { useStore } from '../store';
-import { joinStudyRoom } from '../net';
+import { joinStudyRoom, DEMO_ONLY } from '../net';
 import { AvatarPreview } from './AvatarPreview';
+import { SafeCanvas } from './SafeCanvas';
 
 const SLOT_LABEL: Record<Slot, string> = { head: 'Saç ve yüz', body: 'Üst', legs: 'Alt', feet: 'Ayakkabı' };
 const PART_LABEL: Record<string, string> = {
@@ -28,7 +29,7 @@ export function Lobby() {
       <section className="lobby-preview">
         <div className="brand"><span className="dot" />Pomodoro World</div>
         <div className="preview-3d" onClick={() => { setWave(true); setTimeout(() => setWave(false), 1800); }}>
-          <AvatarPreview code={code} motion={wave ? 'wave' : 'idle'} />
+          <SafeCanvas label="Karakter önizlemesi açılamadı."><AvatarPreview code={code} motion={wave ? 'wave' : 'idle'} /></SafeCanvas>
         </div>
         <p className="hint">Karaktere dokun, el sallasın.</p>
       </section>
@@ -66,6 +67,12 @@ export function Lobby() {
           ))}</div>
         </div>
 
+        {DEMO_ONLY && (
+          <div className="demo-note">
+            <p><b>Deneme modu.</b> Oyun sunucusu henüz internette değil, bu yüzden odada seninle 5 bot arkadaş çalışacak. Sayaç, sohbet kuralları ve hareketler gerçek sürümle aynı.</p>
+            <label className="ck"><input id="fast" type="checkbox" checked={profile.fast} onChange={(e) => setProfile({ fast: e.target.checked })} /> Hızlı deneme: 1 dakika = 1 saniye (25 dk odak 25 saniye sürer)</label>
+          </div>
+        )}
         {error && <p className="err">{error}</p>}
         <button className="go" disabled={!name || busy} onClick={() => joinStudyRoom()}>
           {busy ? 'Bağlanıyor…' : name ? 'Çalışma odasına gir' : 'Önce adını yaz'}

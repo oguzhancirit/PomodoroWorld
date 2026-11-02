@@ -2,9 +2,19 @@
 import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
 import { encodeAvatar, activityFor, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
+import { LocalRoom } from './localRoom';
 
-const SERVER = (import.meta.env.VITE_SERVER_URL as string | undefined) || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:2567`;
+const CONFIGURED = import.meta.env.VITE_SERVER_URL as string | undefined;
+const SERVER = CONFIGURED || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:2567`;
+// no server configured and not running locally (e.g. opened as a Claude artifact) → demo mode right away
+export const DEMO_ONLY = new URLSearchParams(location.search).has('demo') || (!CONFIGURED && !/^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname));
 let room: Room | null = null;
+let local: LocalRoom | null = null;
+
+export function startDemo() {
+  local?.leave();
+  local = new LocalRoom(useStore.getState().profile.fast ? 60 : 1);
+}
 
 const NOTICES: Record<string, string> = {
   chat_closed: 'Odak sırasında sohbet kapalı. Molada açılır.',
@@ -13,6 +23,7 @@ const NOTICES: Record<string, string> = {
 
 export async function joinStudyRoom() {
   const st = useStore.getState();
+  if (DEMO_ONLY) { startDemo(); return true; }
   const { profile } = st;
   st.set({ net: 'connecting', error: '', players: {}, chat: [], emotes: {} });
   try {
@@ -21,12 +32,12 @@ export async function joinStudyRoom() {
       name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category),
     });
   } catch (e) {
-    st.set({ net: 'offline', error: 'Sunucuya bağlanılamadı. Biraz sonra tekrar dene.' });
-    console.warn('join failed', e);
-    return false;
+    console.warn('join failed, falling back to demo mode', e);
+    startDemo(); useStore.getState().flash('Sunucuya ulaşılamadı: bot arkadaşlarla deneme modundasın.', 5000);
+    return true;
   }
   const r = room;
-  st.set({ net: 'online', me: r.sessionId, screen: 'room' });
+  st.set({ net: 'online', mode: 'online', me: r.sessionId, screen: 'room' });
   const cb = Callbacks.get(r);
   cb.listen('preset', (v) => useStore.getState().set({ preset: v as string }));
   // the state arrives a moment after joining: subscribe to the timer object when it shows up
@@ -64,12 +75,13 @@ export async function joinStudyRoom() {
 
 export function leaveRoom() {
   room?.leave(true).catch(() => {}); room = null;
+  local?.leave(); local = null;
   useStore.getState().set({ screen: 'lobby', net: 'idle', players: {}, me: '' });
 }
-export const sendChat = (text: string) => room?.send('chat', { text });
-export const sendEmote = (e: string) => room?.send('emote', { e });
-export const sendActivity = (activity: Activity) => room?.send('activity', { activity });
-export const sendSit = (seatIndex: number) => room?.send('sit', { seatIndex });
+export const sendChat = (text: string) => (local ? local.chat(text) : room?.send('chat', { text }));
+export const sendEmote = (e: string) => (local ? local.emoteMine(e) : room?.send('emote', { e }));
+export const sendActivity = (activity: Activity) => (local ? local.activity(activity) : room?.send('activity', { activity }));
+export const sendSit = (seatIndex: number) => (local ? local.sit(seatIndex) : room?.send('sit', { seatIndex }));
 
 // tiny two-note chime made on the device (no audio files)
 function chime(freq: number) {

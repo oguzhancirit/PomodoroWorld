@@ -7,3 +7,4 @@ client/dist/
 .env
 .env.*
 *.log
+client/dist-artifact/

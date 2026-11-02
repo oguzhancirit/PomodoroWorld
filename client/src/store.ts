@@ -7,11 +7,11 @@ export interface PlayerView {
   id: string; name: string; avatar: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
 }
 export interface ChatLine { id: string; name: string; text: string; at: number; system?: boolean }
-export interface Profile { name: string; avatar: Avatar; preset: string; category: string }
+export interface Profile { name: string; avatar: Avatar; preset: string; category: string; fast: boolean }
 
 const PROFILE_KEY = 'pw2.profile';
 function loadProfile(): Profile {
-  const d: Profile = { name: '', avatar: defaultAvatar('f'), preset: 'p25', category: 'Ders' };
+  const d: Profile = { name: '', avatar: defaultAvatar('f'), preset: 'p25', category: 'Ders', fast: true };
   try { const raw = localStorage.getItem(PROFILE_KEY); if (raw) return { ...d, ...JSON.parse(raw) }; } catch { /* private mode */ }
   return d;
 }
@@ -23,6 +23,8 @@ interface State {
   screen: Screen;
   profile: Profile;
   net: NetStatus;
+  /** 'online' = real game server, 'demo' = rules simulated in this browser with bot classmates */
+  mode: 'online' | 'demo';
   error: string;
   me: string;
   players: Record<string, PlayerView>;
@@ -44,6 +46,7 @@ export const useStore = create<State>((set, get) => ({
   screen: 'lobby',
   profile: loadProfile(),
   net: 'idle',
+  mode: 'online',
   error: '',
   me: '',
   players: {},

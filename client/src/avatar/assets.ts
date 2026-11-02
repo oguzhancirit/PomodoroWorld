@@ -8,6 +8,15 @@ import { decodeAvatar, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, type Avatar, type 
 import { decodeClip } from './clipCodec.js';
 
 const BASE = import.meta.env.BASE_URL;
+// the artifact build ships each model as base64 inside a .json file (artifacts do not serve .glb files)
+const PACKED = import.meta.env.VITE_MODEL_EXT === 'glb.json';
+async function loadModel(path: string): Promise<GLTF> {
+  if (!PACKED) return loader.loadAsync(`${BASE}${path}.glb`);
+  const { glb } = await fetch(`${BASE}${path}.glb.json`).then((r) => r.json());
+  const bin = atob(glb); const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return loader.parseAsync(bytes.buffer, BASE);
+}
 const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
 
 export interface Rig { gltf: GLTF; clips: Record<string, THREE.AnimationClip>; meta: { sitHipY: number; scale: number } }
@@ -16,7 +25,7 @@ const rigs: Partial<Record<Gender, Promise<Rig>>> = {};
 export function loadRig(g: Gender): Promise<Rig> {
   return (rigs[g] ??= (async () => {
     const [gltf, json] = await Promise.all([
-      loader.loadAsync(`${BASE}avatars/body-${g}.glb`),
+      loadModel(`avatars/body-${g}`),
       fetch(`${BASE}avatars/clips-${g}.json`).then((r) => r.json()),
     ]);
     gltf.scene.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.frustumCulled = false; } });
@@ -67,7 +76,7 @@ export function disposeAvatar(root: THREE.Object3D) {
 
 /* furniture (KayKit Furniture Bits, CC0) */
 let furniture: Promise<GLTF> | null = null;
-export const loadFurniture = () => (furniture ??= loader.loadAsync(`${BASE}models/furniture.glb`).then((g) => {
+export const loadFurniture = () => (furniture ??= loadModel('models/furniture').then((g) => {
   g.scene.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }));
