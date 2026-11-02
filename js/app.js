@@ -36,12 +36,71 @@
     const f = freshSave();
     if (validSave(s)) { App.S = Object.assign(f, s); const d = freshSave(); ['settings', 'stats', 'q', 'task'].forEach((k) => (App.S[k] = Object.assign(d[k], s[k] || {}))); const cs = App.S.settings.custom; App.S.settings.custom = Object.assign(d.settings.custom, cs && typeof cs === 'object' ? cs : {}); if (!PW.TIMER_PRESETS.some((p) => p.id === App.S.settings.preset) && App.S.settings.preset !== 'custom') App.S.settings.preset = 'p25'; App.S.room = Object.assign(PW.DEFAULT_ROOM(), s.room || {}); App.S.av = Object.assign(PW.defaultAvatar(s.av && s.av.g), s.av || {}); }
     else App.S = f;
+    sanitizeSave(App.S, freshSave());
     const S = App.S;
     S.todos = Array.isArray(S.todos) ? S.todos : []; S.friends = S.friends && typeof S.friends === 'object' ? S.friends : {}; S.blocked = S.blocked && typeof S.blocked === 'object' ? S.blocked : {};
     S.room.ban = Array.isArray(S.room.ban) ? S.room.ban : []; S.sound = Object.assign({ mix: {}, vol: 0.7, focusOnly: true }, S.sound || {});
     if (S.settings.shareTask == null) S.settings.shareTask = false; if (S.settings.filter == null) S.settings.filter = true; if (S.settings.notify == null) S.settings.notify = true;
     if (!PW.DEV) S.settings.speed = 1;
   };
+  // Repairs a save that came from an old version, a bad import or a hand-edited storage entry:
+  // every field gets the type the game expects, so nothing downstream can crash or concatenate strings.
+  function sanitizeSave(S, d) {
+    const obj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+    const num = (v, a, b, def) => { const n = typeof v === 'string' && v.trim() !== '' ? +v : v; return typeof n === 'number' && Number.isFinite(n) ? Math.max(a, Math.min(b, n)) : def; };
+    const str = (v, max, def = '') => (typeof v === 'string' ? v.slice(0, max) : def);
+    for (const k of ['settings', 'stats', 'q', 'task', 'flags', 'ach', 'room', 'owned']) if (!obj(S[k])) S[k] = d[k];
+    S.name = str(S.name, 20); S.xp = Math.floor(num(S.xp, 0, 1e9, 0)); S.coins = Math.floor(num(S.coins, 0, 1e9, 0));
+    S.onboarded = !!S.onboarded; S.toured = !!S.toured;
+    // inventory: known items only, sane counts, starter items always present
+    const own = {}; for (const [k, v] of Object.entries(S.owned)) if (PW.ITEM[k]) { const n = Math.floor(num(v, 0, 99, 0)); if (n > 0) own[k] = n; }
+    for (const [k, v] of Object.entries(d.owned)) own[k] = Math.max(own[k] || 0, v); S.owned = own;
+    // stats
+    const st = S.stats; for (const k of ['days', 'weekXP', 'dayPomos', 'goalPaid', 'hours']) if (!obj(st[k])) st[k] = {};
+    for (const k of ['days', 'weekXP', 'dayPomos', 'hours']) for (const [kk, v] of Object.entries(st[k])) { const n = num(v, 0, 1e7, null); if (n == null) delete st[k][kk]; else st[k][kk] = n; }
+    for (const k of ['focusMin', 'pomos', 'streak', 'msgs']) st[k] = Math.floor(num(st[k], 0, 1e9, 0));
+    st.log = (Array.isArray(st.log) ? st.log : []).filter((e) => obj(e) && typeof e.d === 'string' && Number.isFinite(e.m) && Number.isFinite(e.s)).slice(-400);
+    if (st.lastDay != null && typeof st.lastDay !== 'string') st.lastDay = null;
+    // quests
+    const q = S.q; for (const k of ['daily', 'weekly']) if (!obj(q[k])) q[k] = {};
+    for (const k of ['daily', 'weekly']) for (const [kk, v] of Object.entries(q[k])) { if (!obj(v)) delete q[k][kk]; else { v.p = num(v.p, 0, 1e6, 0); v.c = !!v.c; } }
+    if (!obj(q.login)) q.login = d.q.login; q.login.streak = Math.floor(num(q.login.streak, 0, 9999, 0));
+    q.loginDays = (Array.isArray(q.loginDays) ? q.loginDays : []).filter((x) => typeof x === 'string').slice(-60);
+    if (typeof q.day !== 'string') q.day = ''; if (typeof q.week !== 'string') q.week = '';
+    if (q.pledge != null && !(obj(q.pledge) && Number.isFinite(q.pledge.min) && Number.isFinite(q.pledge.days) && Array.isArray(q.pledge.done))) q.pledge = null;
+    // settings
+    const se = S.settings, c = obj(se.custom) ? se.custom : {};
+    se.custom = { focus: Math.round(num(c.focus, 5, 180, 40)), brk: Math.round(num(c.brk, 1, 60, 8)), long: Math.round(num(c.long, 5, 60, 20)) };
+    if (se.preset !== 'custom' && !PW.TIMER_PRESETS.some((p) => p.id === se.preset)) se.preset = 'p25';
+    if (!['type', 'write', 'read'].includes(se.style)) se.style = 'type';
+    if (!['high', 'low'].includes(se.gfx)) se.gfx = 'high';
+    for (const k of ['sound', 'npc', 'autoNext']) se[k] = se[k] == null ? d.settings[k] : !!se[k];
+    se.speed = num(se.speed, 1, 600, 1);
+    // current task
+    const t = S.task; t.text = str(t.text, 60); if (!PW.TASK_CATS.some((x) => x[0] === t.cat)) t.cat = 'Ders';
+    t.recent = (Array.isArray(t.recent) ? t.recent : []).filter((x) => typeof x === 'string').slice(0, 6);
+    S.todos = (Array.isArray(S.todos) ? S.todos : []).filter((x) => obj(x) && typeof x.t === 'string' && x.t.trim()).slice(0, 200).map((x) => Object.assign(x, { t: x.t.slice(0, 80), est: Math.round(num(x.est, 1, 20, 1)), done: Math.floor(num(x.done, 0, 999, 0)), min: Math.floor(num(x.min, 0, 1e6, 0)) }));
+    if (t.todoId != null && !S.todos.some((x) => x.id === t.todoId)) t.todoId = null;
+    // avatar + room
+    S.av = App.sanitizeAv ? App.sanitizeAv(S.av) : obj(S.av) ? S.av : d.av;
+    const R = S.room, dr = d.room; R.name = str(R.name, 32, dr.name) || dr.name; R.desc = str(R.desc, 90); R.cat = str(R.cat, 20, dr.cat) || dr.cat; R.open = R.open == null ? true : !!R.open;
+    if (typeof R.token !== 'string' || !/^[a-z0-9]{3,10}$/.test(R.token)) R.token = dr.token;
+    R.ban = (Array.isArray(R.ban) ? R.ban : []).filter((x) => typeof x === 'string').slice(0, 200);
+    const lim = 6, HEX = /^#[0-9a-f]{6}$/i;
+    R.items = (Array.isArray(R.items) ? R.items : []).filter((it) => {
+      if (!obj(it) || !PW.ITEM[it.id] || PW.ITEM[it.id].cat !== 'furn') return false;
+      const def = PW.ITEM[it.id];
+      if (def.wall) { if (!['w0', 'w1', 'w2', 'w3'].includes(it.w)) return false; it.x = num(it.x, -lim, lim, 0); return true; }
+      if (it.w) return false;
+      it.x = num(it.x, -lim, lim, 0); it.z = num(it.z, -lim, lim, 0); it.r = Math.round(num(it.r, 0, 3, 0));
+      if (it.c != null && !(typeof it.c === 'string' && HEX.test(it.c))) delete it.c;
+      if (it.wd != null && !(typeof it.wd === 'string' && PW.WOOD_TONES && PW.WOOD_TONES[it.wd])) delete it.wd;
+      return true;
+    }).slice(0, 400);
+    if (PW.safe && PW.safe.roomDesign) { const keys = ['theme', 'view', 'size', 'mood', 'wall', 'wallPat', 'floorT', 'floorC', 'trim', 'curtain']; const probe = {}; keys.forEach((k) => (probe[k] = R[k])); const ok = PW.safe.roomDesign(probe) || {}; keys.forEach((k) => { if (ok[k] === undefined) delete R[k]; else R[k] = ok[k]; }); if (!R.theme) R.theme = dr.theme; if (!R.view) R.view = dr.view; }
+    // timer snapshot is validated in restoreTimer
+    if (S.timer != null && !obj(S.timer)) delete S.timer;
+  }
   let saveT = 0;
   App.save = () => { clearTimeout(saveT); saveT = setTimeout(App.saveNow, 250); };
   App.saveNow = () => {
@@ -143,7 +202,8 @@
     const t = App.S.timer; if (!t || typeof t !== 'object') return;
     const T = App.timer; T.round = S_int(t.round, 0, 999, 0);
     if (!['focus', 'break'].includes(t.phase)) return;
-    Object.assign(T, { phase: t.phase, running: !!t.running, endAt: +t.endAt || 0, left: +t.left || 0, total: +t.total || 0, long: !!t.long, last: +t.last || Date.now(), logStart: t.logStart ? new Date(t.logStart) : null, logMin: t.logMin || 0, todo: t.todo || null });
+    const fin = (v, max) => { const n = +v; return Number.isFinite(n) ? Math.max(0, Math.min(max, n)) : 0; };
+    Object.assign(T, { phase: t.phase, running: !!t.running, endAt: fin(t.endAt, 1e14), left: fin(t.left, 181 * 60), total: fin(t.total, 181 * 60), long: !!t.long, last: +t.last || Date.now(), logStart: t.logStart ? new Date(t.logStart) : null, logMin: t.logMin || 0, todo: t.todo || null });
     App.focusAccum = +t.accum || 0;
     if (T.running && !T.endAt) T.endAt = Date.now() + T.left * 1000;
   };

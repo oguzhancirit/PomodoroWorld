@@ -1,0 +1,28 @@
+const { chromium } = require('playwright');
+(async () => {
+  const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
+  const ctx = await browser.newContext({ viewport: { width: 1200, height: 800 } });
+  await ctx.route('**/three.min.js', (r) => r.fulfill({ path: '/home/claude/deps/node_modules/three/build/three.min.js', contentType: 'application/javascript' }));
+  await ctx.route('https://fonts.googleapis.com/**', (r) => r.abort());
+  await ctx.route('https://cdn.jsdelivr.net/**', (r) => { const m = r.request().url().match(/three@0\.128\.0\/(examples\/js\/.*)$/); if (m) return r.fulfill({ path: '/home/claude/deps/node_modules/three/' + m[1], contentType: 'application/javascript' }); return r.abort(); });
+  const errs = [];
+  const mk = async (name, g, uid) => { const p = await ctx.newPage(); p.on('pageerror', (e) => errs.push(name + ': ' + e.message)); p.on('console', (m) => { if (m.type()==='warning' || m.type()==='error') errs.push(name+' '+m.type()+': '+m.text().slice(0,300)); }); await p.addInitScript(([n, g, uid]) => { sessionStorage.x = 1; }, [name, g, uid]); await p.goto('http://localhost:8765/index.html?dev', { waitUntil: 'domcontentloaded', timeout: 120000 }); await p.waitForTimeout(2500); await p.evaluate(() => PW.cinema && PW.cinema.stop()); await p.waitForTimeout(1500); await p.evaluate(([n, g, uid]) => { PW.world.setQuality('low'); PW.app.S.introSeen = true; PW.world.paused = true; const S = PW.app.S; S.uid = uid; S.name = n; S.onboarded = true; S.toured = true; S.av = PW.defaultAvatar(g); S.room.name = n + "'in Kütüphanesi"; S.room.desc = 'Sessiz çalışma'; document.querySelector('#m-onboard').classList.remove('open'); PW.world.hideTags = false; document.querySelector('#m-onboard').removeAttribute('data-locked'); PW.app.enterHome(); }, [name, g, uid]); return p; };
+  const a = await mk('Ayse', 'f', 'ayse1234');
+  await a.waitForTimeout(1500);
+  const b = await mk('Mehmet', 'm', 'mehmet99');
+  await b.waitForTimeout(3000);
+  await b.evaluate(() => PW.ui.open('world'));
+  await b.waitForTimeout(1500);
+  await b.screenshot({ path: 'mp2-world.png' });
+  await b.evaluate(() => { const j = document.querySelector('[data-join]'); if (j) j.click(); else PW.app.visitCode('ayse1234'); });
+  await b.waitForTimeout(4000);
+  await a.evaluate(() => { window.__got=[]; const bc=new BroadcastChannel('pw-'+PW.app.chan.name); bc.onmessage=(e)=>window.__got.push(e.data.type); window.__ck={a: PW.app.chan && (PW.app.chan.name||PW.app.chan.room), key: PW.app.room.key, ccb: PW.app.chan._ccb.length, hasbc: !!PW.app.chan.bc}; const o=PW.app.onRemoteChat; PW.app.onRemoteChat=(m)=>{window.__got.push('ORC:'+JSON.stringify(m)); try{o(m);}catch(e){window.__got.push('ERR '+e.message)}}; const oa=PW.ui.addChat; PW.ui.addChat=(m)=>{window.__got.push('ADD:'+m.text); oa(m);}; });
+  console.log('B chan', await b.evaluate(() => JSON.stringify({n: PW.app.chan && (PW.app.chan.name), key: PW.app.room.key})));
+  await b.evaluate(() => PW.app.sendChat('Selam Ayşe, odan çok güzel!'));
+  await a.waitForTimeout(8000);
+  const seen = await a.evaluate(() => ({ got: window.__got, ck: window.__ck, avatars: [...PW.world.avatars.keys()], chat: [...document.querySelectorAll('#chat-log .msg')].map((m) => m.textContent).slice(-3) }));
+  console.log(JSON.stringify(seen));
+  await a.screenshot({ path: 'mp2-a.png' }); await b.screenshot({ path: 'mp2-b.png' });
+  console.log(errs.join('\n') || 'no errors');
+  await browser.close();
+})();

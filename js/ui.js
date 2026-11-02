@@ -28,7 +28,7 @@
     $$('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m && !m.dataset.locked) ui.close(); }));
     $$('.modal [data-close]').forEach((b) => b.addEventListener('click', () => ui.close()));
     document.addEventListener('keydown', (e) => {
-      if (e.target.matches('input, textarea, select')) return;
+      if (e.target && e.target.matches && e.target.matches('input, textarea, select, [contenteditable]')) return;
       if (e.key === 'Escape') { if (PW.world.edit.ghost) PW.world.cancelGhost(); else if (ui.focusOpen) ui.closeFocus(); else ui.close(); }
       if ((e.key === 'r' || e.key === 'R') && PW.world.edit.on) ui.editRotate();
       if (PW.world.edit.on && (e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); e.shiftKey ? ui.redo() : ui.undo(); }
@@ -49,7 +49,9 @@
     $('#btn-edit').addEventListener('click', () => ui.setEditing(true));
     $('#btn-invite').addEventListener('click', () => ui.open('roomset'));
     $('#btn-sit').addEventListener('click', () => { const w = PW.world, me = w.avatars.get('me'); if (me.seatIdx != null) w.standAvatar('me'); else { const s = w.freeSeat(A().room.kind !== 'social'); if (s != null) w.sitAvatar('me', s); } A().myAct(); A().publish(); ui.refreshTimer(); });
-    $$('#emotes [data-emote]').forEach((b) => b.addEventListener('click', () => A().emote(b.dataset.emote)));
+    $$('#emotes [data-emote]').forEach((b) => b.addEventListener('click', () => { A().emote(b.dataset.emote); $('#mini').classList.remove('emo-open'); $('#emo-tog').setAttribute('aria-expanded', 'false'); }));
+    $('#emo-tog').addEventListener('click', (e) => { e.stopPropagation(); const on = $('#mini').classList.toggle('emo-open'); $('#emo-tog').setAttribute('aria-expanded', String(on)); });
+    document.addEventListener('pointerdown', (e) => { if (!e.target.closest || !e.target.closest('#mini')) { $('#mini').classList.remove('emo-open'); $('#emo-tog').setAttribute('aria-expanded', 'false'); } });
     // focus screen
     $('#fx-go').addEventListener('click', ui.timerMain);
     $('#fx-close').addEventListener('click', ui.closeFocus);
@@ -277,12 +279,12 @@
         <div class="foot" style="justify-content:space-between"><button type="button" class="btn ghost" id="ob-back">Geri</button><button class="btn" style="font-size:16px;padding:12px 24px">Odama gir</button></div></div></form>`;
       const pv = new PW.Preview($('#ob-preview2')); pv.setAvatar(o.draft); setTimeout(() => pv.wave(), 400);
       const nm = $('#ob-name'), rm = $('#ob-room');
-      const sync = () => { if (!rm.dataset.touched) rm.value = nm.value.trim() ? `${nm.value.trim()}'in Odası` : ''; };
+      const sync = () => { if (!rm.dataset.touched) rm.value = nm.value.trim() ? `${PW.util.gen(nm.value)} Odası` : ''; };
       nm.addEventListener('input', sync); rm.addEventListener('input', () => (rm.dataset.touched = 1)); sync();
       $('#ob-back').onclick = () => { o.step = 1; ui.renderOnboard(); };
       $('#ob-form').onsubmit = (e) => {
         e.preventDefault(); const n = PW.safe.str(nm.value, 20); if (n.length < 2) { $('#ob-err').hidden = false; return; } if (PW.safe.isBadName(n) || PW.safe.isBadName(rm.value)) { $('#ob-err').textContent = 'Bu ad kullanılamaz, başka bir ad dene.'; $('#ob-err').hidden = false; return; }
-        S.name = n; S.av = o.draft; S.room.name = (rm.value.trim() || `${n}'in Odası`).slice(0, 32); S.onboarded = true; A().saveNow();
+        S.name = n; S.av = o.draft; S.room.name = (rm.value.trim() || `${PW.util.gen(n)} Odası`).slice(0, 32); S.onboarded = true; A().saveNow();
         const m = $('#m-onboard'); delete m.dataset.locked; m.classList.remove('open');
         PW.world.hideTags = false;
         ui.refreshHUD();
@@ -464,7 +466,7 @@
     // the link shown must reflect the draft visibility
     const origOpen = R.open; draw();
     const syncLink = () => { const tmp = R.open; R.open = draft.open; const v = A().inviteLink(), c = A().inviteCode(); R.open = tmp; const l = $('#rs-link'); if (l) l.value = v; const ce = $('.code', f); if (ce) ce.textContent = c; };
-    f.addEventListener('click', () => setTimeout(syncLink, 0)); syncLink(); void origOpen;
+    f.onclick = () => setTimeout(syncLink, 0); syncLink(); void origOpen;
   };
 
   /* ---------------- quests ---------------- */

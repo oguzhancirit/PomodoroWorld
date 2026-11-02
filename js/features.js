@@ -345,5 +345,6 @@
     const c = CATS.find((x) => x[0] === S.task.cat) || CATS[0];
     const td = S.task.todoId && S.todos.find((t) => t.id === S.task.todoId);
     el.style.setProperty('--c', COL[c[0]] || '#FF8466'); el.innerHTML = `<i></i>${U.esc(td ? td.t : c[1])}`;
+    const go = $('#fx-go'); if (go) go.dataset.min = A().timer.phase === 'idle' ? A().preset().focus + ' dk' : '';
   };
 })();

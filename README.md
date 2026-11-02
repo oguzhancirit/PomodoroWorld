@@ -59,6 +59,7 @@
   - Günlük yedek kopya: bozuk kayıt otomatik kurtarılır
   - Yedeği dosya olarak indirip başka cihaza taşıma
   - Depolama dolarsa uyarı
+  - Eski sürümden, bozuk yedekten ya da elle değiştirilmiş kayıttan gelen her alan yüklenirken onarılır (tür, aralık, bilinmeyen eşyalar)
 - **Hile**: Hız ayarı kaldırıldı (yalnızca `?dev` ile açılır). Haftalık sıralamada imkânsız XP değerleri kırpılır. Sunucu olmadığı için tam doğrulama mümkün değil (aşağıya bak).
 - **Kararlılık**:
   - Oda her yeniden kurulduğunda eski 3D veri GPU'dan silinir
@@ -66,6 +67,11 @@
   - WebGL yoksa anlaşılır bir uyarı çıkar
   - "Hareketi azalt" tercihine uyulur
 - **Uygulama olarak yükleme (PWA)**: GitHub Pages'te ana ekrana eklenebilir. İnternet yokken de tek başına pomodoro ve oda tasarımı çalışır.
+
+- **Test**: Her sürüm Playwright ile otomatik denenir:
+  - Sayaç (tüm süreler, mola, uzun mola, duraklatma), ekonomi, editör, görevler, sohbet
+  - Bozuk kayıtlar, ilk açılış ve davet akışı, iki oyunculu oda, kötü niyetli veri
+  - 7 ekran boyutunda (360×640 telefondan yatay telefona ve 1440×900 masaüstüne) her ekranın taşma, çakışma ve dokunma alanı denetimi
 
 **Bilinen sınır**: Sunucusuz (P2P) bir yapıda ilerleme oyuncunun kendi cihazında tutulur. Bu yüzden sıralama yalnızca makul olmayan değerleri eleyebilir, kesin hile koruması sağlayamaz. Gerçek bir genel sıralama ve hesap senkronu için küçük bir arka uç (ör. Supabase/Firebase) gerekir.
 

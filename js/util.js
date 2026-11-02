@@ -36,6 +36,8 @@
       if (m < 60) return m + ' dk';
       return Math.floor(m / 60) + ' sa ' + (m % 60) + ' dk';
     },
+    // Turkish possessive for a name: Ayşe → Ayşe'nin, Oğuzhan → Oğuzhan'ın, Deniz → Deniz'in, Burcu → Burcu'nun
+    gen: (name) => { const n = String(name || '').trim(); if (!n) return ''; const v = (n.toLocaleLowerCase('tr').match(/[aıoueiöü](?=[^aıoueiöü]*$)/) || ['e'])[0]; const suf = { a: 'ın', ı: 'ın', e: 'in', i: 'in', o: 'un', u: 'un', ö: 'ün', ü: 'ün' }[v]; return n + "'" + (/[aıoueiöü]$/i.test(n.toLocaleLowerCase('tr')) ? 'n' : '') + suf; },
     esc: (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])),
     hashStr: (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; },
     seeded: (seed) => { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 100000) / 100000; }; },
