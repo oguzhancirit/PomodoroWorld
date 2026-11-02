@@ -98,6 +98,10 @@
       return true;
     }).slice(0, 400);
     if (PW.safe && PW.safe.roomDesign) { const keys = ['theme', 'view', 'size', 'mood', 'wall', 'wallPat', 'floorT', 'floorC', 'trim', 'curtain']; const probe = {}; keys.forEach((k) => (probe[k] = R[k])); const ok = PW.safe.roomDesign(probe) || {}; keys.forEach((k) => { if (ok[k] === undefined) delete R[k]; else R[k] = ok[k]; }); if (!R.theme) R.theme = dr.theme; if (!R.view) R.view = dr.view; }
+    // ambient sound mix
+    const so = obj(S.sound) ? S.sound : {}; const mix = {}; const LAY = (PW.sound && PW.sound.LAYERS) || {};
+    if (obj(so.mix)) for (const [k, v] of Object.entries(so.mix)) if (LAY[k]) { const n = num(v, 0, 1, 0); if (n > 0) mix[k] = n; }
+    S.sound = { mix, vol: num(so.vol, 0, 1, 0.7), focusOnly: so.focusOnly == null ? true : !!so.focusOnly };
     // timer snapshot is validated in restoreTimer
     if (S.timer != null && !obj(S.timer)) delete S.timer;
   }
@@ -116,7 +120,7 @@
   App.importSave = (text) => {
     let o = null; try { o = JSON.parse(text); } catch (e) { return 'Dosya okunamadı.'; }
     if (!validSave(o) || o.app !== 'pomodoro-world') return 'Bu bir Pomodoro World yedeği değil.';
-    delete o.app; delete o.exported; U.store.set(BAK_KEY, App.S); U.store.set(SAVE_KEY, o); App.inactive = true; location.reload(); return null;
+    delete o.app; delete o.exported; U.store.set(BAK_KEY, App.S); U.store.set(SAVE_KEY + '.preimport', App.S); /* the daily backup rotates; this copy keeps what was replaced */ U.store.set(SAVE_KEY, o); App.inactive = true; location.reload(); return null;
   };
 
   /* ---------------- economy ---------------- */

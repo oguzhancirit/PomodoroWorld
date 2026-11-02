@@ -36,7 +36,7 @@
       if ((e.key === 't' || e.key === 'T') && !e.ctrlKey && !e.metaKey && !ui.focusOpen) ui.topView();
       if ((e.key === 'c' || e.key === 'C') && PW.world.edit.on && !e.ctrlKey && !e.metaKey) ui.editCopy();
       if ((e.key === 'Delete' || e.key === 'Backspace') && PW.world.edit.on) ui.editRemove();
-      if (e.key === ' ' && ui.focusOpen && !$('.modal.open')) { e.preventDefault(); ui.timerMain(); }
+      if (e.key === ' ' && ui.focusOpen && !$('.modal.open') && !(e.target && e.target.closest && e.target.closest('button, a, [role=radio]'))) { e.preventDefault(); ui.timerMain(); }
     });
     $('#hud-me').addEventListener('click', () => ui.open('profile'));
     $('#chat-form').addEventListener('submit', (e) => { e.preventDefault(); const i = $('#chat-in'); A().sendChat(i.value); i.value = ''; });
@@ -300,7 +300,7 @@
   /* ---------------- guided tour ---------------- */
   const TOUR = [
     { il: 'room', t: 'Burası senin odan', p: '{name}, hoş geldin!' },
-    { sel: '#btn-focus', il: 'ring', t: 'Başlat, odaklan', p: '25 dk odak · 5 dk mola' },
+    { sel: '#btn-focus', il: 'ring', t: 'Başlat, odaklan', p: 'Ne çalışacağını ve süreyi seç: 25/5, 50/10, 90/20…' },
     { sel: '#hud-xpwrap', il: 'coin', t: 'Dakika = XP + jeton' },
     { sel: '#btn-edit', il: 'sofa', t: 'Jetonlarla odanı kur' },
     { sel: '#btn-invite', il: 'link', t: 'Arkadaşını çağır', p: 'Açık ya da davetle' },

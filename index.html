@@ -1056,6 +1056,19 @@ body.editing .side .people { display: none; }
   .fx-go { padding-top: 6px; padding-bottom: 6px; } .fx-go .pl { width: 36px; height: 36px; }
 }
 #focus[data-phase="idle"] .fx-go[data-min]:not([data-min=""])::after { content: "· " attr(data-min); font-weight: 600; opacity: .85; margin-left: -4px; }
+/* popovers (sounds, to-dos) follow the dark UI instead of a cream card */
+.popover { background: linear-gradient(180deg, #27233A, #1B1829); color: var(--text); border: 1px solid rgba(255,255,255,.1); }
+.popover .note { color: var(--muted); }
+.popover .sugg { border-color: rgba(255,255,255,.18); color: var(--text); }
+.popover .sugg:hover { background: rgba(255,255,255,.06); }
+.snd-row.on { background: rgba(255,255,255,.07); }
+.snd-row svg { stroke: var(--muted); }
+.popover .td { background: rgba(255,255,255,.05); color: var(--text); }
+.popover .td.sel { background: rgba(239,90,60,.14); }
+/* range sliders: never inherit text-input padding/borders (that pushed the height slider out of the sheet) */
+input[type=range].range { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; height: 22px; margin: 0; }
+/* dialogs receive focus programmatically for screen readers; no ring around the whole sheet */
+.sheet[tabindex="-1"]:focus, .sheet[tabindex="-1"]:focus-visible, #focus:focus { outline: none; }
 /* comfortable touch targets */
 @media (pointer: coarse), (max-width: 899px) {
   .btn.sm { min-height: 34px; }
@@ -1215,7 +1228,7 @@ body.editing .side .people { display: none; }
 <div class="modal" id="m-help"><div class="sheet"><header><div><h2>Nasıl oynanır?</h2><p>Pomodoro World, odaklanmayı oyuna çevirir: çalıştıkça XP ve jeton kazan, karakterini ve odanı büyüt.</p></div><button class="x" data-close aria-label="Kapat">×</button></header>
   <div class="help-grid">
     <section><h3>1 · Odan senin</h3><p>Herkesin kendi odası var. Odana ad ver, <b>Açık</b> yap ki Dünya'da listelensin ya da <b>Kapalı</b> yapıp sadece davet linkiyle arkadaşlarını çağır.</p></section>
-    <section><h3>2 · Odaklan</h3><p><b>Odaklan</b> ile odak ekranını aç, görevini yaz, süreyi seç ve başlat. Karakterin masada çalışır; molada esner, kahve içer.</p></section>
+    <section><h3>2 · Odaklan</h3><p><b>Odaklan</b> ile odak ekranını aç, ne çalışacağını ve süreyi seç, başlat. Yazı yazman gerekmez. Karakterin masada çalışır; molada esner, kahve içer.</p></section>
     <section><h3>3 · Puan kazan</h3><table class="econ"><tbody>
       <tr><td>Her odak dakikası</td><td>+1 XP · +1 jeton</td></tr>
       <tr><td>Tamamlanan pomodoro</td><td>+10 XP · +5 jeton</td></tr>

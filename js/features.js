@@ -289,7 +289,7 @@
   ui.addChat = (m) => { if (m.uid && A().S.blocked[m.uid]) return; origChat(m); };
 
   /* ================= installable app (GitHub Pages / any https host) ================= */
-  if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && location.protocol === 'https:' && window.top === window) {
+  if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && (location.protocol === 'https:' || location.hostname === 'localhost') && window.top === window) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }
 })();
@@ -347,4 +347,34 @@
     el.style.setProperty('--c', COL[c[0]] || '#FF8466'); el.innerHTML = `<i></i>${U.esc(td ? td.t : c[1])}`;
     const go = $('#fx-go'); if (go) go.dataset.min = A().timer.phase === 'idle' ? A().preset().focus + ' dk' : '';
   };
+})();
+
+/* ===== accessibility: real dialogs (role, focus in, Tab trap, focus back) for every modal and the focus screen ===== */
+(function () {
+  const PW = window.PW, ui = PW.ui;
+  const FOC = 'button:not([disabled]), [href], input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const visible = (e) => e.getBoundingClientRect().width > 0 && !e.closest('[hidden]');
+  let lastOutside = null;
+  document.addEventListener('focusin', (e) => { if (!e.target.closest('.modal, #focus')) lastOutside = e.target; });
+  const topLayer = () => { const ms = [...document.querySelectorAll('.modal.open')]; if (ms.length) return ms[ms.length - 1]; const f = document.getElementById('focus'); return f && f.classList.contains('open') ? f : null; };
+  const enter = (layer) => { const sheet = layer.querySelector('.sheet') || layer; if (!sheet.hasAttribute('tabindex')) sheet.setAttribute('tabindex', '-1'); requestAnimationFrame(() => { if (!layer.contains(document.activeElement)) (layer.id === 'focus' ? document.getElementById('fx-go') : sheet).focus({ preventScroll: true }); }); };
+  const leave = () => { setTimeout(() => { if (topLayer()) { const t = topLayer(); if (!t.contains(document.activeElement)) enter(t); return; } if (lastOutside && lastOutside.isConnected && visible(lastOutside)) lastOutside.focus({ preventScroll: true }); }, 0); };
+  document.querySelectorAll('.modal').forEach((m, i) => {
+    m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+    const h = m.querySelector('h2, h3'); if (h) { if (!h.id) h.id = 'dlg-t-' + (m.id || i); m.setAttribute('aria-labelledby', h.id); }
+    let was = m.classList.contains('open');
+    new MutationObserver(() => { const on = m.classList.contains('open'); if (on === was) return; was = on; on ? enter(m) : leave(); }).observe(m, { attributes: true, attributeFilter: ['class'] });
+  });
+  const fx = document.getElementById('focus');
+  if (fx) { fx.setAttribute('role', 'region'); let was = fx.classList.contains('open'); new MutationObserver(() => { const on = fx.classList.contains('open'); if (on === was) return; was = on; on ? enter(fx) : leave(); }).observe(fx, { attributes: true, attributeFilter: ['class'] }); }
+  // keep Tab inside the top-most layer
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return; const ms = document.querySelectorAll('.modal.open'); const L = ms[ms.length - 1]; if (!L) return; // the focus screen is not trapped: chat stays reachable on desktop
+    const f = [...L.querySelectorAll(FOC)].filter(visible); if (!f.length) return;
+    const first = f[0], last = f[f.length - 1], a = document.activeElement;
+    if (!L.contains(a)) { e.preventDefault(); first.focus(); return; }
+    if (e.shiftKey && (a === first || !f.includes(a) && a.classList.contains('sheet'))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+  }, true);
+  void ui;
 })();

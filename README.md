@@ -71,6 +71,8 @@
 - **Test**: Her sürüm Playwright ile otomatik denenir:
   - Sayaç (tüm süreler, mola, uzun mola, duraklatma), ekonomi, editör, görevler, sohbet
   - Bozuk kayıtlar, ilk açılış ve davet akışı, iki oyunculu oda, kötü niyetli veri
+  - Erişilebilirlik: her pencere gerçek bir diyalog (odak içeri taşınır, Tab dışarı kaçmaz, kapanınca odak geri döner), adsız düğme ya da etiketsiz alan yok
+  - Ortam sesleri, yedek indir/yükle, film atlama ve tekrar izleme, internetsiz açılış (PWA)
   - 7 ekran boyutunda (360×640 telefondan yatay telefona ve 1440×900 masaüstüne) her ekranın taşma, çakışma ve dokunma alanı denetimi
 
 **Bilinen sınır**: Sunucusuz (P2P) bir yapıda ilerleme oyuncunun kendi cihazında tutulur. Bu yüzden sıralama yalnızca makul olmayan değerleri eleyebilir, kesin hile koruması sağlayamaz. Gerçek bir genel sıralama ve hesap senkronu için küçük bir arka uç (ör. Supabase/Firebase) gerekir.
