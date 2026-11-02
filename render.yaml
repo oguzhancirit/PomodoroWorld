@@ -1,0 +1,13 @@
+# Render.com blueprint for the Pomodoro World game server (Colyseus).
+# New → Blueprint → pick this repo. The free plan sleeps when nobody is online;
+# the first visitor then waits about a minute while it wakes up.
+services:
+  - type: web
+    name: pomodoro-world-server
+    runtime: node
+    plan: free
+    buildCommand: npm install --ignore-scripts --legacy-peer-deps
+    startCommand: npm start -w server
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
