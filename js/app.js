@@ -158,7 +158,7 @@
     if (App.peers.size > 0 || (App.room && App.room.kind === 'visit')) App.qProg('d_together', 1);
     App.gain(xp, coins, label); App.checkAch(); PW.sfx('done');
     PW.world.emote(App.myId, 'cheer'); App.chan && App.chan.sendEmote('cheer');
-    App.startBreak(T.round % 4 === 0); PW.ui.flashTitle('Mola zamanı!');
+    App.startBreak(T.round % 4 === 0); PW.ui.flashTitle('Mola zamanı!'); PW.ui.celebrate && PW.ui.celebrate();
   }
   App.tick = () => {
     const T = App.timer, now = Date.now();
@@ -310,7 +310,7 @@
     if (!av || typeof av !== 'object') return o;
     for (const k of ['hs', 'top', 'bot', 'sh', 'fh']) if (typeof av[k] === 'string' && PW.ITEM[av[k]]) o[k] = av[k];
     for (const k of ['sk', 'hc', 'ec', 'tc', 'tc2', 'bc', 'shc', 'lp']) if (Number.isInteger(av[k]) && av[k] >= 0 && av[k] < 16) o[k] = av[k];
-    for (const [k, list] of [['ey', PW.EYE_STYLES], ['br', PW.BROW_STYLES], ['mo', PW.MOUTH_STYLES], ['bd', PW.BODY_TYPES], ['tp', PW.TOP_PATTERNS]]) if (list.some((x) => x[0] === av[k])) o[k] = av[k];
+    for (const [k, list] of [['ey', PW.EYE_STYLES], ['br', PW.BROW_STYLES], ['mo', PW.MOUTH_STYLES], ['bd', PW.BODY_TYPES], ['tp', PW.TOP_PATTERNS], ['ps', PW.PERSONAS]]) if (list.some((x) => x[0] === av[k])) o[k] = av[k];
     o.bl = av.bl ? 1 : 0; o.fr = av.fr ? 1 : 0; if (typeof av.ht === 'number') o.ht = U.clamp(av.ht, 0.9, 1.1);
     if (Array.isArray(av.acc)) o.acc = av.acc.filter((x) => typeof x === 'string' && PW.ITEM[x]).slice(0, 6);
     return o;

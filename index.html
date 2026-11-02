@@ -332,7 +332,7 @@ nav.main .badge { position: absolute; top: 2px; right: 6px; min-width: 16px; hei
 #focus.open { display: block; }
 @media (min-width: 900px) { #focus .fx-center { left: 33%; } #focus::before { background: linear-gradient(90deg, rgba(14,12,28,.62) 0%, rgba(14,12,28,.42) 45%, rgba(14,12,28,.05) 75%, rgba(14,12,28,.15)); } }
 @media (max-width: 899px) { #focus::before { background: linear-gradient(180deg, rgba(14,12,28,.1) 0%, rgba(14,12,28,.1) 30%, rgba(14,12,28,.6) 55%, rgba(14,12,28,.75)); } #focus .fx-center { top: 60%; } }
-@media (max-width: 720px) { body.focusing .chat { display: none; } #focus .fx-day { left: 12px; transform: none; width: calc(100% - 80px); } #fx-styles { display: none; } #focus .fx-time { font-size: 92px; } #focus .fx-bottom { gap: 8px; } #focus .fx-center { gap: 8px; } }
+@media (max-width: 720px) { body.focusing .chat { display: none; } #focus .fx-day { left: 12px; transform: none; width: calc(100% - 80px); } #focus .fx-time { font-size: 92px; } #focus .fx-bottom { gap: 8px; } #focus .fx-center { gap: 8px; } }
 #focus::before { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 55% at 50% 52%, rgba(14, 12, 28, .18), rgba(14, 12, 28, .62)); pointer-events: none; }
 #focus > * { pointer-events: auto; }
 .fx-day { position: absolute; top: max(16px, env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(640px, calc(100% - 32px)); background: rgba(40, 52, 58, .62); border: 1px solid rgba(255, 255, 255, .14); border-radius: 18px; padding: 12px 16px 10px; backdrop-filter: blur(10px); color: #F4F6F2; }
@@ -503,6 +503,100 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
   .fx-bottom { gap: 6px; } .fx-bottom .grp button { padding: 7px 8px; font-size: 12px; }
   .fx-icon { width: 40px; height: 40px; }
 }
+
+/* ---------- focus v3: one ring, one button ---------- */
+#focus .fx-center { top: 50%; gap: 16px; width: min(420px, calc(100% - 32px)); }
+@media (min-width: 900px) { #focus .fx-center { left: 31%; } }
+.fx-phase { display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 99px; background: rgba(20, 18, 34, .5); backdrop-filter: blur(8px); font-weight: 800; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+#focus[data-phase="break"] .fx-phase span:first-child { color: #9BE7B4; }
+.fx-dots { display: flex; gap: 5px; } .fx-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.25); } .fx-dots i.on { background: #fff; }
+.fx-ring { position: relative; width: min(300px, 72vw); aspect-ratio: 1; }
+.fx-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.fx-ring circle { fill: none; stroke-width: 9; }
+.fx-ring .trk { stroke: rgba(255, 255, 255, .16); fill: rgba(16, 14, 30, .38); }
+.fx-ring .bar { stroke: var(--tomato); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset .9s linear, stroke .4s; filter: drop-shadow(0 0 8px rgba(232, 85, 61, .6)); }
+#focus[data-phase="break"] .fx-ring .bar { stroke: #4CC38A; filter: drop-shadow(0 0 8px rgba(76, 195, 138, .6)); }
+.fx-in { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; text-align: center; }
+#focus .fx-time { font: 800 clamp(64px, 17vw, 84px)/1 var(--f-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: #FBFAF6; text-shadow: 0 6px 24px rgba(0, 0, 0, .35); }
+#fx-task { width: 200px; max-width: 70%; background: none; border: 0; border-bottom: 1px dashed rgba(255, 255, 255, .3); color: #fff; text-align: center; font-weight: 700; font-size: 14px; padding: 4px 2px; }
+#fx-task::placeholder { color: rgba(255, 255, 255, .62); }
+#fx-task:focus { outline: none; border-bottom-color: #fff; }
+.fx-go { padding: 12px 34px 12px 12px; }
+.fx-go:empty { display: none; }
+.fx-tools { display: flex; gap: 10px; }
+.fx-tools .fx-icon { width: 44px; height: 44px; background: rgba(250, 246, 240, .14); color: #fff; border: 1px solid rgba(255, 255, 255, .18); backdrop-filter: blur(8px); }
+.fx-tools .fx-icon[aria-expanded="true"] { background: #fff; color: #2A2440; }
+.fx-tools .fx-icon[hidden] { display: none; }
+.fx-pop { display: grid; gap: 8px; justify-items: center; padding: 10px; border-radius: 18px; background: rgba(250, 246, 240, .95); color: #2A2440; animation: tin .25s ease; }
+.fx-pop[hidden] { display: none; }
+.fx-pop .seg { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: #EFE9F4; }
+.fx-pop .seg button { border: 0; background: none; border-radius: 10px; padding: 8px 11px; font-weight: 800; font-size: 13px; color: #5B5470; }
+.fx-pop .seg button.on { background: #2A2440; color: #fff; }
+.fx-pop .seg.ico svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.fx-pop select { border-radius: 10px; border: 1px solid #DDD5E8; background: #fff; color: #2A2440; padding: 6px 10px; font-weight: 700; }
+#focus::before { background: radial-gradient(60% 70% at 31% 50%, rgba(14,12,28,.55), rgba(14,12,28,.15) 70%, rgba(14,12,28,.05)); }
+@media (max-width: 899px) { #focus::before { background: linear-gradient(180deg, rgba(14,12,28,0) 0%, rgba(14,12,28,0) 28%, rgba(14,12,28,.55) 52%, rgba(14,12,28,.7)); } #focus .fx-center { top: 63%; gap: 12px; } .fx-ring { width: min(230px, 62vw); } #focus .fx-time { font-size: 60px; } }
+@media (max-height: 700px) and (max-width: 899px) { #focus .fx-center { top: 66%; } .fx-ring { width: 190px; } #focus .fx-time { font-size: 50px; } }
+
+/* moodlet */
+.moodlet { --mc: #F2C14E; display: flex; align-items: center; gap: 6px; padding: 6px 10px 6px 7px; border-radius: 99px; border: 1px solid color-mix(in srgb, var(--mc) 55%, transparent); background: color-mix(in srgb, var(--mc) 18%, transparent); color: #fff; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.moodlet svg { width: 18px; height: 18px; fill: none; stroke: var(--mc); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.moodlet.pop { animation: tin .45s cubic-bezier(.2, 1.4, .4, 1); }
+@media (max-width: 720px) { .moodlet b { display: none; } .moodlet { padding: 6px; } }
+/* editor camera / undo cluster */
+.e-cam { display: flex; gap: 4px; padding-right: 8px; margin-right: 4px; border-right: 1px solid var(--line); }
+.e-cam .ib { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--ink); display: grid; place-items: center; }
+.e-cam .ib svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.e-cam .ib:disabled { opacity: .35; }
+.e-cam .ib.on { background: var(--gold); color: #2A2440; border-color: var(--gold); }
+.e-cam .ib[data-mode="up"] { background: rgba(255,255,255,.18); }
+.stylecard { display: grid; gap: 6px; width: 140px; padding: 8px; border-radius: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.05); color: var(--ink); text-align: left; flex: none; }
+.stylecard .sw2 { display: grid; grid-template-columns: 1fr 1fr; height: 62px; border-radius: 10px; overflow: hidden; }
+.stylecard .sw2 i { background-size: cover; }
+.stylecard b { font-size: 13px; } .stylecard span { font-size: 11px; color: var(--muted); }
+.stylecard.on { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
+.stylecard:disabled { opacity: .45; }
+
+.tabs .dice { margin-left: auto; width: 38px; padding: 0 !important; display: grid; place-items: center; }
+.tabs .dice svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.tabs .dice circle { fill: currentColor; stroke: none; }
+.tabs .dice:active svg { transform: rotate(90deg); transition: transform .2s; }
+
+/* illustrations */
+.illu { width: 72px; height: 72px; overflow: visible; }
+.illu * { vector-effect: non-scaling-stroke; }
+.i-ring .t { fill: none; stroke: #E9E2F2; stroke-width: 6; } .i-ring .b { fill: none; stroke: var(--tomato); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 100; transform: rotate(-90deg); transform-origin: 40px 40px; animation: ringfill 2.6s ease-in-out infinite; } .i-ring .f { fill: var(--tomato); }
+@keyframes ringfill { 0% { stroke-dashoffset: 100; } 70%, 100% { stroke-dashoffset: 0; } }
+.i-coin .c { animation: coinhop 1.6s cubic-bezier(.3,1.6,.5,1) infinite; transform-origin: 40px 60px; } .i-coin .o { fill: #F2C14E; } .i-coin .i { fill: #F7D27A; } .i-coin .s { fill: none; stroke: #B5832A; stroke-width: 3; stroke-linecap: round; } .i-coin .sh { fill: rgba(0,0,0,.15); } .i-coin .p { font: 800 15px var(--f-body); fill: #2F9A6B; animation: plus 1.6s ease-out infinite; }
+@keyframes coinhop { 0%, 100% { transform: translateY(0) scaleX(1); } 40% { transform: translateY(-12px) scaleX(.8); } 60% { transform: translateY(-12px) scaleX(1); } }
+@keyframes plus { 0% { opacity: 0; transform: translateY(8px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+.i-sofa .s { animation: drop 2.4s cubic-bezier(.3,1.5,.5,1) infinite; } .i-sofa .bk { fill: #C7432F; } .i-sofa .se { fill: #E8553D; } .i-sofa .lg { fill: #6B4630; } .i-sofa .fl { fill: #D9CFE6; } .i-sofa .sp path { fill: var(--gold); animation: twinkle 2.4s ease infinite; transform-origin: 62px 25px; }
+@keyframes drop { 0% { transform: translateY(-40px); opacity: 0; } 25% { transform: translateY(0); opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes twinkle { 0%, 30% { transform: scale(0); } 45% { transform: scale(1.2); } 60%, 100% { transform: scale(0); } }
+.i-link .a { fill: #8FB8FF; } .i-link .b { fill: #F28AB0; } .i-link .d { fill: none; stroke: var(--gold); stroke-width: 3; stroke-dasharray: 4 5; stroke-linecap: round; animation: dash 1s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -18; } }
+.i-globe .o { fill: #5AB0FF; } .i-globe .m { fill: none; stroke: #fff; stroke-width: 2.5; animation: spin 2.4s linear infinite; transform-origin: 40px 40px; } .i-globe .l { fill: none; stroke: rgba(255,255,255,.7); stroke-width: 2; }
+@keyframes spin { 0% { transform: scaleX(1); } 50% { transform: scaleX(.1); } 100% { transform: scaleX(1); } }
+.i-room .w { fill: #F3E6D2; stroke: #B07D52; stroke-width: 2.5; stroke-linejoin: round; } .i-room .e { fill: none; stroke: #B07D52; stroke-width: 2; } .i-room .me { fill: #3E7CB1; } .i-room .gem { fill: #3DDC84; animation: bobg 1.6s ease-in-out infinite; }
+@keyframes bobg { 50% { transform: translateY(-3px); } }
+.ob-loop { display: flex; align-items: center; gap: 6px; margin: 10px 0 6px; }
+.ob-loop figure { margin: 0; display: grid; justify-items: center; gap: 6px; padding: 14px 12px 10px; border-radius: 20px; background: rgba(255,255,255,.06); border: 1px solid var(--line); min-width: 110px; }
+.ob-loop figcaption { font: 800 15px var(--f-display); }
+.ob-arrow { width: 22px; height: 22px; fill: none; stroke: var(--muted); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+@media (max-width: 720px) { .ob-loop { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .ob-arrow { display: none; } .ob-loop figure { min-width: 0; } }
+#tour .card { width: min(330px, calc(100% - 32px)); }
+#tour .card .hd { gap: 14px; }
+#tour .card .hd .illu { width: 64px; height: 64px; flex: none; background: #F4EEF8; border-radius: 18px; padding: 6px; box-sizing: border-box; }
+#tour .card h3 { font-size: 21px; }
+#tour .card p { font-size: 14px; color: #6B6382; }
+#tour .spot:not(.none) { animation: spotpulse 1.6s ease-in-out infinite; }
+@keyframes spotpulse { 50% { box-shadow: 0 0 0 9999px rgba(10, 8, 22, .62), 0 0 0 6px var(--gold), 0 0 40px 12px rgba(242, 193, 78, .65); } }
+
+.fx-pop .seg.ico button { width: 44px; height: 36px; padding: 0; display: grid; place-items: center; }
+.fx-pop .seg { background: #EFE9F4 !important; border: 0 !important; }
+#fx-task { width: 220px; }
+
+@media (max-width: 720px) { #e-sel { display: none; } .e-top .row { width: 100%; scrollbar-width: none; } .e-top .row .btn { flex: none; } .e-cam { flex: none; } }
 </style>
 </head>
 <body>
@@ -559,6 +653,7 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
   </section>
 
   <section class="mini" id="mini" data-phase="idle" aria-label="Pomodoro">
+    <button class="moodlet" id="moodlet" type="button" aria-label="Ruh hâli"></button>
     <div class="mt"><span id="mini-phase">Hazır</span><b id="mini-time">25:00</b></div>
     <div class="prog"><i id="mini-prog" style="width:0%"></i></div>
     <button class="btn" id="mini-open">Odak ekranı</button>
@@ -568,8 +663,9 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
 
   <section id="editbar" hidden aria-label="Oda düzenleyici">
     <div class="e-top">
-      <div id="e-tabs" class="tabs" style="margin:0"><button data-etab="furn" class="on">Eşyalar</button><button data-etab="wall">Duvar</button><button data-etab="floor">Zemin</button><button data-etab="mood">Atmosfer</button><button data-etab="view">Manzara</button><button data-etab="theme">Hazır tema</button><button data-etab="size">Boyut</button></div>
-      <div class="row"><span id="e-sel">Seçili eşya yok</span><button class="btn sm ghost" id="e-rot">Döndür (R)</button><button class="btn sm ghost" id="e-move">Taşı</button><button class="btn sm ghost" id="e-del">Kaldır</button><button class="btn sm" id="e-done">Bitti</button></div>
+      <div id="e-tabs" class="tabs" style="margin:0"><button data-etab="style">Stiller</button><button data-etab="furn" class="on">Eşyalar</button><button data-etab="wall">Duvar</button><button data-etab="floor">Zemin</button><button data-etab="mood">Atmosfer</button><button data-etab="view">Manzara</button><button data-etab="theme">Hazır tema</button><button data-etab="size">Boyut</button></div>
+      <div class="row"><div class="e-cam"><button class="ib" id="e-undo" title="Geri al (Ctrl+Z)" aria-label="Geri al"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button><button class="ib" id="e-redo" title="Yinele (Ctrl+Y)" aria-label="Yinele"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button><button class="ib" id="e-walls" title="Duvarlar: kesik / açık / kapalı" aria-label="Duvar görünümü"><svg viewBox="0 0 24 24"><path d="M3 20V9l9-5 9 5v11"/><path d="M3 14h18"/></svg></button><button class="ib" id="e-top" title="Kuşbakışı (T)" aria-label="Kuşbakışı"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 12h16M12 4v16"/></svg></button></div>
+        <span id="e-sel">Seçili eşya yok</span><button class="btn sm ghost" id="e-rot">Döndür</button><button class="btn sm ghost" id="e-move">Taşı</button><button class="btn sm ghost" id="e-copy" title="Aynısından bir tane daha yerleştir">Kopyala</button><button class="btn sm ghost" id="e-del">Kaldır</button><button class="btn sm" id="e-done">Bitti</button></div>
     </div>
     <div id="e-sub"></div>
     <div id="e-list"></div>
@@ -578,24 +674,32 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
 
 <!-- Focus screen -->
 <div id="focus" aria-label="Odak ekranı">
-  <div class="fx-day"><div class="r"><span id="fx-daytitle">Günün ilk bloğu seni bekliyor</span><em id="fx-best"></em></div><div class="fx-line" id="fx-line"></div><div class="fx-hours"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
   <button class="fx-icon fx-close" id="fx-close" title="Odaya dön" aria-label="Odaya dön"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   <div class="fx-center">
-    <div class="fx-task"><input id="fx-task" maxlength="60" placeholder="Bu seans için görev yaz…" list="fx-recent" aria-label="Görev"><datalist id="fx-recent"></datalist><select id="fx-cat" aria-label="Kategori"></select></div>
-    <div id="fx-mascot"></div>
-    <div class="fx-modes"><span data-m="focus">Odak</span><span data-m="break">Mola</span><span data-m="long">Uzun mola</span></div>
-    <div class="fx-time" id="fx-time">25<span class="sec">:00</span></div>
-    <div class="fx-sub" id="fx-sub">Hazırsan başlayalım!</div>
-    <button class="fx-go" id="fx-go"><span class="pl"><svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span><span id="fx-go-t">Başlat</span></button>
-    <div class="fx-pill" id="fx-pill">25 dk · %0</div>
-  </div>
-  <div class="fx-bottom">
-    <div class="grp" id="fx-presets"><button data-preset="p25">25/5</button><button data-preset="p50">50/10</button><button data-preset="p90">90/20</button><button data-preset="custom">Özel</button></div>
-    <div class="grp" id="fx-styles"><button data-style="type">Laptop</button><button data-style="write">Defter</button><button data-style="read">Kitap</button></div>
-    <div class="grp"><div class="fx-dots" id="fx-dots"></div></div>
-    <button class="fx-icon" id="fx-skip" title="Bu aşamayı atla" aria-label="Atla"><svg viewBox="0 0 24 24"><path d="M5 5l9 7-9 7zM17 5v14"/></svg></button>
-    <button class="fx-icon" id="fx-reset" title="Sıfırla" aria-label="Sıfırla"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/></svg></button>
-    <button class="fx-icon" id="fx-min" title="Odayı göster" aria-label="Odayı göster"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1"/></svg></button>
+    <div class="fx-phase"><span id="fx-phase">Odak</span><span class="fx-dots" id="fx-dots"></span></div>
+    <div class="fx-ring">
+      <svg viewBox="0 0 300 300" aria-hidden="true"><circle class="trk" cx="150" cy="150" r="136"/><circle class="bar" id="fx-bar" cx="150" cy="150" r="136" pathLength="100"/></svg>
+      <div class="fx-in">
+        <div class="fx-time" id="fx-time">25:00</div>
+        <input id="fx-task" maxlength="60" placeholder="Ne çalışıyorsun?" list="fx-recent" aria-label="Görev" autocomplete="off"><datalist id="fx-recent"></datalist>
+      </div>
+    </div>
+    <button class="fx-go" id="fx-go"><span class="pl"></span><span id="fx-go-t">Başlat</span></button>
+    <div class="fx-tools">
+      <button class="fx-icon" id="fx-set" title="Süre ve çalışma şekli" aria-label="Süre ve çalışma şekli" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg></button>
+      <button class="fx-icon" id="fx-reset" title="Sıfırla" aria-label="Sıfırla"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/></svg></button>
+      <button class="fx-icon" id="fx-skip" title="Bu aşamayı atla" aria-label="Atla"><svg viewBox="0 0 24 24"><path d="M5 5l9 7-9 7zM17 5v14"/></svg></button>
+      <button class="fx-icon" id="fx-min" title="Odayı göster" aria-label="Odayı göster"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z"/></svg></button>
+    </div>
+    <div class="fx-pop" id="fx-pop" hidden>
+      <div class="seg" id="fx-presets"><button data-preset="p25">25 · 5</button><button data-preset="p50">50 · 10</button><button data-preset="p90">90 · 20</button><button data-preset="custom">Özel</button></div>
+      <div class="seg ico" id="fx-styles">
+        <button data-style="type" title="Laptop" aria-label="Laptop"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="10" rx="1.5"/><path d="M3 18h18"/></svg></button>
+        <button data-style="write" title="Defter" aria-label="Defter"><svg viewBox="0 0 24 24"><path d="M6 4h10a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M14 9l-5 5-.5 2 2-.5 5-5z"/></svg></button>
+        <button data-style="read" title="Kitap" aria-label="Kitap"><svg viewBox="0 0 24 24"><path d="M3 6c3-1.5 6-1.5 9 0v13c-3-1.5-6-1.5-9 0zM21 6c-3-1.5-6-1.5-9 0v13c3-1.5 6-1.5 9 0z"/></svg></button>
+      </div>
+      <select id="fx-cat" aria-label="Kategori"></select>
+    </div>
   </div>
 </div>
 
@@ -648,11 +752,16 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SAOShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/DepthLimitedBlurShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/UnpackDepthRGBAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SAOPass.js"></script>
 <script src="js/util.js"></script>
 <script src="js/data.js"></script>
 <script src="js/models.js"></script>
 <script src="js/avatar.js"></script>
 <script src="js/world.js"></script>
+<script src="js/render.js"></script>
 <script src="js/net.js"></script>
 <script src="js/app.js"></script>
 <script src="js/ui.js"></script>

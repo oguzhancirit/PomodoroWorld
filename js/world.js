@@ -6,9 +6,9 @@
   const WALL_H = 3.2, WALL_T = 0.16;
 
   PW.MOODS = {
-    day: { env: 1, name: 'Gün ışığı', sun: '#FFE9CF', sunI: 1.3, hemi: 0.5, hemiC: '#FFF4E6', hemiG: '#7A6A5A', amb: 0.16, exp: 1.02, lamp: 0.55, bloom: 0.28, bg: '#2B2A44', shafts: 0.55, dust: 1 },
-    golden: { env: 0.8, name: 'Altın saat', sun: '#FFAE68', sunI: 1.45, hemi: 0.4, hemiC: '#FFD3A8', hemiG: '#6A4A4A', amb: 0.12, exp: 1.05, lamp: 0.8, bloom: 0.45, bg: '#36263A', shafts: 0.85, dust: 1 },
-    night: { env: 0.28, name: 'Gece lambası', sun: '#6F7BD9', sunI: 0.35, hemi: 0.22, hemiC: '#8A9AE0', hemiG: '#2A2440', amb: 0.08, exp: 1.12, lamp: 1.7, bloom: 0.8, bg: '#111124', shafts: 0.12, dust: 0.45 },
+    day: { env: 1, name: 'Gün ışığı', sun: '#FFE9CF', sunI: 1.45, hemi: 0.36, hemiC: '#FFF4E6', hemiG: '#7A6A5A', amb: 0.07, exp: 0.94, lamp: 0.55, bloom: 0.28, bg: '#2B2A44', shafts: 0.55, dust: 1 },
+    golden: { env: 0.8, name: 'Altın saat', sun: '#FFAE68', sunI: 1.6, hemi: 0.3, hemiC: '#FFD3A8', hemiG: '#6A4A4A', amb: 0.05, exp: 0.9, lamp: 0.8, bloom: 0.45, bg: '#36263A', shafts: 0.85, dust: 1 },
+    night: { env: 0.22, name: 'Gece lambası', sun: '#6F7BD9', sunI: 0.3, hemi: 0.14, hemiC: '#8A9AE0', hemiG: '#2A2440', amb: 0.05, exp: 1.0, lamp: 1.7, bloom: 0.8, bg: '#111124', shafts: 0.12, dust: 0.45 },
     neon: { env: 0.3, name: 'Neon', sun: '#7A4CFF', sunI: 0.35, hemi: 0.22, hemiC: '#B48AFF', hemiG: '#201640', amb: 0.1, exp: 1.12, lamp: 1.3, bloom: 1.05, bg: '#120D24', shafts: 0.08, dust: 0.3, neon: ['#FF3FA4', '#26D8FF'] },
     candle: { env: 0.2, name: 'Mum ışığı', sun: '#FF8A3A', sunI: 0.2, hemi: 0.16, hemiC: '#FFB070', hemiG: '#2A1610', amb: 0.06, exp: 1.18, lamp: 2.0, bloom: 0.75, bg: '#180F0C', shafts: 0, dust: 0.5, flicker: true },
   };
@@ -462,12 +462,12 @@
     constructor(host) {
       this.host = host;
       const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }));
-      r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+      r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.95; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
       host.appendChild(r.domElement);
       this.scene = new THREE.Scene();
       try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(r); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; } } catch (e) {}
       this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
-      this.scene.add(new THREE.HemisphereLight('#FFF6EC', '#6A5A7A', 0.55));
+      this.scene.add(new THREE.HemisphereLight('#FFF6EC', '#6A5A7A', 0.42));
       const d = new THREE.DirectionalLight('#FFE9D6', 1.15); d.position.set(2, 4, 3); d.castShadow = true; d.shadow.mapSize.set(1024, 1024); d.shadow.radius = 4; this.scene.add(d);
       const rim = new THREE.DirectionalLight('#9DB7FF', 0.7); rim.position.set(-3, 2, -3); this.scene.add(rim);
       const plat = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.8, 0.08, 64), PW.mat('#E9DCC8', { rough: 0.9 })); plat.position.y = -0.04; plat.receiveShadow = true; this.scene.add(plat);

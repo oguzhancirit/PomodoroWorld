@@ -11,6 +11,16 @@
   const LOCK = '<svg viewBox="0 0 20 20" class="ico" aria-hidden="true"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V7a3 3 0 0 1 6 0v2" fill="none"/></svg>';
   const MASCOT = (cls = '') => `<svg class="mascot ${cls}" viewBox="0 0 120 104" aria-hidden="true"><ellipse cx="60" cy="98" rx="30" ry="5" fill="rgba(0,0,0,.18)"/><circle cx="60" cy="58" r="38" fill="#E8553D"/><ellipse cx="44" cy="44" rx="11" ry="7" fill="#FF8C70" opacity=".75"/><path d="M60 22c-6-9-17-9-22-5 8 0 13 4 15 8-9-2-17 2-19 8 9-4 17-4 26-2 9-2 17-2 26 2-2-6-10-10-19-8 2-4 7-8 15-8-5-4-16-4-22 5z" fill="#4E9A49"/><path d="M60 14v12" stroke="#3B7A3A" stroke-width="5" stroke-linecap="round"/><g class="eye"><ellipse cx="47" cy="60" rx="5.5" ry="7" fill="#2A1A14"/><circle cx="45" cy="57" r="2" fill="#fff"/></g><g class="eye"><ellipse cx="73" cy="60" rx="5.5" ry="7" fill="#2A1A14"/><circle cx="71" cy="57" r="2" fill="#fff"/></g><ellipse cx="38" cy="72" rx="6" ry="3.5" fill="#FF9CA0" opacity=".7"/><ellipse cx="82" cy="72" rx="6" ry="3.5" fill="#FF9CA0" opacity=".7"/><path d="M53 74q7 7 14 0" stroke="#2A1A14" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
   PW.MASCOT = MASCOT;
+  // tiny animated illustrations: the tour and welcome show, rather than tell
+  const ILLU = {
+    ring: '<svg class="illu i-ring" viewBox="0 0 80 80"><circle cx="40" cy="40" r="30" class="t"/><circle cx="40" cy="40" r="30" class="b" pathLength="100"/><path d="M34 30v20l16-10z" class="f"/></svg>',
+    coin: '<svg class="illu i-coin" viewBox="0 0 80 80"><ellipse cx="40" cy="70" rx="16" ry="3" class="sh"/><g class="c"><circle cx="40" cy="38" r="20" class="o"/><circle cx="40" cy="38" r="14" class="i"/><path d="M40 30v16M35 34h7a3 3 0 0 1 0 6h-4a3 3 0 0 0 0 6h7" class="s"/></g><text x="58" y="20" class="p">+1</text></svg>',
+    sofa: '<svg class="illu i-sofa" viewBox="0 0 80 80"><rect x="10" y="64" width="60" height="4" rx="2" class="fl"/><g class="s"><rect x="16" y="34" width="48" height="16" rx="6" class="bk"/><rect x="12" y="44" width="56" height="14" rx="6" class="se"/><rect x="18" y="56" width="4" height="8" class="lg"/><rect x="58" y="56" width="4" height="8" class="lg"/></g><g class="sp"><path d="M62 18l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></g></svg>',
+    link: '<svg class="illu i-link" viewBox="0 0 80 80"><circle cx="20" cy="36" r="9" class="a"/><path d="M8 62c0-9 6-14 12-14s12 5 12 14" class="a"/><circle cx="60" cy="36" r="9" class="b"/><path d="M48 62c0-9 6-14 12-14s12 5 12 14" class="b"/><path d="M30 30q10-12 20 0" class="d"/></svg>',
+    globe: '<svg class="illu i-globe" viewBox="0 0 80 80"><circle cx="40" cy="40" r="26" class="o"/><ellipse cx="40" cy="40" rx="12" ry="26" class="m"/><path d="M14 40h52M18 27h44M18 53h44" class="l"/></svg>',
+    room: '<svg class="illu i-room" viewBox="0 0 80 80"><path d="M40 12l30 15v26L40 68 10 53V27z" class="w"/><path d="M40 42L10 27M40 42l30-15M40 42v26" class="e"/><circle cx="46" cy="47" r="5" class="me"/><path d="M46 36l3 4h-6z" class="gem"/></svg>',
+  };
+  PW.ILLU = ILLU;
   const ui = (PW.ui = {});
 
   ui.init = () => {
@@ -21,6 +31,10 @@
       if (e.target.matches('input, textarea, select')) return;
       if (e.key === 'Escape') { if (PW.world.edit.ghost) PW.world.cancelGhost(); else if (ui.focusOpen) ui.closeFocus(); else ui.close(); }
       if ((e.key === 'r' || e.key === 'R') && PW.world.edit.on) ui.editRotate();
+      if (PW.world.edit.on && (e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); e.shiftKey ? ui.redo() : ui.undo(); }
+      if (PW.world.edit.on && (e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); ui.redo(); }
+      if ((e.key === 't' || e.key === 'T') && !e.ctrlKey && !e.metaKey && !ui.focusOpen) ui.topView();
+      if ((e.key === 'c' || e.key === 'C') && PW.world.edit.on && !e.ctrlKey && !e.metaKey) ui.editCopy();
       if ((e.key === 'Delete' || e.key === 'Backspace') && PW.world.edit.on) ui.editRemove();
       if (e.key === ' ' && ui.focusOpen && !$('.modal.open')) { e.preventDefault(); ui.timerMain(); }
     });
@@ -47,9 +61,13 @@
     $('#fx-cat').innerHTML = PW.TASK_CATS.map(([n]) => `<option>${n}</option>`).join('');
     $('#fx-task').addEventListener('input', (e) => { A().S.task.text = e.target.value; A().save(); });
     $('#fx-cat').addEventListener('change', (e) => { A().S.task.cat = e.target.value; A().save(); });
-    $('#fx-mascot').innerHTML = MASCOT();
+    $('#fx-set').addEventListener('click', () => ui.togglePop());
     // editor
     $('#e-done').addEventListener('click', () => ui.setEditing(false));
+    $('#e-undo').addEventListener('click', () => ui.undo()); $('#e-redo').addEventListener('click', () => ui.redo());
+    $('#e-walls').addEventListener('click', () => ui.cycleWalls()); $('#e-top').addEventListener('click', () => ui.topView());
+    $('#e-copy').addEventListener('click', () => ui.editCopy());
+    PW.world.onInvalidPlace = () => ui.toast('Buraya sığmıyor', 'Kırmızı: başka bir eşyayla çakışıyor. Biraz kaydır ya da döndür.');
     $('#e-rot').addEventListener('click', ui.editRotate);
     $('#e-move').addEventListener('click', ui.editMove);
     $('#e-del').addEventListener('click', ui.editRemove);
@@ -94,19 +112,20 @@
     $('#mini-phase').textContent = T.phase === 'focus' ? (T.running ? 'Odak' : 'Duraklatıldı') : T.phase === 'break' ? (T.long ? 'Uzun mola' : 'Mola') : 'Hazır';
     $('#mini-prog').style.width = Math.round(frac * 100) + '%';
     $('#mini-open').textContent = T.phase === 'idle' ? 'Odaklan' : 'Odak ekranı';
-    // focus screen
+    // focus screen: ring, time, one button
+    $('#focus').dataset.phase = T.phase;
     const mm = String(Math.floor(left / 60)).padStart(2, '0'), ss = String(Math.floor(left % 60)).padStart(2, '0');
-    $('#fx-time').innerHTML = `${mm}<span class="sec">:${ss}</span>`;
-    $$('.fx-modes span').forEach((s) => s.classList.toggle('on', (T.phase === 'idle' && s.dataset.m === 'focus') || (T.phase === 'focus' && s.dataset.m === 'focus') || (T.phase === 'break' && s.dataset.m === (T.long ? 'long' : 'break'))));
-    const task = S.task.text;
-    $('#fx-sub').textContent = T.phase === 'idle' ? (task ? `Sıradaki: ${task}` : 'Hazırsan başlayalım!') : T.phase === 'focus' ? (T.running ? (task ? `Odaktasın · ${task}` : 'Odaktasın. Telefon uzakta, nefes derin.') : 'Duraklatıldı. Hazır olunca devam et.') : 'Mola: kalk, esne, su iç. Ekrandan uzaklaş.';
+    $('#fx-time').textContent = `${mm}:${ss}`;
+    $('#fx-phase').textContent = T.phase === 'break' ? (T.long ? 'Uzun mola' : 'Mola') : T.phase === 'focus' && !T.running ? 'Duraklatıldı' : 'Odak';
+    $('#fx-bar').style.strokeDashoffset = String(100 - frac * 100);
     const go = $('#fx-go'); go.classList.toggle('run', T.running);
     $('#fx-go-t').textContent = T.phase === 'idle' ? 'Başlat' : T.running ? 'Duraklat' : 'Devam et';
     go.querySelector('.pl').innerHTML = T.running ? '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>' : '<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';
-    $('#fx-pill').textContent = `${Math.round((T.phase === 'idle' ? p.focus * 60 : T.total) / 60)} dk · %${Math.round(frac * 100)}`;
-    const r = T.round % 4; $('#fx-dots').innerHTML = [0, 1, 2, 3].map((i) => `<i class="${i < r ? 'on' : ''}"></i>`).join('') + `<span>${r}/4</span>`;
+    $('#fx-skip').hidden = T.phase === 'idle'; $('#fx-reset').hidden = T.phase === 'idle';
+    const r = T.round % 4; $('#fx-dots').innerHTML = [0, 1, 2, 3].map((i) => `<i class="${i < r ? 'on' : ''}"></i>`).join('');
     $$('#fx-presets [data-preset]').forEach((b) => b.classList.toggle('on', b.dataset.preset === S.settings.preset));
     $$('#fx-styles [data-style]').forEach((b) => b.classList.toggle('on', b.dataset.style === S.settings.style));
+    ui.refreshMood();
     const me = PW.world && PW.world.avatars.get('me');
     $('#btn-sit').textContent = me && me.seatIdx != null ? 'Kalk' : 'Otur';
     if (me) PW.world.updateAvatarInfo('me', { status: A().status(), timer: U.fmtTime(T.left) });
@@ -118,24 +137,38 @@
   /* ---------------- focus screen ---------------- */
   ui.openFocus = () => {
     ui.close(); ui.setEditing(false, true);
-    ui.focusOpen = true; $('#focus').classList.add('open'); document.body.classList.add('focusing');
+    ui.focusOpen = true; $('#focus').classList.add('open'); document.body.classList.add('focusing'); PW.world.fpsCap = 30;
     A().ensureSeated(); PW.world.setFocusCam('me');
     $('#fx-task').value = A().S.task.text || ''; $('#fx-cat').value = A().S.task.cat || 'Ders';
     $('#fx-recent').innerHTML = (A().S.task.recent || []).map((t) => `<option value="${esc(t)}">`).join('');
-    ui.renderDay(); ui.refreshTimer();
+    ui.togglePop(false); ui.refreshTimer();
   };
-  ui.closeFocus = () => { ui.focusOpen = false; $('#focus').classList.remove('open'); document.body.classList.remove('focusing'); PW.world.setFocusCam(null); };
-  ui.renderDay = () => {
-    const S = A().S, d = U.todayKey();
-    const blocks = S.stats.log.filter((b) => b.d === d);
-    const mins = S.stats.days[d] || 0;
-    $('#fx-daytitle').textContent = mins ? `Bugün ${U.fmtMin(mins)} odaklandın` : 'Günün ilk bloğu seni bekliyor';
-    let best = null, bv = 0; for (const h in S.stats.hours) if (S.stats.hours[h] > bv) { bv = S.stats.hours[h]; best = +h; }
-    $('#fx-best').textContent = best != null ? `En verimli saatin ${String(best).padStart(2, '0')}:00` : 'İlk seansın en verimli saatini belirler';
-    const col = Object.fromEntries(PW.TASK_CATS);
-    const now = new Date(); const nowM = now.getHours() * 60 + now.getMinutes();
-    $('#fx-line').innerHTML = blocks.map((b) => `<i style="left:${(b.s / 1440) * 100}%;width:${Math.max(0.6, (b.m / 1440) * 100)}%;background:${col[b.c] || '#6CBF6A'}"></i>`).join('') + (best != null ? `<span class="best" style="left:calc(${((best * 60 + 30) / 1440) * 100}% - 3px)"></span>` : '') + `<span class="now" style="left:${(nowM / 1440) * 100}%"></span>`;
+  ui.closeFocus = () => { ui.focusOpen = false; PW.world.fpsCap = 0; ui.togglePop(false); $('#focus').classList.remove('open'); document.body.classList.remove('focusing'); PW.world.setFocusCam(null); };
+  ui.togglePop = (on) => { const p = $('#fx-pop'), b = $('#fx-set'); const v = on == null ? p.hidden : on; p.hidden = !v; b.setAttribute('aria-expanded', String(v)); };
+
+  /* ---------------- moodlet (Sims-style: state + reason, mirrored by the character's body language) ---------------- */
+  const MOODS = {
+    ready: { n: 'Hazır', why: 'Bir pomodoro başlat', c: '#F2C14E', i: '<path d="M8 5v14l11-7z"/>' },
+    focused: { n: 'Odaklı', why: 'Sayaç çalışıyor', c: '#3DDC84', i: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>' },
+    flow: { n: 'Akışta', why: 'Üst üste pomodorolar', c: '#4FD1C5', i: '<path d="M3 14c3-4 6 4 9 0s6 4 9 0"/><path d="M3 9c3-4 6 4 9 0s6 4 9 0"/>' },
+    tired: { n: 'Yorgun', why: 'Uzun mola zamanı', c: '#B794F6', i: '<path d="M4 15a8 8 0 0 0 15-4 6 6 0 0 1-9-7 8 8 0 0 0-6 11z"/>' },
+    fresh: { n: 'Dinç', why: 'Molada enerji topluyorsun', c: '#5AB0FF', i: '<path d="M12 3c4 4 6 7 6 10a6 6 0 0 1-12 0c0-3 2-6 6-10z"/>' },
+    proud: { n: 'Gururlu', why: 'Pomodoro tamamlandı', c: '#F6AD55', i: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>' },
   };
+  ui.moodKey = () => {
+    const T = A().timer, S = A().S, today = S.stats.dayPomos[U.todayKey()] || 0;
+    if (ui._proudUntil && Date.now() < ui._proudUntil) return 'proud';
+    if (T.phase === 'break') return 'fresh';
+    if (T.phase === 'focus' && T.running) return T.round > 0 && T.round % 4 === 0 ? 'tired' : today >= 2 ? 'flow' : 'focused';
+    if (T.phase === 'idle' && T.round > 0 && T.round % 4 === 0) return 'tired';
+    return 'ready';
+  };
+  ui.refreshMood = () => {
+    const k = ui.moodKey(), m = MOODS[k], el = $('#moodlet'); if (!el) return;
+    if (el.dataset.k !== k) { el.dataset.k = k; el.style.setProperty('--mc', m.c); el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${m.i}</svg><b>${m.n}</b>`; el.title = m.why; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+    const me = PW.world && PW.world.avatars.get('me'); if (me) me.av.mood = k === 'tired' ? 'tired' : k === 'proud' || k === 'fresh' ? 'happy' : null;
+  };
+  ui.celebrate = () => { ui._proudUntil = Date.now() + 9000; ui.refreshMood(); setTimeout(ui.refreshMood, 9200); };
 
   /* ---------------- room card ---------------- */
   ui.onRoomChange = (spec, soft) => {
@@ -218,13 +251,14 @@
     const o = ui.ob, body = $('#ob-body');
     $('#ob-steps').innerHTML = [0, 1, 2].map((i) => `<i class="${i <= o.step ? 'on' : ''}"></i>`).join('');
     if (o.step === 0) {
-      body.innerHTML = `<div class="ob-welcome">${MASCOT('big')}<p class="lbl" style="color:var(--tomato2)">Pomodoro World'e hoş geldin</p><h2>Odaklan, birlikte büyü.</h2><p>Kendi 3D odanda arkadaşlarınla pomodoro yap. Her odak dakikası karakterine ve odana yeni bir şey katar.</p>
-        <div class="ob-feats"><div><b>Senin odan</b><span>Duvar rengi, ışık, manzara ve eşyalar tamamen sana özel.</span></div><div><b>Birlikte çalış</b><span>Odanı açık yap ya da linkle sadece arkadaşlarını davet et.</span></div><div><b>Oyunlaştır</b><span>XP, jeton, seviye, lig ve günlük görevler.</span></div></div>
-        ${o.invite ? '<div class="invite-note">Bir davet linkiyle geldin. Karakterini oluşturduktan sonra seni o odaya götüreceğiz.</div>' : ''}
-        <button class="btn" id="ob-next" style="font-size:17px;padding:13px 28px">Karakterimi oluştur</button></div>`;
+      const arrow = '<svg class="ob-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+      body.innerHTML = `<div class="ob-welcome">${MASCOT('big')}<h2>Odaklan, birlikte büyü.</h2>
+        <div class="ob-loop"><figure>${ILLU.ring}<figcaption>Odaklan</figcaption></figure>${arrow}<figure>${ILLU.coin}<figcaption>Kazan</figcaption></figure>${arrow}<figure>${ILLU.sofa}<figcaption>Odanı kur</figcaption></figure>${arrow}<figure>${ILLU.link}<figcaption>Birlikte</figcaption></figure></div>
+        ${o.invite ? '<div class="invite-note">Davetle geldin: karakterinden sonra seni o odaya götüreceğiz.</div>' : ''}
+        <button class="btn" id="ob-next" style="font-size:17px;padding:13px 30px">Başla</button></div>`;
       $('#ob-next').onclick = () => { o.step = 1; ui.renderOnboard(); };
     } else if (o.step === 1) {
-      body.innerHTML = `<header style="margin-bottom:10px"><div><h2>Karakterini oluştur</h2><p style="color:var(--muted);margin:4px 0 0">Yüz, saç ve kıyafet seç. Sonradan Karakter bölümünden her şeyi değiştirebilirsin.</p></div></header>
+      body.innerHTML = `<header style="margin-bottom:10px"><div><h2>Sen kimsin?</h2></div></header>
         <div class="wardrobe"><div class="pv" id="ob-preview"><span class="hint">Döndürmek için sürükle</span><button class="btn sm ghost" id="ob-wave" type="button">El salla</button></div><div><div class="tabs" id="ob-tabs"></div><div id="ob-wbody"></div><div class="foot"><button class="btn ghost" id="ob-back">Geri</button><button class="btn" id="ob-next">Devam</button></div></div></div>`;
       const pv = (ui.obPreview = new PW.Preview($('#ob-preview')));
       ui.wardrobe({ tabs: $('#ob-tabs'), body: $('#ob-wbody'), preview: pv, draft: o.draft, onboarding: true });
@@ -235,9 +269,9 @@
     } else {
       const S = A().S;
       body.innerHTML = `<form id="ob-form" class="ob" style="align-items:center"><div class="pv" id="ob-preview2" style="min-height:360px"></div><div class="ob-form">
-        <div><p class="lbl" style="color:var(--tomato2)">Son adım</p><h2>Kendini tanıt</h2></div>
+        <div><h2>Adın ne?</h2></div>
         <label class="field">Kullanıcı adın<input id="ob-name" maxlength="20" placeholder="ör. Oğuzhan" autocomplete="nickname" required value="${esc(S.name || '')}"></label>
-        <label class="field">Odanın adı <small>Arkadaşların seni bu adla bulur.</small><input id="ob-room" maxlength="32" placeholder="ör. Gece Kütüphanem" value=""></label>
+        <label class="field">Odanın adı<input id="ob-room" maxlength="32" placeholder="ör. Gece Kütüphanem" value=""></label>
         <p id="ob-err" hidden style="color:var(--tomato2);margin:0;font-size:13px">En az 2 karakterlik bir ad yaz.</p>
         <div class="foot" style="justify-content:space-between"><button type="button" class="btn ghost" id="ob-back">Geri</button><button class="btn" style="font-size:16px;padding:12px 24px">Odama gir</button></div></div></form>`;
       const pv = new PW.Preview($('#ob-preview2')); pv.setAvatar(o.draft); setTimeout(() => pv.wave(), 400);
@@ -258,25 +292,24 @@
 
   /* ---------------- guided tour ---------------- */
   const TOUR = [
-    { t: 'Merhaba {name}! Ben Domi.', p: 'Burası senin odan. Pomodoro World\'de odaklandıkça hem karakterin hem odan büyür. Sana 1 dakikada her şeyi göstereyim.' },
-    { sel: '#roomcard', t: 'Masana oturdun', p: 'Karakterin masada seni bekliyor. Sen odaklandığında o da çalışır; molada esner, kahve içer. Odaya gelen arkadaşların da boş sandalyelere oturur.' },
-    { sel: '#btn-focus', t: 'Odaklanmaya buradan başla', p: '25 dakika odak + 5 dakika mola = 1 pomodoro. Dört turda bir uzun mola gelir. Görevini yazar, kategorini seçersin.' },
-    { sel: '#hud-xpwrap', t: 'Her dakika değerli', p: 'Her odak dakikası +1 XP ve +1 jeton. Seviye atladıkça mağazada yeni kıyafet ve eşyaların kilidi açılır.' },
-    { sel: '#btn-edit', t: 'Odanı tasarla', p: 'Duvar rengi ve deseni, zemin, ışık atmosferi (altın saat, gece lambası, mum, neon), pencere manzarası ve her eşyanın rengi sana kalmış.' },
-    { sel: '#btn-invite', t: 'Arkadaşlarını davet et', p: 'Odana ad ver, Açık yap ki Dünya\'da listelensin ya da Kapalı yapıp sadece davet linkiyle arkadaşını çağır.' },
-    { sel: '#nav-world', t: 'Dünya', p: 'Molada sosyal alanlara uğra, diğer oyuncuların açık odalarına katıl ya da davet koduyla bir odaya gir.' },
-    { sel: '#nav-quests', t: 'Görevler ve ödüller', p: 'Her gün giriş ödülün ve günlük, haftalık görevlerin var. Hazırsan ilk pomodorona başlayalım!' },
+    { il: 'room', t: 'Burası senin odan', p: '{name}, hoş geldin!' },
+    { sel: '#btn-focus', il: 'ring', t: 'Başlat, odaklan', p: '25 dk odak · 5 dk mola' },
+    { sel: '#hud-xpwrap', il: 'coin', t: 'Dakika = XP + jeton' },
+    { sel: '#btn-edit', il: 'sofa', t: 'Jetonlarla odanı kur' },
+    { sel: '#btn-invite', il: 'link', t: 'Arkadaşını çağır', p: 'Açık ya da davetle' },
+    { sel: '#nav-world', il: 'globe', t: 'Molada dünyayı gez' },
   ];
   ui.startTour = (invite) => {
-    ui.tour = { i: 0, invite }; $('#tour').classList.add('open'); $('#tour-mascot').innerHTML = MASCOT();
+    ui.tour = { i: 0, invite }; $('#tour').classList.add('open');
     $('#tour-next').onclick = () => { ui.tour.i++; if (ui.tour.i >= TOUR.length) ui.endTour(); else ui.tourStep(); };
     $('#tour-skip').onclick = ui.endTour; ui.tourStep();
   };
   ui.tourStep = () => {
     const st = TOUR[ui.tour.i]; const spot = $('#tour .spot'), card = $('#tour .card');
-    $('#tour-title').textContent = st.t.replace('{name}', A().S.name || ''); $('#tour-text').textContent = st.p;
+    $('#tour-title').textContent = st.t; const tp = $('#tour-text'); tp.textContent = (st.p || '').replace('{name}', A().S.name || ''); tp.hidden = !st.p;
+    $('#tour-mascot').innerHTML = ILLU[st.il] || MASCOT();
     $('#tour-dots').innerHTML = TOUR.map((_, i) => `<i class="${i === ui.tour.i ? 'on' : ''}"></i>`).join('');
-    $('#tour-next').textContent = ui.tour.i === TOUR.length - 1 ? 'Odaklanmaya başla' : 'İleri';
+    $('#tour-next').textContent = ui.tour.i === TOUR.length - 1 ? 'Hadi başlayalım' : 'İleri';
     card.classList.remove('tour-anim'); void card.offsetWidth; card.classList.add('tour-anim'); PW.sfx('pop');
     const el = st.sel && $(st.sel); const vw = window.innerWidth, vh = window.innerHeight;
     if (el && el.offsetParent !== null) {
@@ -299,10 +332,24 @@
     const D = o.draft, pv = o.preview; const L = A().levelInfo().level;
     const tabs = [{ id: 'body', name: 'Vücut', zoom: 'full' }, { id: 'face', name: 'Yüz', zoom: 'face' }, { id: 'hair', name: 'Saç', zoom: 'head' }, { id: 'beard', name: 'Sakal', zoom: 'face', g: 'm' }, { id: 'top', name: 'Üst', zoom: 'torso' }, { id: 'bottom', name: 'Alt', zoom: 'legs' }, { id: 'shoes', name: 'Ayakkabı', zoom: 'legs' }, ...(o.onboarding ? [] : [{ id: 'acc', name: 'Aksesuar', zoom: 'full' }])];
     o.slot = o.slot || 'body';
+    const react = () => { if (pv.av) pv.av.doEmote(U.pick(['clap', 'cheer', 'wave']), 1300); };
+    const SLOTKEYS = { body: ['sk', 'ht', 'bd', 'ps'], face: ['ey', 'ec', 'br', 'mo', 'bl', 'fr', 'lp'], hair: ['hs', 'hc'], beard: ['fh'], top: ['top', 'tc', 'tc2', 'tp'], bottom: ['bot', 'bc'], shoes: ['sh', 'shc'], acc: ['acc'] };
+    const usable = (id) => A().isOwned(id) || (PW.ITEM[id] && PW.ITEM[id].price === 0);
+    // "smart randomize": only the current category (everything on the body tab), only parts you own
+    const randomize = () => {
+      let R = PW.randomAvatar(); for (let i = 0; i < 12 && R.g !== D.g; i++) R = PW.randomAvatar();
+      if (R.g !== D.g) return;
+      const keys = o.slot === 'body' ? Object.values(SLOTKEYS).flat().filter((k) => o.onboarding ? k !== 'acc' : true) : SLOTKEYS[o.slot] || [];
+      keys.forEach((k) => { if (['hs', 'top', 'bot', 'sh', 'fh'].includes(k)) { if (usable(R[k])) D[k] = R[k]; } else if (k === 'acc') D.acc = (R.acc || []).filter(usable); else if (R[k] !== undefined) D[k] = R[k]; });
+      draw(); react();
+    };
     const draw = () => {
+      if (!D.ps) D.ps = 'cheer';
       pv.setAvatar(D); const slot = tabs.find((t) => t.id === o.slot) || tabs[0]; pv.setZoom(slot.zoom);
       o.tabs.innerHTML = tabs.filter((t) => !t.g || t.g === D.g).map((t) => `<button type="button" class="${t.id === o.slot ? 'on' : ''}" data-slot="${t.id}">${t.name}</button>`).join('');
+      o.tabs.insertAdjacentHTML('beforeend', '<button type="button" class="dice" data-dice title="Rastgele" aria-label="Rastgele"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1.3"/><circle cx="15" cy="15" r="1.3"/><circle cx="15" cy="9" r="1.3"/><circle cx="9" cy="15" r="1.3"/><circle cx="12" cy="12" r="1.3"/></svg></button>');
       $$('[data-slot]', o.tabs).forEach((b) => (b.onclick = () => { o.slot = b.dataset.slot; draw(); }));
+      $('[data-dice]', o.tabs).onclick = randomize;
       const sw = (arr, key, label) => `<div class="pal"><span>${label}</span><div>${arr.map((c, i) => `<button type="button" class="sw ${D[key] === i ? 'on' : ''}" style="--c:${c}" data-k="${key}" data-i="${i}" aria-label="${label} ${i + 1}"></button>`).join('')}</div></div>`;
       const opt = (list, key, label) => `<div class="pal"><span>${label}</span><div class="opt-grid">${list.map(([v, n]) => `<button type="button" class="${D[key] === v ? 'on' : ''}" data-o="${key}" data-v="${v}">${n}</button>`).join('')}</div></div>`;
       let h = '';
@@ -311,6 +358,7 @@
         h += sw(PW.SKIN, 'sk', 'Ten rengi');
         h += `<div class="pal"><span>Boy</span><input type="range" class="range" id="w-ht" min="0.9" max="1.1" step="0.01" value="${D.ht || 1}" aria-label="Boy"></div>`;
         h += opt(PW.BODY_TYPES, 'bd', 'Vücut tipi');
+        h += opt(PW.PERSONAS, 'ps', 'Tavır (yürüyüş ve duruş)');
       } else if (o.slot === 'face') {
         h += opt(PW.EYE_STYLES, 'ey', 'Göz şekli') + sw(PW.EYEC, 'ec', 'Göz rengi') + opt(PW.BROW_STYLES, 'br', 'Kaş') + opt(PW.MOUTH_STYLES, 'mo', 'Ağız');
         h += `<div class="pal"><span>Detaylar</span><div class="opt-grid"><button type="button" class="${D.bl ? 'on' : ''}" data-t="bl">Allık</button><button type="button" class="${D.fr ? 'on' : ''}" data-t="fr">Çil</button></div></div>`;
@@ -328,7 +376,7 @@
       o.body.innerHTML = h;
       $$('.seg [data-g]', o.body).forEach((b) => (b.onclick = () => { if (D.g === b.dataset.g) return; const keep = { sk: D.sk, hc: D.hc, ec: D.ec, ht: D.ht }; const nd = Object.assign(PW.defaultAvatar(b.dataset.g), keep); Object.keys(D).forEach((k) => delete D[k]); Object.assign(D, nd); draw(); pv.wave(); }));
       $$('.sw[data-k]', o.body).forEach((b) => (b.onclick = () => { D[b.dataset.k] = +b.dataset.i; draw(); }));
-      $$('[data-o]', o.body).forEach((b) => (b.onclick = () => { D[b.dataset.o] = b.dataset.v; draw(); }));
+      $$('[data-o]', o.body).forEach((b) => (b.onclick = () => { D[b.dataset.o] = b.dataset.v; draw(); if (b.dataset.o === 'ps' && pv.av) { pv.av.setState('walk'); setTimeout(() => pv.av && pv.av.setState('stand'), 1800); } }));
       $$('[data-t]', o.body).forEach((b) => (b.onclick = () => { D[b.dataset.t] = D[b.dataset.t] ? 0 : 1; draw(); }));
       const ht = $('#w-ht', o.body); if (ht) ht.oninput = () => { D.ht = +ht.value; clearTimeout(o._ht); o._ht = setTimeout(() => pv.setAvatar(D), 60); };
       $$('.it[data-item]', o.body).forEach((b) => (b.onclick = () => {
@@ -336,7 +384,7 @@
         if (!A().isOwned(it.id)) { if (L < it.lvl) return ui.toast(it.name + ' kilitli', `Seviye ${it.lvl}'de açılır.`); return ui.confirmBuy(it, () => draw()); }
         if (it.slot === 'acc') { if (D.acc.includes(it.id)) D.acc = D.acc.filter((x) => x !== it.id); else { D.acc = D.acc.filter((x) => PW.ITEM[x].sub !== it.sub); D.acc.push(it.id); } }
         else D[SLOT_KEY[it.slot]] = it.id;
-        draw();
+        draw(); react();
       }));
     };
     draw();
@@ -468,17 +516,29 @@
   };
 
   /* ---------------- room designer ---------------- */
+  // one-click styled rooms (surfaces + light), like The Sims' "styled rooms"
+  PW.ROOM_STYLES = [
+    { id: 'warm', n: 'Sıcak Ahşap', wall: '#E9DCC8', wallPat: 'plain', floorT: 'plank', floorC: '#B07D52', trim: '#7A5233', curtain: '#C98FA6', mood: 'golden' },
+    { id: 'scandi', n: 'İskandinav', wall: '#F2EFEA', wallPat: 'plain', floorT: 'plank', floorC: '#D9C2A0', trim: '#F6F4EF', curtain: '#E9DCC8', mood: 'day' },
+    { id: 'pastel', n: 'Pastel Rüya', wall: '#F3D6E0', wallPat: 'dots', floorT: 'carpet', floorC: '#D9CFF0', trim: '#F6F4EF', curtain: '#8E6CC1', mood: 'day' },
+    { id: 'garden', n: 'Bahar Bahçesi', wall: '#DDE8D2', wallPat: 'floral', floorT: 'herring', floorC: '#C49A6C', trim: '#F6F4EF', curtain: '#2F7D5B', mood: 'day' },
+    { id: 'turk', n: 'Çini Köşe', wall: '#F1EADB', wallPat: 'cini', floorT: 'tile', floorC: '#C77B54', trim: '#1F5FA8', curtain: '#C7432F', mood: 'golden' },
+    { id: 'loft', n: 'Loft', wall: '#B5634B', wallPat: 'brick', floorT: 'concrete', floorC: '#8C8C8C', trim: '#2A2B33', curtain: '#5B6270', mood: 'golden' },
+    { id: 'library', n: 'Gece Kütüphanesi', wall: '#2F4A3E', wallPat: 'wainscot', floorT: 'herring', floorC: '#6B4630', trim: '#C9A35A', curtain: '#22406E', mood: 'night' },
+    { id: 'japan', n: 'Japon Sadeliği', wall: '#EFE6D2', wallPat: 'shoji', floorT: 'tatami', floorC: '#CDBB8A', trim: '#5B4636', curtain: '#E9DCC8', mood: 'candle' },
+    { id: 'gamer', n: 'Neon Oyuncu', wall: '#2A2B3D', wallPat: 'stripe', floorT: 'concrete', floorC: '#3B3D4F', trim: '#2A2B33', curtain: '#22406E', mood: 'neon' },
+  ];
   ui.parkMe = () => { const w = PW.world; w.standAvatar('me'); const me = w.avatars.get('me'); if (me) { me.target = null; me.av.root.position.set(w.half - 0.6, 0, w.half - 0.6); me.av.setState('stand'); } };
   ui.setEditing = (on, quiet) => {
     const w = PW.world; if (!w) return;
     if (on && (!A().room || A().room.kind !== 'home')) { A().enterHome().then(() => ui.setEditing(true)); return; }
     if (on && ui.focusOpen) ui.closeFocus();
     const was = w.edit.on;
-    w.setEdit(on); $('#editbar').hidden = !on; document.body.classList.toggle('editing', on);
+    w.setEdit(on); $('#editbar').hidden = !on; document.body.classList.toggle('editing', on); w.hideTags = on;
     if (on) { ui.parkMe(); ui.renderEditBar(); if (!quiet) ui.toast('Odanı tasarla', 'Eşya seç → yere/duvara tıkla. Eşyaya tıklayınca rengini değiştirebilirsin.'); }
-    else if (was && A().room && A().room.kind === 'home') { A().ensureSeated(true); A().myAct(); A().publish(); }
+    else if (was) { if (w.wallMode !== 'cut') w.setWallMode('cut'); if (w.topView) ui.topView(); if (A().room && A().room.kind === 'home') { A().ensureSeated(true); A().myAct(); A().publish(); } }
   };
-  const roomSet = (patch) => { Object.assign(A().S.room, patch); A().save(); A().rebuildHome(); PW.world.setEdit(true); ui.parkMe(); ui.renderEditBar(); };
+  const roomSet = (patch) => { ui.pushUndo(); Object.assign(A().S.room, patch); A().save(); A().rebuildHome(); PW.world.setEdit(true); ui.parkMe(); ui.renderEditBar(); };
   ui.renderEditBar = () => {
     const S = A().S, R = S.room, w = PW.world, bar = $('#e-list'), sub = $('#e-sub'); const L = A().levelInfo().level;
     $$('#e-tabs [data-etab]').forEach((b) => b.classList.toggle('on', b.dataset.etab === ui.etab));
@@ -487,11 +547,17 @@
     ['#e-rot', '#e-move', '#e-del'].forEach((q) => ($(q).disabled = !selIt));
     sub.innerHTML = ''; bar.innerHTML = '';
     const def = A().homeDef();
-    if (ui.etab === 'furn') {
+    $('#e-undo').disabled = !ui.hist.u.length; $('#e-redo').disabled = !ui.hist.r.length; $('#e-copy').disabled = !selIt || !!selIt.w;
+    if (ui.etab === 'style') {
+      const cur = PW.ROOM_STYLES.find((st) => ['wall', 'wallPat', 'floorT', 'floorC', 'mood'].every((k) => R[k] === st[k]));
+      bar.innerHTML = PW.ROOM_STYLES.map((st) => { const lv = Math.max(PW.SURFACE_LVL[st.wallPat] || 1, PW.SURFACE_LVL[st.floorT] || 1, PW.MOOD_LVL[st.mood] || 1); const lock = L < lv; const d = Object.assign({}, def, st);
+        return `<button class="stylecard ${cur === st ? 'on' : ''}" data-style-id="${st.id}" ${lock ? 'disabled' : ''}><span class="sw2"><i style="background-image:url(${PW.surfaceSwatch('wallPat', st.wallPat, d)})"></i><i style="background-image:url(${PW.surfaceSwatch('floorT', st.floorT, d)})"></i></span><b>${esc(st.n)}</b><span>${lock ? 'Seviye ' + lv : esc(PW.MOODS[st.mood].name)}</span></button>`; }).join('');
+      $$('[data-style-id]', bar).forEach((b) => (b.onclick = () => { const st = PW.ROOM_STYLES.find((x) => x.id === b.dataset.styleId); roomSet({ wall: st.wall, wallPat: st.wallPat, floorT: st.floorT, floorC: st.floorC, trim: st.trim, curtain: st.curtain, mood: st.mood }); A().qProg('w_decor', 1); }));
+    } else if (ui.etab === 'furn') {
       if (selIt && !selIt.w) {
         sub.innerHTML = `<div class="swatches"><span class="lbl">Kumaş / renk</span>${PW.FABRIC_COLORS.map((c) => `<button class="sw ${selIt.c === c ? 'on' : ''}" style="--c:${c}" data-ic="${c}" aria-label="Renk"></button>`).join('')}</div><div class="swatches"><span class="lbl">Ahşap</span>${Object.entries(PW.WOOD_TONES).map(([k, c]) => `<button class="sw ${selIt.wd === k ? 'on' : ''}" style="--c:${c}" data-iw="${k}" aria-label="${k}"></button>`).join('')}</div>`;
-        $$('[data-ic]', sub).forEach((b) => (b.onclick = () => { selIt.c = b.dataset.ic; A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(sel); ui.renderEditBar(); }));
-        $$('[data-iw]', sub).forEach((b) => (b.onclick = () => { selIt.wd = b.dataset.iw; A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(sel); ui.renderEditBar(); }));
+        $$('[data-ic]', sub).forEach((b) => (b.onclick = () => { ui.pushUndo(); selIt.c = b.dataset.ic; A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(sel); ui.renderEditBar(); }));
+        $$('[data-iw]', sub).forEach((b) => (b.onclick = () => { ui.pushUndo(); selIt.wd = b.dataset.iw; A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(sel); ui.renderEditBar(); }));
       }
       const ids = Object.keys(S.owned).filter((id) => PW.ITEM[id] && PW.ITEM[id].cat === 'furn').sort((a, b) => ((A().available(b) > 0) - (A().available(a) > 0)) || PW.ITEM[a].sub.localeCompare(PW.ITEM[b].sub));
       bar.innerHTML = ids.map((id) => { const av = A().available(id); return `<button class="eit ${av > 0 ? '' : 'none'}" data-place="${id}" ${av > 0 ? '' : 'disabled'} title="${esc(PW.ITEM[id].name)}"><img alt="" src="${PW.thumb(id)}"><span>${esc(PW.ITEM[id].name)}</span><i>${av}</i></button>`; }).join('') + `<button class="eit shop" data-open-shop="1"><span>Mağazaya git</span></button>`;
@@ -520,19 +586,31 @@
     } else {
       const cat = ui.etab; const cur = cat === 'theme' ? R.theme : cat === 'view' ? R.view : 'sz_' + { 7: 's', 9: 'm', 11: 'l' }[R.size];
       bar.innerHTML = PW.CATALOG.filter((i) => i.cat === cat).map((it) => { const own = A().isOwned(it.id); return `<button class="eit ${it.id === cur ? 'on' : ''} ${own ? '' : 'none'}" data-apply="${it.id}" title="${esc(it.name)}"><img alt="" src="${PW.thumb(it.id)}"><span>${esc(it.name)}</span>${own ? '' : `<i class="p">${COIN}${it.price}</i>`}</button>`; }).join('');
-      $$('[data-apply]', bar).forEach((b) => (b.onclick = () => { const it = PW.ITEM[b.dataset.apply]; if (!A().isOwned(it.id)) { if (L < it.lvl) return ui.toast(it.name + ' kilitli', `Seviye ${it.lvl}'de açılır.`); return ui.confirmBuy(it, () => { ui.applyPurchase(it.id); PW.world.setEdit(true); ui.parkMe(); ui.renderEditBar(); }); } if (it.cat === 'size' && it.size < R.size && R.items.some((x) => !x.w && (Math.abs(x.x) > it.size / 2 - 0.3 || Math.abs(x.z) > it.size / 2 - 0.3))) return ui.toast('Oda küçültülemedi', 'Önce kenardaki eşyaları ortaya taşı.'); ui.applyPurchase(it.id); PW.world.setEdit(true); ui.parkMe(); ui.renderEditBar(); }));
+      $$('[data-apply]', bar).forEach((b) => (b.onclick = () => { const it = PW.ITEM[b.dataset.apply]; if (!A().isOwned(it.id)) { if (L < it.lvl) return ui.toast(it.name + ' kilitli', `Seviye ${it.lvl}'de açılır.`); return ui.confirmBuy(it, () => { ui.applyPurchase(it.id); PW.world.setEdit(true); ui.parkMe(); ui.renderEditBar(); }); } if (it.cat === 'size' && it.size < R.size && R.items.some((x) => !x.w && (Math.abs(x.x) > it.size / 2 - 0.3 || Math.abs(x.z) > it.size / 2 - 0.3))) return ui.toast('Oda küçültülemedi', 'Önce kenardaki eşyaları ortaya taşı.'); ui.pushUndo(); ui.applyPurchase(it.id); PW.world.setEdit(true); ui.parkMe(); ui.renderEditBar(); }));
     }
   };
+  /* undo / redo — "it should be fun to make mistakes" */
+  ui.hist = { u: [], r: [] };
+  const ROOMK = ['items', 'theme', 'view', 'size', 'mood', 'wall', 'wallPat', 'floorT', 'floorC', 'trim', 'curtain'];
+  const snap = () => JSON.stringify(ROOMK.reduce((o, k) => ((o[k] = A().S.room[k]), o), {}));
+  const restore = (j) => { const o = JSON.parse(j); ROOMK.forEach((k) => { if (o[k] === undefined) delete A().S.room[k]; else A().S.room[k] = o[k]; }); A().save(); A().rebuildHome(); PW.world.setEdit(true); ui.parkMe(); PW.world.select(-1); ui.renderEditBar(); };
+  ui.pushUndo = () => { ui.hist.u.push(snap()); if (ui.hist.u.length > 40) ui.hist.u.shift(); ui.hist.r = []; };
+  ui.undo = () => { if (!ui.hist.u.length) return; ui.hist.r.push(snap()); restore(ui.hist.u.pop()); };
+  ui.redo = () => { if (!ui.hist.r.length) return; ui.hist.u.push(snap()); restore(ui.hist.r.pop()); };
+  ui.cycleWalls = () => { const w = PW.world; const next = { cut: 'up', up: 'down', down: 'cut' }[w.wallMode || 'cut']; w.setWallMode(next); const b = $('#e-walls'); b.dataset.mode = next; b.title = { cut: 'Duvarlar: kesik görünüm', up: 'Duvarlar: tamamen açık', down: 'Duvarlar: alçak' }[next]; ui.toast({ cut: 'Kesik duvarlar', up: 'Duvarlar yukarıda', down: 'Duvarlar aşağıda' }[next], ''); };
+  ui.topView = () => { const on = PW.world.toggleTopView(); const b = $('#e-top'); if (b) b.classList.toggle('on', on); };
+  ui.editCopy = () => { const w = PW.world, it = A().S.room.items[w.edit.sel]; if (!it || it.w) return; if (A().available(it.id) <= 0) return ui.toast('Envanterde yok', 'Aynısından bir tane daha mağazadan alabilirsin.'); w.select(-1); w.startGhost(it.id, it.r || 0, { c: it.c, wd: it.wd }); ui.renderEditBar(); };
+
   ui.onPlace = (pos) => {
     const S = A().S;
     if (A().available(pos.id) <= 0) return ui.toast('Envanterde kalmadı', 'Mağazadan bir tane daha alabilirsin.');
-    S.room.items.push(pos); A().save(); A().checkAch(); A().qProg('w_decor', 1);
+    ui.pushUndo(); S.room.items.push(pos); A().save(); A().checkAch(); A().qProg('w_decor', 1);
     A().rebuildHome(); PW.world.setEdit(true); ui.parkMe(); ui.renderEditBar();
     if (A().available(pos.id) > 0) PW.world.startGhost(pos.id, pos.r || 0, { c: pos.c, wd: pos.wd });
   };
-  ui.editRotate = () => { const w = PW.world; if (w.rotateGhost()) return; const S = A().S, i = w.edit.sel; if (i < 0 || !S.room.items[i] || S.room.items[i].w) return; S.room.items[i].r = ((S.room.items[i].r || 0) + 1) % 4; A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(i); ui.renderEditBar(); };
-  ui.editRemove = () => { const w = PW.world, S = A().S, i = w.edit.sel; if (i < 0 || !S.room.items[i]) return; S.room.items.splice(i, 1); A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(-1); ui.renderEditBar(); };
-  ui.editMove = () => { const w = PW.world, S = A().S, i = w.edit.sel; if (i < 0 || !S.room.items[i]) return; const it = S.room.items.splice(i, 1)[0]; A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(-1); w.startGhost(it.id, it.r || 0, { c: it.c, wd: it.wd }); ui.renderEditBar(); };
+  ui.editRotate = () => { const w = PW.world; if (w.rotateGhost()) return; const S = A().S, i = w.edit.sel; if (i < 0 || !S.room.items[i] || S.room.items[i].w) return; ui.pushUndo(); S.room.items[i].r = ((S.room.items[i].r || 0) + 1) % 4; A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(i); ui.renderEditBar(); };
+  ui.editRemove = () => { const w = PW.world, S = A().S, i = w.edit.sel; if (i < 0 || !S.room.items[i]) return; ui.pushUndo(); S.room.items.splice(i, 1); A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(-1); ui.renderEditBar(); };
+  ui.editMove = () => { const w = PW.world, S = A().S, i = w.edit.sel; if (i < 0 || !S.room.items[i]) return; ui.pushUndo(); const it = S.room.items.splice(i, 1)[0]; A().save(); A().rebuildHome(); w.setEdit(true); ui.parkMe(); w.select(-1); w.startGhost(it.id, it.r || 0, { c: it.c, wd: it.wd }); ui.renderEditBar(); };
 
   /* ---------------- profile ---------------- */
   ui.renderProfile = () => {
