@@ -2,3 +2,8 @@ dist/
 node_modules/
 .DS_Store
 test_avatar.html
+node_modules/
+client/dist/
+.env
+.env.*
+*.log

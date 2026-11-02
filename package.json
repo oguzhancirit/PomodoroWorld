@@ -1,0 +1,26 @@
+{
+  "name": "pomodoro-world",
+  "private": true,
+  "version": "2.0.0-dev",
+  "description": "Pomodoro World v2: React + three.js (R3F) client, Colyseus server, shared rules",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "test": "npm run test -w shared && npm run test -w server",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client",
+    "avatars": "cd tools && node strip-models.mjs && node retarget.mjs"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
+    "meshoptimizer": "1.3.0",
+    "three": "0.186.1"
+  }
+}
