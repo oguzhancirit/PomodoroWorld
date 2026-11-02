@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#e9e4dc;overflow:hidden}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { decodeClip } from '/client/src/avatar/clipCodec.js';
+const q = new URLSearchParams(location.search);
+const g = q.get('g') || 'm', clipName = q.get('clip') || 'Sit', t = +(q.get('t') || 0.5);
+const parts = (q.get('parts') || (g === 'm' ? 'Casual_Hoodie' : 'Casual')).split(',');
+const R = new THREE.WebGLRenderer({ antialias: true }); R.setSize(innerWidth, innerHeight); document.body.appendChild(R.domElement);
+R.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#e9e4dc');
+scene.add(new THREE.HemisphereLight('#fff', '#888', 2.2)); const dl = new THREE.DirectionalLight('#fff', 2); dl.position.set(3, 5, 4); scene.add(dl);
+const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.1, 50);
+const view = q.get('view') || 'side';
+cam.position.set(...(view === 'front' ? [0, 1.1, 4.2] : view === 'back' ? [0, 1.4, -4] : view === 'q' ? [-1.6, 1.7, 2.6] : [3.6, 1.2, 1.6])); cam.lookAt(0, 0.75, 0.2);
+const l = new GLTFLoader(); l.setMeshoptDecoder(MeshoptDecoder);
+const gl = await l.loadAsync(q.get("src") === "orig" ? `/tools/avatar-src/${g === "m" ? "men" : "women"}.glb` : `/client/public/avatars/body-${g}.glb`);
+const root = gl.scene;
+const keep = new Set(parts.length === 1 ? ['Head', 'Body', 'Legs', 'Feet'].map((s) => `${parts[0]}_${s}`) : parts);
+root.traverse((o) => { if (o.parent === root.children[0] && !o.isBone && o.name) o.visible = keep.has(o.name); });
+scene.add(root);
+// chair + desk proxies
+const json = await (await fetch(`/client/public/avatars/clips-${g}.json`)).json();
+root.scale.setScalar(json.meta.scale || 1);
+const seatY = json.meta.sitHipY - 0.08;
+const chair = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.5), new THREE.MeshStandardMaterial({ color: '#8a5a33' })); chair.position.set(0, seatY, -0.05); scene.add(chair);
+const desk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.6), new THREE.MeshStandardMaterial({ color: '#c49a6c' })); desk.position.set(0, 0.76, 0.55); scene.add(desk);
+desk.visible = chair.visible = clipName.startsWith('Sit');
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: '#d9d2c5' })); floor.rotation.x = -Math.PI / 2; scene.add(floor);
+const clips = json.clips.map(decodeClip);
+const mixer = new THREE.AnimationMixer(root);
+const clip = clips.find((c) => c.name === clipName);
+mixer.clipAction(clip).play(); mixer.setTime(t * clip.duration);
+R.render(scene, cam);
+window.__done = { clips: clips.map((c) => c.name + ':' + c.duration.toFixed(2)), meta: json.meta };
+</script></body></html>
