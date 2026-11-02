@@ -255,9 +255,11 @@
   ];
 
   PW.TIMER_PRESETS = [
+    { id: 'p15', name: '15 / 3', focus: 15, brk: 3, long: 10, hint: 'Isınma' },
     { id: 'p25', name: '25 / 5', focus: 25, brk: 5, long: 15, hint: 'Dengeli' },
     { id: 'p50', name: '50 / 10', focus: 50, brk: 10, long: 20, hint: 'Derin' },
     { id: 'p90', name: '90 / 20', focus: 90, brk: 20, long: 30, hint: 'Maraton' },
+    { id: 'p45', name: '45 / 15', focus: 45, brk: 15, long: 25, hint: 'Etüt' },
   ];
 
   // ---------- Public rooms ----------
@@ -286,24 +288,10 @@
   PW.DEFAULT_ROOM = () => ({
     name: 'Odam', desc: 'Birlikte odaklanalım.', cat: 'Genel', open: true, token: Math.random().toString(36).slice(2, 8),
     theme: 'th_wood', view: 'v_city_day', size: 7, mood: 'golden', wall: '#E9DCC8', wallPat: 'plain', floorT: 'plank', floorC: '#B07D52', curtain: '#C98FA6',
+    // a new player starts with an empty room: just a desk and its chair; everything else is earned
     items: [
       { id: 'f_desk_wood', x: 0.2, z: -1.15, r: 0 },
       { id: 'f_chair_wood', x: 0.2, z: -1.9, r: 0 },
-      { id: 'f_chair_wood', x: 1.35, z: -1.15, r: 3 },
-      { id: 'f_cushion', x: -1.4, z: 0.6, r: 1, c: '#E8803A' },
-      { id: 'd_laptop', x: 0.4, z: -1.25, r: 2 },
-      { id: 'd_lamp', x: -0.3, z: -0.95, r: 2 },
-      { id: 'd_mug', x: 0.0, z: -1.3, r: 0 },
-      { id: 'd_plant', x: 0.78, z: -0.95, r: 0 },
-      { id: 'f_rug_round', x: 0.2, z: -1.3, r: 0 },
-      { id: 'f_bookshelf', x: -3.25, z: -0.8, r: 1 },
-      { id: 'f_monstera', x: -2.9, z: -2.9, r: 0 },
-      { id: 'f_lamp_floor', x: 2.9, z: -2.9, r: 0 },
-      { id: 'f_bed_single', x: 2.85, z: 1.6, r: 2, c: '#3E7CB1' },
-      { id: 'f_teddy', x: -2.9, z: 2.9, r: 0 },
-      { id: 'w_frames', w: 'w1', x: -1.6 },
-      { id: 'w_clock', w: 'w0', x: -2.5 },
-      { id: 'w_cork', w: 'w3', x: -1.2 },
     ],
   });
   PW.ROOM_CATS = ['Genel', 'YKS', 'LGS', 'KPSS', 'ALES/YDS', 'Üniversite', 'Yazılım', 'Dil', 'Sanat & Tasarım', 'İş'];

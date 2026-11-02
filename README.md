@@ -10,10 +10,14 @@
    - Arkadaşın Elif seni odasına çağırır; içeri girip masaya oturursun, "Birlikte başlat" ile sayaçlarınız eşitlenir.
    - Molada Dünya'dan Meydan Kafe'ye gidip sohbete yazarsın; diğerleri cevap verir.
    - Hızlandırılmış bölüm: Günler akarken (gündüz → akşam → gece) XP ve jeton toplanır, seviye atlanır. Jetonlar harcandıkça boş oda adım adım dolar: halı, lamba, kitaplık, bitki, duvar kâğıdı, parke, puf, fotoğraflar ve Boğaz manzarası eklenir.
+   - İlk iki bölüm hızlı akar (yaklaşık 1,6 kat), son bölüm kendi ritmindedir.
    - Film "Karakterimi oluştur" ile biter. İstenirse "Geç" ile atlanabilir, Profil'den tekrar izlenebilir.
 2. **Karakter oluşturma**: vücut, boy, tavır (yürüyüş/duruş), yüz, saç, sakal, 66 kıyafet ve aksesuar parçası, desen ve renkler. Zar düğmesi yalnızca seçili kategoriyi rastgele değiştirir.
-3. **İsim ve oda adı** → kamera odana süzülür → ilk pomodoro ekranı.
-4. **Odak ekranı**: tek halka, süre ve tek bir Başlat düğmesi. Süre, çalışma şekli ve kategori küçük bir menünün içinde.
+3. **İsim ve oda adı** → kamera odana süzülür. Yeni oda boştur: yalnızca bir masa ve sandalye. Pomodoro kendiliğinden açılmaz; "Odaklan" ile sen açarsın.
+4. **Odak ekranı** (Odakoo'daki gibi yazı yazdırmadan):
+   - **Ne çalışacaksın?**: Ders, Okuma, Kodlama, Proje / İş, Yazı, Dil, Diğer. Seçim karakterin masadaki hareketini de belirler (okuma → kitap, ders/yazı → not alma, kodlama → klavye).
+   - **Süre (odak / mola)**: 15/3 Isınma, 25/5 Dengeli, 50/10 Derin, 90/20 Maraton, 45/15 Etüt ve "Sana özel" (odak 5–180 dk, mola 1–60 dk).
+   - Tek "Başlat" düğmesi. Sayaç çalışırken seçim paneli gizlenir, halkada yalnızca kalan süre ve seçilen tür kalır.
 
 ## The Sims serisinden alınanlar
 

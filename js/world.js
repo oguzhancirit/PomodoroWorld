@@ -207,7 +207,7 @@
           PW.cyl(tall, 0.018, 0.018, ww + 1.3, PW.mat('#2A2B33', { metal: 0.6, rough: 0.3 }), 0, 2.68, 0.2, 8).rotation.z = Math.PI / 2;
           for (const sx of [-1, 1]) PW.sph(tall, 0.035, PW.mat('#C9A15A', { metal: 0.8, rough: 0.3 }), sx * (ww / 2 + 0.66), 2.68, 0.2, 10, 8);
           // sill plant
-          const sp = new THREE.Group(); sp.position.set(0.85, y0 + 0.04, 0.12); tall.add(sp); if (PW.hasModel('d_plant')) { const pl = PW.buildItem('d_plant'); sp.add(pl); }
+          if (def.sill) { const sp = new THREE.Group(); sp.position.set(0.85, y0 + 0.04, 0.12); tall.add(sp); if (PW.hasModel('d_plant')) { const pl = PW.buildItem('d_plant'); sp.add(pl); } }
         } else {
           const m = new THREE.Mesh(new THREE.BoxGeometry(len, WALL_H, WALL_T), wm); m.position.y = WALL_H / 2; m.receiveShadow = true; m.castShadow = true; tall.add(m);
         }
@@ -443,7 +443,7 @@
         if (a.target) {
           const dx = a.target.x - root.position.x, dz = a.target.z - root.position.z, dist = Math.hypot(dx, dz);
           if (dist < 0.05) { a.target = null; av.setState('stand'); if (a.onArrive) { const f = a.onArrive; a.onArrive = null; f(); } }
-          else { av.setState('walk'); const s = Math.min(dist, dt * 1.9); root.position.x += (dx / dist) * s; root.position.z += (dz / dist) * s; const want = Math.atan2(dx, dz); let d = want - root.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); root.rotation.y += d * Math.min(1, dt * 10); }
+          else { av.setState('walk'); const s = Math.min(dist, dt * 1.9 * (PW.walkBoost || 1)); root.position.x += (dx / dist) * s; root.position.z += (dz / dist) * s; const want = Math.atan2(dx, dz); let d = want - root.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d)); root.rotation.y += d * Math.min(1, dt * 10); }
         }
         av.update(dt, this.time);
         av.headWorld(this.tmpV); this.tmpV.y += 0.1; this.tmpV.project(this.camera);

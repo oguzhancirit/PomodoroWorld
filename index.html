@@ -805,7 +805,7 @@ body.cinema .top, body.cinema .side, body.cinema .chat, body.cinema .mini, body.
 .cn-shade { position: absolute; left: 0; right: 0; bottom: 0; height: 32vh; background: linear-gradient(180deg, transparent, rgba(0,0,0,.55)); }
 .cn-prog { position: absolute; top: calc(7vh + 12px); left: 50%; transform: translateX(-50%); display: flex; gap: 6px; width: min(360px, 60vw); }
 .cn-prog i { flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,.25); overflow: hidden; position: relative; }
-.cn-prog i.done { background: #fff; } .cn-prog i.on::after { content: ""; position: absolute; inset: 0; background: #fff; transform-origin: left; animation: cnfill 11s linear forwards; }
+.cn-prog i.done { background: #fff; } .cn-prog i.on::after { content: ""; position: absolute; inset: 0; background: #fff; transform-origin: left; animation: cnfill 7s linear forwards; }
 @keyframes cnfill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .cn-skip { position: absolute; top: calc(7vh + 4px); right: max(16px, env(safe-area-inset-right, 0px)); pointer-events: auto; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; border-radius: 99px; padding: 7px 14px; font-weight: 800; font-size: 13px; z-index: 2; }
 .cn-cap { position: absolute; left: 50%; bottom: calc(7vh + 18px); transform: translateX(-50%); width: min(640px, calc(100% - 32px)); text-align: center; color: #fff; opacity: 0; }
@@ -975,6 +975,41 @@ nav.main svg { stroke-width: 1.7; }
 .tag .bubble { font-family: var(--f-body); font-weight: 600; border-radius: 14px; box-shadow: 0 10px 24px -8px rgba(0, 0, 0, .5); }
 /* cinematic type */
 .cn-cap b, .cn-end b { font-family: var(--f-display); font-weight: 700; letter-spacing: -.01em; }
+
+/* ---------- focus start screen: pick what & how long, then one tap ---------- */
+#fx-set, #fx-task { display: none !important; }
+.fx-catlbl { font: 600 14px/1.2 var(--f-body); color: rgba(255,255,255,.82); display: inline-flex; align-items: center; gap: 6px; }
+.fx-catlbl i { width: 8px; height: 8px; border-radius: 50%; background: var(--c, #FF8466); }
+.fx-setup { display: grid; gap: 12px; width: 100%; padding: 14px; border-radius: 20px; background: rgba(18,16,30,.72); border: 1px solid rgba(255,255,255,.08); backdrop-filter: blur(14px); box-shadow: var(--hi), var(--sh); box-sizing: border-box; }
+#focus:not([data-phase="idle"]) .fx-setup { display: none; }
+.fx-sec { display: grid; gap: 8px; }
+.fx-h { font: 700 10.5px/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.55); text-align: left; }
+.fx-cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.fx-cat { display: grid; justify-items: center; gap: 5px; padding: 9px 4px 8px; border-radius: 13px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color: rgba(255,255,255,.75); font: 600 11.5px/1.15 var(--f-body); transition: background .15s, border-color .15s, color .15s, transform .15s; }
+.fx-cat svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.fx-cat:hover { background: rgba(255,255,255,.08); color: #fff; }
+.fx-cat[aria-checked="true"] { color: #fff; background: color-mix(in srgb, var(--c) 22%, transparent); border-color: color-mix(in srgb, var(--c) 70%, transparent); }
+.fx-cat[aria-checked="true"] svg { stroke: var(--c); }
+.fx-durs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.fx-dur { display: grid; gap: 2px; padding: 9px 6px; border-radius: 13px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color: #fff; transition: background .15s, border-color .15s; }
+.fx-dur b { font: 600 17px/1 var(--f-display); font-variant-numeric: tabular-nums; } .fx-dur b small { font-size: 12px; color: rgba(255,255,255,.55); font-weight: 500; }
+.fx-dur span { font-size: 10.5px; font-weight: 600; color: rgba(255,255,255,.55); }
+.fx-dur:hover { background: rgba(255,255,255,.08); }
+.fx-dur[aria-checked="true"] { background: rgba(255,112,81,.18); border-color: rgba(255,132,102,.8); } .fx-dur[aria-checked="true"] span { color: #FFB3A1; }
+.fx-custom { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.fx-custom[hidden] { display: none; }
+.fx-custom label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.7); }
+.fx-custom .stepper { background: rgba(0,0,0,.3); border-color: rgba(255,255,255,.1); } .fx-custom .stepper button { background: rgba(255,255,255,.08); color: #fff; } .fx-custom .stepper b { color: #fff; min-width: 46px; }
+#focus[data-phase="idle"] .fx-ring { width: min(220px, 52vw); }
+#focus[data-phase="idle"] .fx-time { font-size: 60px !important; }
+@media (min-width: 900px) { #focus .fx-center { width: min(440px, calc(100% - 32px)); } }
+@media (max-width: 899px) {
+  #focus .fx-center { top: auto; bottom: max(12px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); gap: 10px; }
+  #focus[data-phase="idle"] .fx-ring { width: 150px; } #focus[data-phase="idle"] .fx-time { font-size: 42px !important; }
+  #focus[data-phase="idle"] .fx-phase { display: none; }
+  .fx-setup { padding: 10px; gap: 10px; } .fx-cat { padding: 7px 2px 6px; font-size: 10.5px; } .fx-cat svg { width: 18px; height: 18px; }
+}
+@media (max-height: 760px) and (max-width: 899px) { #focus[data-phase="idle"] .fx-ring { display: none; } }
 </style>
 </head>
 <body>
@@ -1062,7 +1097,14 @@ nav.main svg { stroke-width: 1.7; }
       <svg viewBox="0 0 300 300" aria-hidden="true"><circle class="trk" cx="150" cy="150" r="136"/><circle class="bar" id="fx-bar" cx="150" cy="150" r="136" pathLength="100"/></svg>
       <div class="fx-in">
         <div class="fx-time" id="fx-time">25:00</div>
+        <span class="fx-catlbl" id="fx-catlbl"></span>
         <input id="fx-task" maxlength="60" placeholder="Ne çalışıyorsun?" list="fx-recent" aria-label="Görev" autocomplete="off"><datalist id="fx-recent"></datalist>
+      </div>
+    </div>
+    <div class="fx-setup" id="fx-setup">
+      <div class="fx-sec"><span class="fx-h">Ne çalışacaksın?</span><div class="fx-cats" id="fx-cats" role="radiogroup" aria-label="Çalışma türü"></div></div>
+      <div class="fx-sec"><span class="fx-h">Süre · odak / mola</span><div class="fx-durs" id="fx-durs" role="radiogroup" aria-label="Süre"></div>
+        <div class="fx-custom" id="fx-custom" hidden><label>Odak<span class="stepper"><button type="button" data-cs="focus" data-d="-5">−</button><b id="cs-focus">40 dk</b><button type="button" data-cs="focus" data-d="5">+</button></span></label><label>Mola<span class="stepper"><button type="button" data-cs="brk" data-d="-1">−</button><b id="cs-brk">8 dk</b><button type="button" data-cs="brk" data-d="1">+</button></span></label></div>
       </div>
     </div>
     <button class="fx-go" id="fx-go"><span class="pl"></span><span id="fx-go-t">Başlat</span></button>

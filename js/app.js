@@ -34,7 +34,7 @@
     let s = parse(U.store.raw(SAVE_KEY));
     if (U.store.raw(SAVE_KEY) && !validSave(s)) { const b = parse(U.store.raw(BAK_KEY)); if (validSave(b)) { s = b; App._restored = true; } }
     const f = freshSave();
-    if (validSave(s)) { App.S = Object.assign(f, s); ['settings', 'stats', 'q', 'task'].forEach((k) => (App.S[k] = Object.assign(f[k], s[k] || {}))); App.S.room = Object.assign(PW.DEFAULT_ROOM(), s.room || {}); App.S.av = Object.assign(PW.defaultAvatar(s.av && s.av.g), s.av || {}); }
+    if (validSave(s)) { App.S = Object.assign(f, s); const d = freshSave(); ['settings', 'stats', 'q', 'task'].forEach((k) => (App.S[k] = Object.assign(d[k], s[k] || {}))); const cs = App.S.settings.custom; App.S.settings.custom = Object.assign(d.settings.custom, cs && typeof cs === 'object' ? cs : {}); if (!PW.TIMER_PRESETS.some((p) => p.id === App.S.settings.preset) && App.S.settings.preset !== 'custom') App.S.settings.preset = 'p25'; App.S.room = Object.assign(PW.DEFAULT_ROOM(), s.room || {}); App.S.av = Object.assign(PW.defaultAvatar(s.av && s.av.g), s.av || {}); }
     else App.S = f;
     const S = App.S;
     S.todos = Array.isArray(S.todos) ? S.todos : []; S.friends = S.friends && typeof S.friends === 'object' ? S.friends : {}; S.blocked = S.blocked && typeof S.blocked === 'object' ? S.blocked : {};
@@ -569,7 +569,7 @@
       else PW.ui.startOnboarding(inviteHash);
     }
     else if (inviteHash) App.visitCode(inviteHash);
-    else { App.enterHome(); PW.world.flyIn(); setTimeout(() => PW.ui.openFocus(), 900); }
+    else { App.enterHome(); PW.world.flyIn(); if (App.timer.running) setTimeout(() => PW.ui.openFocus(), 900); }
     setInterval(App.tick, 250);
     setInterval(() => App.publishLobby(), 15000);
     window.addEventListener('beforeunload', () => App.saveNow());

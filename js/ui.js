@@ -288,8 +288,9 @@
         ui.refreshHUD();
         // the trailer already played before character creation: go straight to the room and the first pomodoro
         S.toured = true; S.introSeen = true; A().saveNow();
-        if (o.invite) { A().visitCode(o.invite); setTimeout(() => ui.openFocus(), 1200); }
-        else { A().enterHome(); PW.world.flyIn(); setTimeout(() => ui.openFocus(), 1600); }
+        // land in your (empty) room first; the pomodoro opens only when you ask for it
+        if (o.invite) A().visitCode(o.invite);
+        else { A().enterHome(); PW.world.flyIn(); setTimeout(() => PW.ui.toastAction && PW.ui.toastAction('Odan hazır', 'Şimdilik sadece bir masa var. Odaklandıkça coin kazanır, odanı döşersin.', 'Odaklan', () => ui.openFocus()), 1800); }
       };
     }
   };
@@ -327,7 +328,7 @@
   ui.endTour = () => {
     $('#tour').classList.remove('open'); A().S.toured = true; A().save();
     const inv = ui.tour && ui.tour.invite; ui.tour = null;
-    if (inv) { A().visitCode(inv); setTimeout(() => ui.openFocus(), 1200); } else ui.openFocus();
+    if (inv) A().visitCode(inv);
   };
 
   /* ---------------- wardrobe (shared by onboarding + Karakter) ---------------- */

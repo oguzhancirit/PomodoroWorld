@@ -22,7 +22,9 @@
 
   let run = null; // the active playback (cancellable)
   let firstRun = false;
-  const sleep = (ms) => new Promise((res, rej) => { const t = setTimeout(res, ms / (PW.cinemaSpeed || 1)); run && run.timers.push([t, rej]); });
+  // pace: chapters 1–2 run brisk so nobody gets bored; the time-lapse keeps its own rhythm
+  let pace = 1.6;
+  const sleep = (ms) => new Promise((res, rej) => { const t = setTimeout(res, ms / ((PW.cinemaSpeed || 1) * pace)); run && run.timers.push([t, rej]); });
   const alive = () => { if (!run || run.stopped) throw new Error('skip'); };
 
   /* ---------- overlay ---------- */
@@ -65,7 +67,7 @@
   /* ---------- the film ---------- */
   async function film() {
     const w = PW.world, S = A().S, me = 'c-me', myName = S.name || 'Sen';
-    camOrbit = 0;
+    camOrbit = 0; pace = 1.6; PW.walkBoost = 1.45;
     // ---- 1. friend's room ----
     chapter(0);
     w.clearAvatars(); w.loadRoom(FRIEND_ROOM);
@@ -77,7 +79,7 @@
     stage(`<div class="cn-toast" id="cn-inv"><span class="cn-av">E</span><div><b>Elif</b><span>seni odasına davet etti</span></div><button type="button">Katıl</button></div>`);
     await sleep(1600); alive(); await tap('#cn-inv button'); stage('');
     w.addAvatar(me, S.av, { name: myName, level: A().levelInfo().level, isMe: true });
-    w.avatars.get(me).av.root.position.set(2.4, 0, 2.9);
+    w.avatars.get(me).av.root.position.set(1.6, 0, 2.1);
     camFollow = { id: me, dz: -0.6 }; shot({ r: 6.5, theta: 0.35, phi: 1.0 });
     cap('1 · Arkadaşınla çalış', 'Odasına gir, masaya otur');
     await sitAt(me, 0, 0.25); alive();
@@ -91,7 +93,7 @@
     cap('1 · Arkadaşınla çalış', 'Sayaçlarınız eşitlenir, aynı anda odaklanırsınız');
     shot({ theta: 2.1, r: 4.0 });
     const tEl = $('#cinema .cn-timer b'); const bar = $('#cinema .cn-timer .b');
-    for (let s = 1500; s >= 1440; s -= 4) { tEl.textContent = U.fmtTime(s); bar.style.strokeDashoffset = String(100 - ((1500 - s) / 1500) * 100 * 12); await sleep(70); }
+    for (let s = 1500; s >= 1460; s -= 4) { tEl.textContent = U.fmtTime(s); bar.style.strokeDashoffset = String(100 - ((1500 - s) / 1500) * 100 * 12); await sleep(70); }
     await sleep(900); alive();
     // ---- 2. a social space in the World ----
     chapter(1); await fade(true); stage(''); alive();
@@ -100,7 +102,7 @@
     const rnd = U.seeded(42), names = ['Deniz', 'Kerem', 'Zeynep', 'Mert'];
     names.forEach((n, i) => { const id = 'c-n' + i; w.addAvatar(id, PW.randomAvatar(rnd), { name: n, level: 3 + i * 4 }); if (i < 2) { const s = w.freeSeat(false); if (s != null) w.sitAvatar(id, s); } else w.avatars.get(id).av.root.position.set(i === 2 ? -1.2 : 1.4, 0, i === 2 ? 0.8 : -0.6); });
     w.avatars.get('c-n2').av.root.rotation.y = 1.2; w.avatars.get('c-n3').av.root.rotation.y = -2.2;
-    w.addAvatar(me, S.av, { name: myName, level: A().levelInfo().level, isMe: true }); w.avatars.get(me).av.root.position.set(0.2, 0, 4.4);
+    w.addAvatar(me, S.av, { name: myName, level: A().levelInfo().level, isMe: true }); w.avatars.get(me).av.root.position.set(0.2, 0, 3.1);
     shot({ target: [0, 0.6, 0], r: 15, theta: 0.6, phi: 0.95, snap: true });
     cap('2 · Molada sosyalleş', 'Molada Dünya’dan bir sosyal alana uğra');
     stage(`<div class="cn-card" id="cn-world"><div class="cn-thumb"></div><div><b>Meydan Kafe</b><span>4 oyuncu · sohbet</span></div><button type="button">Git</button></div>`);
@@ -110,7 +112,7 @@
     camFollow = null; shot({ target: [0.1, 1.0, 0.8], r: 5.2, theta: 0.45, phi: 1.05 });
     cap('2 · Molada sosyalleş', 'Yaz; mesajın karakterinin üstünde balon olur');
     stage(`<div class="cn-chat"><span class="cn-in"></span><button type="button" id="cn-send">Gönder</button></div>`);
-    await sleep(500); await typeInto($('#cinema .cn-in'), 'Selam! Mola veren var mı?'); alive();
+    await sleep(500); await typeInto($('#cinema .cn-in'), 'Selam! Mola veren var mı?', 38); alive();
     await tap('#cn-send'); w.bubble(me, 'Selam! Mola veren var mı?'); stage('');
     await sleep(1300); alive(); w.emote('c-n2', 'wave'); w.bubble('c-n2', 'Selam! Gel, bize katıl.');
     await sleep(1400); alive(); w.emote('c-n3', 'dance'); w.bubble('c-n3', 'Ben de molada, 2. turdayım!');
@@ -118,7 +120,7 @@
     await sleep(2200); alive();
     // ---- 3. focus → coins → your room grows ----
     chapter(2); await fade(true); stage(''); alive();
-    await timelapse(me, myName);
+    pace = 1.15; PW.walkBoost = 1; await timelapse(me, myName);
   }
 
   /* ---------- chapter 3: a time-lapse of your own room growing ---------- */
@@ -191,7 +193,7 @@
       requestAnimationFrame(camTick);
       try { await film(); } catch (e) { if (e && e.message !== 'skip') console.warn('cinema', e); }
       // back to the real game
-      const was = run; run = null; camFollow = null; camOrbit = 0; if (was) was.timers.forEach(([t]) => t && clearTimeout(t));
+      const was = run; run = null; camFollow = null; camOrbit = 0; PW.walkBoost = 1; if (was) was.timers.forEach(([t]) => t && clearTimeout(t));
       el.classList.add('black'); await new Promise((r) => setTimeout(r, 300));
       A().cinema = false; document.body.classList.remove('cinema');
       await A().enterHome(); el.classList.remove('open', 'black'); stage('');

@@ -308,3 +308,42 @@
   ui.open = (n) => { o(n); mark(); }; ui.close = (s) => { c(s); mark(); }; ui.onRoomChange = (a, b) => { rc(a, b); mark(); };
   setTimeout(mark, 0);
 })();
+
+/* ===== focus start screen (Odakoo-style): choose a kind of work and a duration, then start ===== */
+(function () {
+  const PW = window.PW, U = PW.util, ui = PW.ui, A = () => PW.app;
+  const $ = (s) => document.querySelector(s);
+  const ICO = {
+    Ders: '<path d="M4 6l8-3 8 3-8 3z"/><path d="M7 7.5V12c0 1.5 2.2 3 5 3s5-1.5 5-3V7.5"/><path d="M20 6v5"/>',
+    Okuma: '<path d="M3 6c3-1.5 6-1.5 9 0v13c-3-1.5-6-1.5-9 0zM21 6c-3-1.5-6-1.5-9 0v13c3-1.5 6-1.5 9 0z"/>',
+    Kodlama: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+    Proje: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',
+    Yazı: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+    Dil: '<path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6 8M11 5c-1 4-4 7-7 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/>',
+    Diğer: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/>',
+  };
+  // name shown on the button, colour from the task categories, and the matching desk animation
+  const CATS = [['Ders', 'Ders', 'write'], ['Okuma', 'Okuma', 'read'], ['Kodlama', 'Kodlama', 'type'], ['Proje', 'Proje / İş', 'type'], ['Yazı', 'Yazı', 'write'], ['Dil', 'Dil', 'read'], ['Diğer', 'Diğer', 'type']];
+  const COL = Object.fromEntries(PW.TASK_CATS);
+  const DURS = () => [...PW.TIMER_PRESETS.map((p) => ({ id: p.id, f: p.focus, b: p.brk, hint: p.hint })), { id: 'custom', hint: 'Sana özel' }];
+  const render = () => {
+    const S = A().S;
+    $('#fx-cats').innerHTML = CATS.map(([id, n]) => `<button type="button" class="fx-cat" role="radio" aria-checked="${S.task.cat === id}" data-cat="${id}" style="--c:${COL[id] || '#FF8466'}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[id]}</svg>${n}</button>`).join('');
+    $('#fx-durs').innerHTML = DURS().map((d) => `<button type="button" class="fx-dur" role="radio" aria-checked="${S.settings.preset === d.id}" data-dur="${d.id}">${d.id === 'custom' ? `<b>${S.settings.custom.focus}<small> / ${S.settings.custom.brk}</small></b>` : `<b>${d.f}<small> / ${d.b}</small></b>`}<span>${d.hint}</span></button>`).join('');
+    $('#fx-custom').hidden = S.settings.preset !== 'custom';
+    $('#cs-focus').textContent = S.settings.custom.focus + ' dk'; $('#cs-brk').textContent = S.settings.custom.brk + ' dk';
+    $('#fx-cats').querySelectorAll('[data-cat]').forEach((b) => (b.onclick = () => { const c = CATS.find((x) => x[0] === b.dataset.cat); S.task.cat = c[0]; S.settings.style = c[2]; A().save(); A().myAct(); render(); ui.refreshTimer(); }));
+    $('#fx-durs').querySelectorAll('[data-dur]').forEach((b) => (b.onclick = () => { S.settings.preset = b.dataset.dur; A().save(); render(); ui.refreshTimer(); }));
+  };
+  document.querySelectorAll('[data-cs]').forEach((b) => (b.onclick = () => { const S = A().S, k = b.dataset.cs, lim = k === 'focus' ? [5, 180] : [1, 60]; S.settings.custom[k] = U.clamp(S.settings.custom[k] + +b.dataset.d, lim[0], lim[1]); S.settings.custom.long = Math.max(15, S.settings.custom.brk * 3); A().save(); render(); ui.refreshTimer(); }));
+  const origOpen = ui.openFocus;
+  ui.openFocus = () => { origOpen(); render(); };
+  const origTimer = ui.refreshTimer;
+  ui.refreshTimer = () => {
+    origTimer();
+    const S = A().S; if (!S) return; const el = $('#fx-catlbl'); if (!el) return;
+    const c = CATS.find((x) => x[0] === S.task.cat) || CATS[0];
+    const td = S.task.todoId && S.todos.find((t) => t.id === S.task.todoId);
+    el.style.setProperty('--c', COL[c[0]] || '#FF8466'); el.innerHTML = `<i></i>${U.esc(td ? td.t : c[1])}`;
+  };
+})();
