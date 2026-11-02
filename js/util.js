@@ -41,7 +41,8 @@
     seeded: (seed) => { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 100000) / 100000; }; },
     store: {
       get(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } },
-      set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+      set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+      raw(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     },
   };
 

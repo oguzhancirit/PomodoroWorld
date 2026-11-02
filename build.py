@@ -6,6 +6,7 @@ head = re.search(r'<head>(.*?)</head>', html, re.S).group(1)
 body = re.search(r'<body>(.*?)</body>', html, re.S).group(1)
 head = re.sub(r'<meta charset[^>]*>\s*', '', head)
 head = re.sub(r'<meta name="viewport"[^>]*>\s*', '', head)
+head = re.sub(r'<link[^>]*data-pwa[^>]*>\s*', '', head)  # PWA files are not part of the single-file artifact
 def inline(m):
     src = m.group(1)
     return '<script>\n' + (root / src).read_text() + '\n</script>'

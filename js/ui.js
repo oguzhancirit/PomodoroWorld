@@ -198,14 +198,16 @@
   };
   ui.refreshPeople = () => {
     const w = PW.world, list = $('#people-list'); if (!w) return;
-    const rows = []; for (const [id, a] of w.avatars) rows.push({ id, name: a.info.name, lv: a.info.level, st: a.info.status, me: id === 'me', npc: id.startsWith('npc-') });
+    const rows = []; for (const [id, a] of w.avatars) rows.push({ id, name: a.info.name, lv: a.info.level, st: a.info.status, me: id === 'me', npc: id.startsWith('npc-'), fr: id.startsWith('p-') && (() => { const p = A().peers.get(id.slice(2)); return p && A().S.friends[p.uid]; })() });
     rows.sort((a, b) => (b.me - a.me) || (a.npc - b.npc) || (b.lv - a.lv));
     $('#people-count').textContent = rows.length;
-    list.innerHTML = rows.map((r) => `<li class="${r.me ? 'me' : ''} ${r.npc ? 'npc' : ''}"><i class="lv">${r.lv}</i><span>${esc(r.name)}${r.me ? ' (sen)' : ''}${r.npc ? '<em>NPC</em>' : ''}</span><b class="st ${r.st}">${r.st === 'focus' ? 'odak' : r.st === 'break' ? 'mola' : r.st === 'paused' ? 'durdu' : ''}</b></li>`).join('');
+    list.innerHTML = rows.map((r) => `<li class="${r.me ? 'me' : ''} ${r.npc ? 'npc' : ''}" ${r.id.startsWith('p-') ? `data-av="${esc(r.id)}" tabindex="0" role="button"` : ''}><i class="lv">${r.lv}</i><span>${esc(r.name)}${r.me ? ' (sen)' : ''}${r.npc ? '<em>NPC</em>' : ''}${r.fr ? '<em class="fr">arkadaş</em>' : ''}</span><b class="st ${r.st}">${r.st === 'focus' ? 'odak' : r.st === 'break' ? 'mola' : r.st === 'paused' ? 'durdu' : ''}</b></li>`).join('');
   };
+  document.addEventListener('click', (e) => { const li = e.target.closest && e.target.closest('#people-list [data-av]'); if (li && ui.openPerson) ui.openPerson(li.dataset.av); });
   ui.onWorldClick = (ev) => {
     const w = PW.world, room = A().room;
     if (ev.type === 'edit-select') { ui.renderEditBar(); return; }
+    if (ev.type === 'avatar' && ev.id.startsWith('p-') && ui.openPerson) return ui.openPerson(ev.id);
     if (ev.type === 'avatar') { if (ev.id !== 'me') { const a = w.avatars.get(ev.id); if (a) ui.toast(a.info.name, `Seviye ${a.info.level} · ${PW.titleFor(a.info.level)}${ev.id.startsWith('npc-') ? ' · sosyal alanın müdavimi (NPC)' : ''}`); } else w.emote('me', 'wave'); return; }
     if (ev.type === 'seat') {
       const s = w.seats[ev.idx]; if (!s) return;
@@ -280,7 +282,7 @@
       nm.addEventListener('input', sync); rm.addEventListener('input', () => (rm.dataset.touched = 1)); sync();
       $('#ob-back').onclick = () => { o.step = 1; ui.renderOnboard(); };
       $('#ob-form').onsubmit = (e) => {
-        e.preventDefault(); const n = nm.value.trim().slice(0, 20); if (n.length < 2) { $('#ob-err').hidden = false; return; }
+        e.preventDefault(); const n = PW.safe.str(nm.value, 20); if (n.length < 2) { $('#ob-err').hidden = false; return; } if (PW.safe.isBadName(n) || PW.safe.isBadName(rm.value)) { $('#ob-err').textContent = 'Bu ad kullanılamaz, başka bir ad dene.'; $('#ob-err').hidden = false; return; }
         S.name = n; S.av = o.draft; S.room.name = (rm.value.trim() || `${n}'in Odası`).slice(0, 32); S.onboarded = true; A().saveNow();
         const m = $('#m-onboard'); delete m.dataset.locked; m.classList.remove('open');
         PW.world.hideTags = false;
@@ -455,7 +457,7 @@
       $$('[data-close]', f).forEach((b) => (b.onclick = () => ui.close()));
     };
     const keep = () => { const n = $('#rs-name'), d = $('#rs-desc'); if (n) draft.name = n.value; if (d) draft.desc = d.value; };
-    f.onsubmit = (e) => { e.preventDefault(); keep(); const name = (draft.name || '').trim(); if (name.length < 2) return ui.toast('Oda adı kısa', 'En az 2 karakter yaz.'); A().saveRoomSettings({ name: name.slice(0, 32), desc: (draft.desc || '').trim().slice(0, 90), cat: draft.cat, open: draft.open }); ui.close(); ui.toast('Oda kaydedildi', draft.open ? 'Odan Dünya\'da listeleniyor.' : 'Odan kapalı; sadece davetle girilebilir.'); };
+    f.onsubmit = (e) => { e.preventDefault(); keep(); const name = PW.safe.str(draft.name, 32); if (PW.safe.isBadName(name) || PW.safe.clean(draft.desc || '') !== (draft.desc || '')) return ui.toast('Uygunsuz ifade', 'Oda adı ya da açıklamasında uygunsuz bir kelime var.', 'warn'); if (name.length < 2) return ui.toast('Oda adı kısa', 'En az 2 karakter yaz.'); A().saveRoomSettings({ name: name.slice(0, 32), desc: (draft.desc || '').trim().slice(0, 90), cat: draft.cat, open: draft.open }); ui.close(); ui.toast('Oda kaydedildi', draft.open ? 'Odan Dünya\'da listeleniyor.' : 'Odan kapalı; sadece davetle girilebilir.'); };
     // the link shown must reflect the draft visibility
     const origOpen = R.open; draw();
     const syncLink = () => { const tmp = R.open; R.open = draft.open; const v = A().inviteLink(), c = A().inviteCode(); R.open = tmp; const l = $('#rs-link'); if (l) l.value = v; const ce = $('.code', f); if (ce) ce.textContent = c; };
@@ -634,17 +636,21 @@
         <label class="ck"><input type="checkbox" id="set-auto" ${S.settings.autoNext ? 'checked' : ''}> Mola bitince yeni turu otomatik başlat</label>
         <div class="row custom"><span>Özel süre</span><label>Odak <input type="number" id="set-cf" min="5" max="180" value="${S.settings.custom.focus}"> dk</label><label>Mola <input type="number" id="set-cb" min="1" max="60" value="${S.settings.custom.brk}"> dk</label><label>Uzun <input type="number" id="set-cl" min="5" max="60" value="${S.settings.custom.long}"> dk</label></div>
         <label>Grafik kalitesi <select id="set-gfx"><option value="high">Yüksek (ışık parlaması, yumuşak gölge)</option><option value="low">Hafif (eski cihazlar için)</option></select></label>
-        <label>Demo hızı <select id="set-speed"><option value="1">Gerçek zaman</option><option value="10">×10 (deneme)</option><option value="60">×60 (1 sn = 1 dk)</option></select></label>
-        <p class="note">Demo hızı sadece denemek içindir; gerçek kullanımda “Gerçek zaman”da bırak.</p>
+        <label class="ck"><input type="checkbox" id="set-notify" ${S.settings.notify ? 'checked' : ''}> Sekme arka plandayken bildirim gönder</label>
+        <label class="ck"><input type="checkbox" id="set-share" ${S.settings.shareTask ? 'checked' : ''}> Görevimi odadakilere göster</label>
+        <label class="ck"><input type="checkbox" id="set-filter" ${S.settings.filter !== false ? 'checked' : ''}> Sohbette küfür filtresi</label>
+        ${PW.DEV ? '<label>Demo hızı <select id="set-speed"><option value="1">Gerçek zaman</option><option value="10">×10</option><option value="60">×60</option></select></label>' : ''}
         <div class="row"><button class="btn">Kaydet</button><button type="button" class="btn ghost" id="set-tour">Tanıtım turunu tekrar izle</button></div>
       </form>`;
-    $('#set-speed').value = String(S.settings.speed || 1); $('#set-gfx').value = S.settings.gfx || 'high';
+    if ($('#set-speed')) $('#set-speed').value = String(S.settings.speed || 1); $('#set-gfx').value = S.settings.gfx || 'high';
     $('#set-tour').onclick = () => { ui.close(); if (!A().room || A().room.kind !== 'home') A().enterHome(); setTimeout(() => ui.startTour(), 600); };
     $('#set-form').onsubmit = (e) => {
-      e.preventDefault(); const n = $('#set-name').value.trim().slice(0, 20); if (n.length >= 2) S.name = n;
+      e.preventDefault(); const n = PW.safe.str($('#set-name').value, 20); if (n.length >= 2) { if (PW.safe.isBadName(n)) return ui.toast('Bu ad kullanılamaz', 'Başka bir ad dene.', 'warn'); S.name = n; }
+      S.settings.notify = $('#set-notify').checked; S.settings.shareTask = $('#set-share').checked; S.settings.filter = $('#set-filter').checked;
+      if (S.settings.notify) try { 'Notification' in window && Notification.permission === 'default' && Notification.requestPermission(); } catch (er) {}
       S.settings.sound = $('#set-sound').checked; const npcBefore = S.settings.npc; S.settings.npc = $('#set-npc').checked; S.settings.autoNext = $('#set-auto').checked;
       S.settings.custom = { focus: U.clamp(+$('#set-cf').value || 25, 5, 180), brk: U.clamp(+$('#set-cb').value || 5, 1, 60), long: U.clamp(+$('#set-cl').value || 15, 5, 60) };
-      S.settings.speed = +$('#set-speed').value || 1; S.settings.gfx = $('#set-gfx').value; PW.world.setQuality(S.settings.gfx);
+      S.settings.speed = $('#set-speed') ? +$('#set-speed').value || 1 : 1; S.settings.gfx = $('#set-gfx').value; PW.world.setQuality(S.settings.gfx);
       A().save(); ui.refreshHUD(); ui.refreshTimer(); A().publish(); A().publishLobby(); ui.toast('Ayarlar kaydedildi', '');
       if (npcBefore !== S.settings.npc && A().room && A().room.kind === 'social') A().enterRoom(A().room);
     };

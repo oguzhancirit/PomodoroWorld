@@ -9,6 +9,9 @@
   const APP_ID = 'pomodoro-world-oguzhan-v1';
   const TRYSTERO_URL = 'https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm';
 
+  // untrusted payload guard: oversized or non-object presence is dropped before it reaches the game
+  const MAX_PRES = 20000, MAX_PEERS = 80;
+  const okPres = (d) => { if (!d || typeof d !== 'object' || Array.isArray(d)) return false; try { return JSON.stringify(d).length <= MAX_PRES; } catch (e) { return false; } };
   class Channel {
     constructor(name) { this.name = name; this._peers = []; this._pcb = []; this._ccb = []; this._ecb = []; this.me = null; this.connected = false; }
     onPeers(cb) { this._pcb.push(cb); cb(this._peers); }
@@ -23,7 +26,7 @@
   class ClaudeChannel extends Channel {
     constructor(name, api) {
       super(name); this.api = api; this.unsubs = [];
-      this.unsubs.push(api.onPeers((ch) => this._emitPeers(ch.peers.filter((p) => p.kind === 'viewer').map((p) => ({ peer: p.peer, presence: p.presence || {}, isMe: !!p.sameTab, guest: p.guest })))));
+      this.unsubs.push(api.onPeers((ch) => this._emitPeers(ch.peers.filter((p) => p.kind === 'viewer').slice(0, MAX_PEERS).map((p) => ({ peer: p.peer, presence: okPres(p.presence) ? p.presence : {}, isMe: !!p.sameTab, guest: p.guest })))));
       this.unsubs.push(api.on('chat', (m) => { if (m.sameTab) return; this._emitChat({ peer: m.peer, text: String((m.data && m.data.t) || '').slice(0, 240) }); }));
       this.unsubs.push(api.on('emote', (m) => { if (m.sameTab) return; this._emitEmote({ peer: m.peer, e: String((m.data && m.data.e) || '') }); }));
       if (api.onConnection) this.unsubs.push(api.onConnection((c) => (this.connected = c)));
@@ -47,7 +50,7 @@
       this.selfId = mod.selfId; this.peers = new Map(); this.myPres = {};
       const mk = (n) => { const a = this.room.makeAction(n); if (Array.isArray(a)) return { send: a[0], set on(f) { a[1](f); } }; return { send: (d, o) => a.send(d, o), set on(f) { a.onMessage = f; } }; };
       this.aPres = mk('pres'); this.aChat = mk('chat'); this.aEmo = mk('emo');
-      this.aPres.on = (data, ctx) => { const pid = ctx && ctx.peerId ? ctx.peerId : ctx; this.peers.set(pid, data || {}); this.flush(); };
+      this.aPres.on = (data, ctx) => { const pid = ctx && ctx.peerId ? ctx.peerId : ctx; if (!okPres(data)) return; if (!this.peers.has(pid) && this.peers.size >= MAX_PEERS) return; this.peers.set(pid, data); this.flush(); };
       this.aChat.on = (data, ctx) => { const pid = ctx && ctx.peerId ? ctx.peerId : ctx; this._emitChat({ peer: pid, text: String((data && data.t) || '').slice(0, 240) }); };
       this.aEmo.on = (data, ctx) => { const pid = ctx && ctx.peerId ? ctx.peerId : ctx; this._emitEmote({ peer: pid, e: String((data && data.e) || '') }); };
       const onJoin = (pid) => { this.connected = true; this.aPres.send(this.myPres, { target: pid }); };
@@ -81,7 +84,7 @@
     onMsg(m) {
       if (!m || m.from === this.id) return;
       if (m.type === 'hello') { this.post({ type: 'pres', data: this.myPres }); return; }
-      if (m.type === 'pres') { this.peers.set(m.from, { pres: m.data || {}, seen: Date.now() }); this.flush(); }
+      if (m.type === 'pres') { if (!okPres(m.data)) return; this.peers.set(m.from, { pres: m.data, seen: Date.now() }); this.flush(); }
       if (m.type === 'bye') { this.peers.delete(m.from); this.flush(); }
       if (m.type === 'chat') this._emitChat({ peer: m.from, text: String(m.t || '').slice(0, 240) });
       if (m.type === 'emo') this._emitEmote({ peer: m.from, e: m.e });

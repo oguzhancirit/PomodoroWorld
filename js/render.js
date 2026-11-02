@@ -107,6 +107,7 @@
   };
   const AvP = PW.Avatar.prototype, origBuild = AvP.build;
   AvP.build = function (cfg) {
+    if (this.body && this.body.children.length) PW.disposeTree(this.body, false);
     origBuild.call(this, cfg);
     const P = this.parts || {};
     [P.skirt, P.mouth, this.halo].forEach((o) => o && (o.userData.keep = true));
@@ -136,10 +137,22 @@
   };
   const RIM_BY_MOOD = { day: ['#FFF1DC', 0.55], golden: ['#FFC48A', 0.8], night: ['#9BB2FF', 0.75], neon: ['#FF7AD9', 0.9], candle: ['#FFA05A', 0.8] };
 
+  /* ---------- GPU memory: free what a rebuilt room / avatar leaves behind ---------- */
+  // Every edit in the room designer rebuilds the room; without this, GPU memory grows with each click.
+  const TEX_KEYS = ['map', 'bumpMap', 'emissiveMap', 'alphaMap', 'roughnessMap', 'normalMap', 'aoMap'];
+  PW.disposeTree = function (root, withTextures) {
+    if (!root) return;
+    const mats = new Set();
+    root.traverse((o) => { if (o.geometry && o.geometry.dispose) o.geometry.dispose(); if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => mats.add(m)); });
+    mats.forEach((m) => { if (withTextures) TEX_KEYS.forEach((k) => m[k] && m[k].dispose && m[k].dispose()); if (m.uniforms) for (const u of Object.values(m.uniforms)) if (u && u.value && u.value.isTexture && withTextures) u.value.dispose(); m.dispose && m.dispose(); });
+  };
   /* ---------- room enhancement after every load ---------- */
   const origLoad = W.loadRoom;
   W.loadRoom = function (def) {
+    const oldRoom = this.roomGroup, oldFx = this.fxGroup;
     origLoad.call(this, def);
+    if (oldRoom && oldRoom !== this.roomGroup) PW.disposeTree(oldRoom, true);
+    if (oldFx && oldFx !== this.fxGroup) PW.disposeTree(oldFx, true);
     try { this.enhanceRoom(); } catch (e) { console.warn('enhance failed', e); }
   };
   W.enhanceRoom = function () {
@@ -190,6 +203,9 @@
   PW.polishAvatar = function (av) {
     av.root.traverse((o) => { if (o.isMesh && o.material && !Array.isArray(o.material)) PW.rimify(o.material); });
   };
+
+  const origRemove = W.removeAvatar;
+  W.removeAvatar = function (id) { const a = this.avatars.get(id); origRemove.call(this, id); if (a) PW.disposeTree(a.av.root, false); };
 
   /* ---------- active-character marker (Sims-style state gem) ---------- */
   const GEM_COL = { focus: '#3DDC84', paused: '#F2C14E', break: '#5AB0FF', idle: '#F06A4A' };
@@ -292,6 +308,7 @@
   /* ---------- frame governor ---------- */
   const origLoop = W.loop;
   W.loop = function () {
+    if (this.paused) { requestAnimationFrame(this.loop); return; }
     const now = performance.now();
     if (this.fpsCap && this._lastF && now - this._lastF < 1000 / this.fpsCap - 3 && !document.hidden) { requestAnimationFrame(this.loop); return; }
     const last = this._lastF || now; this._lastF = now;

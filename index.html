@@ -7,6 +7,9 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Pomodoro World: kendi 3D odanda arkadaşlarınla pomodoro yap, XP ve jeton kazan, karakterini ve odanı tasarla.">
 <meta name="theme-color" content="#1C1A2E">
+<link rel="manifest" href="manifest.webmanifest" data-pwa>
+<link rel="icon" href="icons/icon-192.png" data-pwa>
+<link rel="apple-touch-icon" href="icons/icon-192.png" data-pwa>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
@@ -597,6 +600,82 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
 #fx-task { width: 220px; }
 
 @media (max-width: 720px) { #e-sel { display: none; } .e-top .row { width: 100%; scrollbar-width: none; } .e-top .row .btn { flex: none; } .e-cam { flex: none; } }
+
+/* ---------- v4: sync chip, mini icon buttons, popovers, person card, to-dos, blocker ---------- */
+.mini-ib { width: 36px; height: 36px; border-radius: 11px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--ink); display: grid; place-items: center; flex: none; }
+.mini-ib svg, .fx-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mini-ib.on { background: var(--gold); color: #2A2440; border-color: var(--gold); }
+.sync-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 10px; border-radius: 99px; background: rgba(76,195,138,.18); border: 1px solid rgba(76,195,138,.5); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.sync-chip[hidden] { display: none; }
+.sync-chip button { border: 0; background: rgba(255,255,255,.12); color: inherit; border-radius: 99px; padding: 3px 8px; font-weight: 800; font-size: 11px; }
+.popover { position: fixed; z-index: 30; width: min(340px, calc(100vw - 24px)); max-height: min(70vh, 520px); overflow: auto; background: #FFFDF8; color: #2A2440; border-radius: 20px; padding: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.45); animation: tin .25s ease; }
+.popover[hidden] { display: none; }
+.popover h4 { margin: 0 0 8px; font: 800 15px var(--f-display); display: flex; justify-content: space-between; align-items: center; }
+.popover .note { color: #6B6382; font-size: 12px; margin: 6px 0 0; }
+.snd-row { display: grid; grid-template-columns: 30px 1fr 110px; align-items: center; gap: 8px; padding: 6px 4px; border-radius: 12px; }
+.snd-row.on { background: #F4EEF8; }
+.snd-row svg { width: 22px; height: 22px; fill: none; stroke: #5B5470; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.snd-row.on svg { stroke: var(--tomato); }
+.snd-row b { font-size: 13.5px; }
+.popover input[type=range] { width: 100%; accent-color: var(--tomato); }
+.popover .sugg { width: 100%; margin-top: 8px; border: 1px dashed #CFC6DD; background: none; border-radius: 12px; padding: 8px; font-weight: 800; color: #5B5470; }
+.popover .ck { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; margin-top: 8px; }
+.td-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.td { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 14px; background: #F4EEF8; color: #2A2440; }
+.td.sel { box-shadow: 0 0 0 2px var(--tomato) inset; background: #FFF1EC; }
+.td.ok { opacity: .55; } .td.ok .t { text-decoration: line-through; }
+.td .t { font-weight: 800; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; background: none; text-align: left; color: inherit; padding: 0; }
+.td .pomos { display: flex; gap: 3px; } .td .pomos i { width: 9px; height: 9px; border-radius: 50%; background: #D9D0E6; } .td .pomos i.on { background: var(--tomato); } .td .pomos i.over { background: #F2C14E; }
+.td .cat { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 99px; color: #2A2440; }
+.td .chk { width: 22px; height: 22px; border-radius: 7px; border: 2px solid #B9AECB; background: #fff; display: grid; place-items: center; padding: 0; }
+.td.ok .chk { background: #2F9A6B; border-color: #2F9A6B; } .td .chk svg { width: 14px; height: 14px; stroke: #fff; stroke-width: 3; fill: none; }
+.td .del { border: 0; background: none; color: #8C84A3; font-size: 18px; padding: 0 4px; }
+.td-add { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; margin-top: 10px; }
+.td-add input, .td-add select { border-radius: 12px; border: 1px solid #DDD5E8; padding: 9px 10px; font-weight: 700; background: #fff; color: #2A2440; min-width: 0; }
+.stepper { display: flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #DDD5E8; border-radius: 12px; padding: 2px; }
+.stepper button { width: 28px; height: 30px; border: 0; background: #F4EEF8; border-radius: 9px; font-weight: 800; color: #2A2440; }
+.stepper b { min-width: 34px; text-align: center; font-size: 13px; }
+#m-todo .sheet .td, #m-todo .td-add input { font-size: 15px; }
+#m-todo .td { background: rgba(255,255,255,.06); color: var(--ink); } #m-todo .td.sel { background: rgba(232,85,61,.14); } #m-todo .td .pomos i { background: rgba(255,255,255,.18); } #m-todo .td .pomos i.on { background: var(--tomato); }
+#m-todo .td-add input, #m-todo .td-add select, #m-todo .stepper { background: rgba(255,255,255,.06); color: var(--ink); border-color: var(--line); } #m-todo .stepper button { background: rgba(255,255,255,.1); color: var(--ink); }
+#m-todo .td .t { color: var(--ink); } #m-todo .td .del { color: var(--muted); }
+.ps-av { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+.ps-av img { width: 84px; height: 84px; border-radius: 20px; background: rgba(255,255,255,.06); }
+.ps-actions { display: grid; gap: 8px; }
+.ps-actions .btn { width: 100%; justify-content: center; }
+.ps-actions .danger { background: transparent; border: 1px solid rgba(229,72,59,.6); color: #FF8A7A; box-shadow: none; }
+.ps-task { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.tagid { font-size: 11px; color: var(--dim); font-weight: 700; margin-left: 4px; }
+#people-list li[data-av] { cursor: pointer; } #people-list li[data-av]:hover { background: rgba(255,255,255,.08); }
+#people-list em.fr { background: rgba(76,195,138,.2); color: #9BE7B4; }
+#blocker { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: #15132A; padding: 20px; }
+#blocker[hidden] { display: none; }
+.blk-card { max-width: 420px; text-align: center; display: grid; gap: 12px; justify-items: center; color: var(--ink); }
+.blk-card h2 { margin: 0; font: 800 26px var(--f-display); } .blk-card p { margin: 0; color: var(--muted); }
+.blk-ico svg { width: 72px; height: 72px; fill: none; stroke: var(--gold); stroke-width: 1.6; }
+.toast .act { margin-top: 8px; display: flex; gap: 6px; } .toast .act button { border: 0; border-radius: 10px; padding: 6px 12px; font-weight: 800; background: var(--tomato); color: #fff; } .toast .act button.ghost { background: #EFE9F4; color: #2A2440; }
+.toast.warn { border-color: rgba(242,193,78,.6); }
+.toast.has-act { pointer-events: auto; }
+/* stats */
+.heat { display: block; max-width: 100%; height: auto; }
+.heat-wrap { overflow-x: auto; }
+.heat rect { rx: 2.5; }
+.heat .mo { font-size: 9px; fill: var(--dim); }
+.hbar { display: grid; grid-template-columns: 82px 1fr 52px; gap: 8px; align-items: center; font-size: 13px; margin: 6px 0; }
+.hbar .tr { height: 12px; border-radius: 4px; background: rgba(255,255,255,.06); overflow: hidden; } .hbar .tr i { display: block; height: 100%; background: var(--tomato); border-radius: 0 4px 4px 0; }
+.hbar b { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.hours { display: flex; align-items: flex-end; gap: 2px; height: 70px; } .hours i { flex: 1; background: var(--tomato); border-radius: 3px 3px 0 0; min-height: 2px; opacity: .85; position: relative; } .hours i:hover { opacity: 1; }
+.hours-ax { display: flex; justify-content: space-between; font-size: 10px; color: var(--dim); margin-top: 4px; }
+.legend-seq { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--dim); justify-content: flex-end; } .legend-seq i { width: 11px; height: 11px; border-radius: 2.5px; display: inline-block; }
+.chart-tip { position: fixed; z-index: 60; pointer-events: none; background: #FFFDF8; color: #2A2440; font-size: 12px; font-weight: 700; padding: 6px 9px; border-radius: 9px; box-shadow: 0 8px 20px rgba(0,0,0,.35); }
+.backup { display: flex; flex-wrap: wrap; gap: 8px; }
+.banlist { display: grid; gap: 6px; } .banlist div { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,.05); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; } }
+@media (max-width: 720px) { .mini-ib { width: 34px; height: 34px; } .sync-chip span { display: none; } }
+
+.snd-row { grid-template-columns: 26px minmax(0, 1fr) 120px; }
+.snd-row input[type=range], .popover input[type=range] { width: 120px !important; min-width: 0; margin: 0; padding: 0 !important; border: 0 !important; background: none !important; height: 22px; box-shadow: none !important; }
+.popover { overflow-x: hidden; }
 </style>
 </head>
 <body>
@@ -637,6 +716,7 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
         <button class="btn sm ghost" id="btn-invite">Davet et</button>
         <button class="btn sm ghost" id="btn-home" hidden>Odama dön</button>
         <button class="btn sm ghost" id="btn-sit">Kalk</button>
+        <button class="btn sm ghost" id="btn-group" hidden title="Odadakilerle aynı anda başlayın">Birlikte başlat</button>
       </div>
     </div>
     <div class="people" id="people">
@@ -656,6 +736,8 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
     <button class="moodlet" id="moodlet" type="button" aria-label="Ruh hâli"></button>
     <div class="mt"><span id="mini-phase">Hazır</span><b id="mini-time">25:00</b></div>
     <div class="prog"><i id="mini-prog" style="width:0%"></i></div>
+    <span class="sync-chip" id="sync-chip" hidden></span>
+    <button class="ib mini-ib" id="mini-todo" title="Yapılacaklar" aria-label="Yapılacaklar"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></button><button class="ib mini-ib" id="mini-snd" title="Ortam sesleri" aria-label="Ortam sesleri"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
     <button class="btn" id="mini-open">Odak ekranı</button>
     <span class="sep"></span>
     <div class="emo" id="emotes"><button data-emote="wave" title="El salla">👋</button><button data-emote="clap" title="Alkış">👏</button><button data-emote="cheer" title="Yaşasın">🎉</button><button data-emote="dance" title="Dans">💃</button></div>
@@ -686,6 +768,8 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
     </div>
     <button class="fx-go" id="fx-go"><span class="pl"></span><span id="fx-go-t">Başlat</span></button>
     <div class="fx-tools">
+      <button class="fx-icon" id="fx-list" title="Yapılacaklar" aria-label="Yapılacaklar"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg></button>
+      <button class="fx-icon" id="fx-snd" title="Ortam sesleri" aria-label="Ortam sesleri"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
       <button class="fx-icon" id="fx-set" title="Süre ve çalışma şekli" aria-label="Süre ve çalışma şekli" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg></button>
       <button class="fx-icon" id="fx-reset" title="Sıfırla" aria-label="Sıfırla"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/></svg></button>
       <button class="fx-icon" id="fx-skip" title="Bu aşamayı atla" aria-label="Atla"><svg viewBox="0 0 24 24"><path d="M5 5l9 7-9 7zM17 5v14"/></svg></button>
@@ -702,6 +786,16 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
     </div>
   </div>
 </div>
+
+<!-- popovers: ambient sound mixer and the to-do picker -->
+<div class="popover" id="snd-pop" hidden role="dialog" aria-label="Ortam sesleri"></div>
+<div class="popover" id="todo-pop" hidden role="dialog" aria-label="Yapılacaklar"></div>
+<!-- person card -->
+<div class="modal" id="m-person"><div class="sheet narrow" style="width:min(420px,100%)"><header><div><h2 id="ps-name">Oyuncu</h2><p id="ps-sub"></p></div><button class="x" data-close aria-label="Kapat">×</button></header><div id="ps-body"></div></div></div>
+<!-- to-do list -->
+<div class="modal" id="m-todo"><div class="sheet" style="width:min(640px,100%)"><header><div><h2>Yapılacaklar</h2><p>Her işe kaç pomodoro süreceğini tahmin et; odaklandıkça ilerler.</p></div><button class="x" data-close aria-label="Kapat">×</button></header><div id="todo-body"></div></div></div>
+<!-- blocking states: second tab, no WebGL -->
+<div id="blocker" hidden><div class="blk-card"><div class="blk-ico"></div><h2 class="blk-t"></h2><p class="blk-p"></p><button class="btn" id="blk-go">Burada kullan</button></div></div>
 
 <!-- Tour -->
 <div id="tour" aria-live="polite"><div class="spot none"></div><div class="card"><div class="hd"><div id="tour-mascot"></div><h3 id="tour-title"></h3></div><p id="tour-text"></p><div class="ft"><div class="dots" id="tour-dots"></div><div class="row"><button class="skip" id="tour-skip">Geç</button><button class="btn sm" id="tour-next">İleri</button></div></div></div></div>
@@ -763,8 +857,11 @@ body.focusing nav.main { opacity: .0; pointer-events: none; }
 <script src="js/world.js"></script>
 <script src="js/render.js"></script>
 <script src="js/net.js"></script>
+<script src="js/safety.js"></script>
+<script src="js/sound.js"></script>
 <script src="js/app.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/features.js"></script>
 <script>
   (function start() {
     if (!window.THREE) { document.querySelector('#loading span').textContent = '3D motoru yüklenemedi. Bağlantını kontrol edip sayfayı yenile.'; return; }

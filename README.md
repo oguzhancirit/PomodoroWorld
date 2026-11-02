@@ -19,6 +19,39 @@
 - **Yapı modu**: geri al/yinele (Ctrl+Z / Ctrl+Y), eşyanın sığmadığı yerde kırmızı uyarı, Kopyala (aynı eşyadan bir tane daha), duvarlar kesik/açık/alçak, kuşbakışı (T), tek tıkla 9 hazır oda stili.
 - **Görüntü**: ekran-uzayı ortam gölgesi (SAO), eşya altı temas gölgeleri, duvar-zemin köşe gölgeleri, karakterlerde kenar ışığı, kumaşlarda parlaklık, yüzeylerde kabartma.
 
+## v4: beş büyük özellik
+
+1. **Birlikte (ortak seans)**: Odada "Birlikte başlat" dersen odadakilere davet gider. Katılanların sayacı seninkine eşitlenir; molaya birlikte girersiniz. Bir oyuncunun üstüne tıklayıp "sayacına katıl" da diyebilirsin.
+2. **Yapılacaklar**: İşleri kaç pomodoro süreceği tahminiyle ekle. Odak ekranında bir işi seç; odaklandıkça dakikası ve pomodorosu o işe yazılır. Tahmin dolunca "bitti mi?" diye sorar.
+3. **Ortam sesleri**: Yağmur, kafe, şömine, orman, dalgalar ve odak gürültüsü. Hepsi cihazda üretilir, dosya indirmez. İstersen yalnızca odak sırasında çalar; manzarana uygun karışımı tek tıkla önerir.
+4. **Arkadaşlar**: Kodunla arkadaş ekle. Dünya ekranında kimin çevrimiçi olduğunu ve nerede olduğunu görür, yanına gidersin. Arkadaşın odana girince haber verir.
+5. **İçgörüler**: 6 aylık odak takvimi, son 30 günün kategori dağılımı, günün saatlerine göre verim ve tamamlanan işler.
+
+## Herkese açık kullanım için önlemler
+
+- **Güvenli veri**: Diğer oyunculardan gelen her veri boyut, tür ve aralık açısından denetlenir. Bozuk, aşırı büyük ya da hileli veri oyunu kilitleyemez; isimler HTML olarak işlenmez.
+- **Moderasyon**:
+  - Sohbette küfür filtresi (Türkçe + İngilizce, leetspeak dahil) ve uygunsuz isim engeli
+  - Kişi başı mesaj sınırı ve tekrar eden mesajların süzülmesi
+  - Engelle; oda sahibi için "Odamdan çıkar" (çıkarılan kişiyi odadaki herkes gizler)
+- **Gizlilik**: Görev metni varsayılan olarak paylaşılmaz. Ayarlardan açılabilir.
+- **Ölçek**: Sosyal alanlar 16 kişilik salonlara bölünür. Dünya dizinine yalnızca açık oda sahipleri ve dizine bakanlar bağlanır; böylece P2P ağı kalabalıkta çökmez.
+- **Sayaç**: Gerçek saate bağlıdır. Arka plan sekmesi, uyku modu ve sayfa yenileme süreyi bozmaz, seans kaldığı yerden devam eder. Arka plandayken bildirim gönderir.
+- **Kayıt güvenliği**:
+  - Aynı tarayıcıda tek etkin sekme (iki sekme ilerlemeyi ezemez, süreyi iki kez sayamaz)
+  - Günlük yedek kopya: bozuk kayıt otomatik kurtarılır
+  - Yedeği dosya olarak indirip başka cihaza taşıma
+  - Depolama dolarsa uyarı
+- **Hile**: Hız ayarı kaldırıldı (yalnızca `?dev` ile açılır). Haftalık sıralamada imkânsız XP değerleri kırpılır. Sunucu olmadığı için tam doğrulama mümkün değil (aşağıya bak).
+- **Kararlılık**:
+  - Oda her yeniden kurulduğunda eski 3D veri GPU'dan silinir
+  - Grafik bağlamı kaybolursa sahne yeniden kurulur
+  - WebGL yoksa anlaşılır bir uyarı çıkar
+  - "Hareketi azalt" tercihine uyulur
+- **Uygulama olarak yükleme (PWA)**: GitHub Pages'te ana ekrana eklenebilir. İnternet yokken de tek başına pomodoro ve oda tasarımı çalışır.
+
+**Bilinen sınır**: Sunucusuz (P2P) bir yapıda ilerleme oyuncunun kendi cihazında tutulur. Bu yüzden sıralama yalnızca makul olmayan değerleri eleyebilir, kesin hile koruması sağlayamaz. Gerçek bir genel sıralama ve hesap senkronu için küçük bir arka uç (ör. Supabase/Firebase) gerekir.
+
 ## Odalar
 
 - **Kendi odan**: Herkesin kendi kurduğu oda. Adını, açıklamasını ve kategorisini değiştir; **Açık** (Dünya'da listelenir) ya da **Kapalı** (sadece davet linki/koduyla girilir) yap. Kapalı odada davet linkini yenileyerek eski linki iptal edebilirsin.
@@ -43,7 +76,7 @@
 - Saf HTML/CSS/JS + Three.js r128 (prosedürel modeller, ACES ton eşleme, sRGB renk yönetimi, bloom, SAO, PMREM ortam ışığı). Derleme adımı yok.
 - Performans: sabit eşyalar ve karakter parçaları malzemeye göre birleştirilir (çizim çağrısı yaklaşık yarıya iner). Yavaş cihazlarda önce ortam gölgesi, sonra çözünürlük, en son bloom kapatılır. Odak ekranında 30 FPS sınırı uygulanır.
 - Gerçek zamanlı katman (`js/net.js`): claude.ai artifact olarak açıldığında `room` yeteneği, GitHub Pages'te Trystero (WebRTC P2P), bunlar yoksa aynı tarayıcıdaki sekmeler arası BroadcastChannel.
-- İlerleme `localStorage`'da tutulur.
+- İlerleme `localStorage`'da tutulur (günlük yedek kopyası ve dosyaya dışa aktarma ile).
 
 ```
 index.html      arayüz ve stiller
@@ -53,9 +86,13 @@ js/models.js    3D mobilya ve manzaralar
 js/avatar.js    karakter modeli ve animasyonları
 js/world.js     sahne, ışık atmosferi, kamera, editör, önizleme
 js/render.js    görüntü kalitesi (AO, temas gölgeleri, kenar ışığı), birleştirme, kare hızı yönetimi, yerleştirme kontrolü
-js/net.js       gerçek zamanlı bağlantı
+js/net.js       gerçek zamanlı bağlantı (boyut sınırlı)
+js/safety.js    gelen verinin denetimi, küfür filtresi, hız sınırları, makullük sınırları
+js/sound.js     prosedürel ortam sesleri
 js/app.js       oyun mantığı (sayaç, XP, görevler, odalar, davet)
 js/ui.js        arayüz (odak ekranı, karşılama, tur, gardırop, mağaza…)
+js/features.js  ortak seans, yapılacaklar, ses karıştırıcı, arkadaşlar, içgörüler, kişi kartı, yedek
+sw.js, manifest.webmanifest, icons/   uygulama olarak yükleme ve çevrimdışı çalışma
 build.py        tek dosyalık sürüm üretir (dist/)
 ```
 
