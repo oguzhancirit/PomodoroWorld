@@ -110,7 +110,7 @@
       this.neonLights = [new THREE.PointLight('#FF3FA4', 0, 9, 2), new THREE.PointLight('#26D8FF', 0, 9, 2)]; this.neonLights.forEach((l) => this.scene.add(l));
     }
     setupEnv() {
-      try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(this.renderer); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; if (THREE.OutputPass) this.scene.environmentIntensity = 0.3; /* r186 RoomEnvironment is ~3x brighter than r128's */ } } catch (e) {}
+      try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(this.renderer); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; } } catch (e) {}
     }
     setupPost() {
       this.post = null;
@@ -479,7 +479,7 @@
       r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); r.outputEncoding = THREE.sRGBEncoding; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 0.95; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
       host.appendChild(r.domElement);
       this.scene = new THREE.Scene();
-      try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(r); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; if (THREE.OutputPass) this.scene.environmentIntensity = 0.3; /* r186 RoomEnvironment is ~3x brighter than r128's */ } } catch (e) {}
+      try { if (THREE.RoomEnvironment) { const pm = new THREE.PMREMGenerator(r); this.scene.environment = pm.fromScene(new THREE.RoomEnvironment(), 0.04).texture; } } catch (e) {}
       this.camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
       this.scene.add(new THREE.HemisphereLight('#FFF6EC', '#6A5A7A', 0.42));
       const d = new THREE.DirectionalLight('#FFE9D6', 1.15); d.position.set(2, 4, 3); d.castShadow = true; d.shadow.mapSize.set(1024, 1024); d.shadow.radius = 4; this.scene.add(d);

@@ -46,7 +46,10 @@ class LegacyPointLight extends legacy(T.PointLight) {
   get distance() { return this._ld; }
   set distance(v: number) { this._ld = v * 0.5; }
 }
+// r186's RoomEnvironment reflection is ~3x stronger than r128's; every old scene gets the old balance.
+class LegacyScene extends T.Scene { constructor() { super(); this.environmentIntensity = 0.3; } }
 const LEGACY_LIGHTS = {
+  Scene: LegacyScene,
   PointLight: LegacyPointLight,
   DirectionalLight: legacy(T.DirectionalLight),
   HemisphereLight: legacy(T.HemisphereLight),

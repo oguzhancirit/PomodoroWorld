@@ -91,6 +91,7 @@ export function Lobby() {
         <button className="go" disabled={!name || busy || !allowed} onClick={() => joinStudyRoom()}>
           {busy ? 'Bağlanıyor…' : !name ? 'Önce adını yaz' : !allowed ? 'Önce parçaları al ya da ücretsizlere dön' : 'Çalışma odasına gir'}
         </button>
+        <button className="go alt" onClick={() => useStore.getState().set({ screen: 'home' })}>Odama git <small>— eşyalarını yerleştir, odanı tasarla</small></button>
         <ShopModal />
       </section>
     </main>

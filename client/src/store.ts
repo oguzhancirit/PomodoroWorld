@@ -1,7 +1,7 @@
 // The shared notebook (zustand): UI state + a copy of what the server says.
 // 3D components read small slices of it with selectors.
 import { create } from 'zustand';
-import { defaultAvatar, type Avatar, type Activity, type Phase, type Wallet } from '@pw/shared';
+import { defaultAvatar, type Avatar, type Activity, type Phase, type Wallet, type Room } from '@pw/shared';
 
 export interface PlayerView {
   id: string; name: string; level?: number; avatar: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
@@ -16,7 +16,7 @@ function loadProfile(): Profile {
   return d;
 }
 
-export type Screen = 'lobby' | 'room';
+export type Screen = 'lobby' | 'room' | 'home';
 export type NetStatus = 'idle' | 'connecting' | 'online' | 'reconnecting' | 'offline';
 
 interface State {
@@ -37,6 +37,10 @@ interface State {
   wallet: Wallet | null;
   reward: { xp: number; coins: number; lines: string[]; levelUp: number; at: number } | null;
   shop: boolean;
+  /** shop tab to open with (the room editor sends people to the furniture tab) */
+  shopTab: string;
+  /** my personal room (old game format) */
+  room: Room | null;
   setProfile(p: Partial<Profile>): void;
   set(partial: Partial<State>): void;
   upsertPlayer(id: string, p: Partial<PlayerView>): void;
@@ -62,6 +66,8 @@ export const useStore = create<State>((set, get) => ({
   wallet: null,
   reward: null,
   shop: false,
+  shopTab: 'avatar',
+  room: null,
   setProfile(p) {
     const profile = { ...get().profile, ...p };
     try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch { /* ignore */ }
