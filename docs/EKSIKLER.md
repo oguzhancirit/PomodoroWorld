@@ -39,4 +39,17 @@
 - ✔ Slower levels: xpStep 100*L^1.4.
 - ✔ Social spaces: one host bot each (demo only); library bots removed; Elif kept in your own room (demo guide). Seat heights measured on the drawn cushion (legacy/index.ts).
 - ✔ Focus clock: white watch face, Oswald digits, 60 ticks as progress, one card with the setup.
-- Note: the artifact demo still has the old hand clips (clips-*.json are read-blocked, so they cannot be published from here).
+- ✔ Demo has the new hand/emote clips (published from a scratchpad copy).
+
+## Night round (2026-11-03): login, game, shop + personal style
+- ✔ Sign-in page after the user's example (ui/Login.tsx): framed cards (film clip, character creator, people together), Google (Google's own button; server checks the token: server/src/auth.ts, /api/auth/google, needs GOOGLE_CLIENT_ID on the server and VITE_GOOGLE_CLIENT_ID in the build), Apple "Yakında", guest. Guest progress moves into a new Google account; the look (name + avatar) is kept on the account (/api/look). First run: film → character → room + tour (profile.made).
+- ✔ Extras: dice "Şansıma" in character creation, live "people focusing now" line, account box in Karakterim (link Google / sign out).
+- ✔ Speed: screens are lazy chunks; the sign-in page loads ~109 KB instead of 537 KB.
+- ✔ Timer: flip cards in the room timer card; the focus screen keeps the plain ring. Chat starts folded; chat and day summary side by side.
+- ✔ Karakterim = wardrobe of owned parts (name/body/colours fixed after creation).
+- ✔ Oyun Salonu: console + TV item (f_console, also in the shop), "Pomo Canavarları" one-player creature battle (shared/src/monsters.ts, ui/MonsterGame.tsx). Next: two players.
+- ✔ Personal touches on room items (shared room.ts: c colour, t own text ≤18 cleaned/censored, v design): own neon sign, design poster, letter garland, doormat with own words; free colour pickers everywhere.
+- ✔ 29 new shop things (plants, lights, hobbies, pets that move, rugs, wall pieces, desk things); shop search + "Yeni" / "Kişiselleştirilebilir" filters.
+- ✔ Floating room effects (snow, sakura, fireflies, leaves, stardust, bubbles; Room.fx, level-gated), 7 new wall/floor patterns, 7 new one-click looks.
+- ✔ Demo-only "Deneme paketi" in the shop (+3000 coins, level 10) to try everything.
+- Left: Google client id from the user; Apple sign-in (needs a paid Apple developer account); two-player Pomo Canavarları.
