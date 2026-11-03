@@ -27,6 +27,7 @@ export const JoinOptions = z.object({
   avatar: z.string().max(60).optional(),
   preset: z.string().max(8).optional(),
   activity: ActivityEnum.optional(),
+  category: z.string().max(20).optional(),
 });
 export type JoinOptions = z.infer<typeof JoinOptions>;
 
@@ -41,16 +42,24 @@ export function parseJoin(input: unknown): JoinOptions {
     avatar: pick(z.string().max(60), o.avatar),
     preset: pick(z.string().max(8), o.preset),
     activity: pick(ActivityEnum, o.activity),
+    category: pick(z.string().max(20), o.category),
   };
 }
 
 export const ChatMsg = z.object({ text: z.string().min(1).max(CHAT_MAX * 2) });
 export const EmoteMsg = z.object({ e: z.enum(['wave', 'clap', 'cheer', 'heart', 'coffee']) });
 export const SitMsg = z.object({ seatIndex: z.number().int().min(0).max(63) });
-export const ActivityMsg = z.object({ activity: ActivityEnum });
+export const ActivityMsg = z.object({ activity: ActivityEnum, category: z.string().max(20).optional() });
 
 export const EMOTES = EmoteMsg.shape.e.options;
 
 export const BuyRequest = z.object({ pid: PlayerId, secret: PlayerSecret, itemId: z.string().max(80) });
-export const ProfileRequest = z.object({ pid: PlayerId, secret: PlayerSecret });
+/** tz: the player's time zone in minutes east of UTC, so quests reset at their own midnight */
+export const ProfileRequest = z.object({ pid: PlayerId, secret: PlayerSecret, tz: z.number().int().min(-720).max(840).optional() });
+export const QuestRequest = z.discriminatedUnion('action', [
+  z.object({ pid: PlayerId, secret: PlayerSecret, action: z.literal('login') }),
+  z.object({ pid: PlayerId, secret: PlayerSecret, action: z.literal('claim'), id: z.string().max(20) }),
+  z.object({ pid: PlayerId, secret: PlayerSecret, action: z.literal('pledge'), min: z.number().int(), days: z.number().int() }),
+  z.object({ pid: PlayerId, secret: PlayerSecret, action: z.literal('unpledge') }),
+]);
 export const RoomRequest = z.object({ pid: PlayerId, secret: PlayerSecret, room: z.record(z.string(), z.unknown()) });

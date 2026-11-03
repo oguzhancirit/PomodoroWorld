@@ -7,7 +7,7 @@ import {
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter,
   decodeAvatar, encodeAvatar, firstFreeSeat, isSeatFree, STUDY_ROOM,
   ChatMsg, EmoteMsg, SitMsg, ActivityMsg, parseJoin,
-  rewardFocus, avatarAllowed, levelFromXP, defaultAvatar, durationOf,
+  rewardFocus, avatarAllowed, levelFromXP, defaultAvatar, durationOf, clock, noteChat,
 } from '@pw/shared';
 import { StudyRoomState, Player } from './state';
 import { profiles, type Profile } from '../profiles';
@@ -30,6 +30,8 @@ export class StudyRoom extends Room {
   private scale = 1;
   private track = new Map<string, FocusTrack>();
   private profileOf = new Map<string, Profile>();
+  /** what each player works on (Ders, Kodlama…), for their statistics */
+  private categoryOf = new Map<string, string>();
 
   messages = {
     chat: validate(ChatMsg, (client: Client, { text }) => {
@@ -42,6 +44,8 @@ export class StudyRoom extends Room {
       p.bubble = clean;
       this.broadcast('chat', { id: client.sessionId, name: p.name, text: clean, at: Date.now() });
       this.clock.setTimeout(() => { if (p.bubble === clean) p.bubble = ''; }, BUBBLE_MS);
+      const prof = this.profileOf.get(client.sessionId);
+      if (prof) { profiles.update(prof, noteChat(prof.wallet, clock(Date.now(), prof.wallet.tz))); client.send('wallet', { wallet: prof.wallet }); }
     }),
     emote: validate(EmoteMsg, (client: Client, { e }) => {
       if (!this.state.players.has(client.sessionId)) return;
@@ -53,9 +57,10 @@ export class StudyRoom extends Room {
       if (!p || !isSeatFree(seatIndex, this.takenSeats(client.sessionId), STUDY_ROOM.seats.length)) return;
       p.seatIndex = seatIndex;
     }),
-    activity: validate(ActivityMsg, (client: Client, { activity }) => {
+    activity: validate(ActivityMsg, (client: Client, { activity, category }) => {
       const p = this.state.players.get(client.sessionId);
       if (p) p.activity = activity;
+      if (p && category) this.categoryOf.set(client.sessionId, cleanText(category, 20) || 'Diğer');
     }),
     time: validate(z.object({ t0: z.number() }), (client: Client, { t0 }) => {
       if (!this.timeLimit.allow(client.sessionId, Date.now())) return;
@@ -86,6 +91,7 @@ export class StudyRoom extends Room {
     p.avatar = encodeAvatar(prof && !avatarAllowed(prof.wallet, look) ? defaultAvatar(look.g) : look);
     p.level = prof ? levelFromXP(prof.wallet.xp).level : 1;
     p.activity = o.activity ?? 'type';
+    if (o.category) this.categoryOf.set(client.sessionId, cleanText(o.category, 20) || 'Diğer');
     p.seatIndex = firstFreeSeat(this.takenSeats(), STUDY_ROOM.seats.length);
     p.pose = 'sit';
     p.bubble = '';
@@ -113,7 +119,7 @@ export class StudyRoom extends Room {
 
   onLeave(client: Client) {
     this.state.players.delete(client.sessionId);
-    this.track.delete(client.sessionId); this.profileOf.delete(client.sessionId);
+    this.track.delete(client.sessionId); this.profileOf.delete(client.sessionId); this.categoryOf.delete(client.sessionId);
     this.chatLimit.forget(client.sessionId); this.emoteLimit.forget(client.sessionId); this.timeLimit.forget(client.sessionId);
   }
 
@@ -167,15 +173,17 @@ export class StudyRoom extends Room {
       results.push([id, ms, t.fromStart && t.intact]);
       t.accMs = 0; t.since = null;
     });
-    const day = new Date().toISOString().slice(0, 10);
     const focusMin = durationOf('focus', this.preset) * this.scale / 60_000;
     for (const [id, ms, completed] of results) {
       const prof = this.profileOf.get(id); if (!prof) continue;
       const others = results.filter(([o, oms]) => o !== id && oms > 30_000 / this.scale).length;
-      const r = rewardFocus(prof.wallet, { minutes: (ms * this.scale) / 60_000, completed, round: ended.round + 1, others, day, longFocus: focusMin >= 90 });
+      const minutes = (ms * this.scale) / 60_000;
+      // the player's own calendar: their day, week and the minute their counted time began
+      const k = clock(now, prof.wallet.tz), start = clock(now - minutes * 60_000, prof.wallet.tz);
+      const r = rewardFocus(prof.wallet, { minutes, completed, round: ended.round + 1, others, day: k.day, week: k.week, startMin: start.minute, cat: this.categoryOf.get(id) ?? 'Diğer', longFocus: focusMin >= 90 });
       profiles.update(prof, r.wallet);
       const pl = this.state.players.get(id); if (pl) pl.level = levelFromXP(r.wallet.xp).level;
-      this.clients.getById(id)?.send('reward', { gained: r.gained, lines: r.lines, levelUp: r.levelUp, wallet: r.wallet });
+      this.clients.getById(id)?.send('reward', { gained: r.gained, lines: r.lines, levelUp: r.levelUp, wallet: r.wallet, completed, minutes: Math.floor(minutes) });
     }
   }
 
