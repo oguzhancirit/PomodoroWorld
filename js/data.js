@@ -164,6 +164,10 @@
   w('w_painting', 'Soyut Tablo', 200, 4, { ww: 1.0, wy: 1.7 });
   w('w_worldmap', 'Dünya Haritası', 220, 4, { ww: 1.4, wy: 1.7 });
   w('w_neon', 'Neon "ODAK" Tabelası', 380, 6, { ww: 1.2, wy: 2.0, light: 1 });
+  // personal wall pieces (user 2026-11-03): your own neon words, a poster whose design you pick, a letter garland
+  w('w_neon_text', 'Kendi Neon Yazın', 450, 4, { ww: 1.3, wy: 1.75, text: 1, tint: 1 });
+  w('w_poster_art', 'Desenli Poster', 120, 1, { ww: 0.62, wy: 1.5, vars: 8 });
+  w('w_garland', 'Harfli Flama', 180, 2, { ww: 1.4, wy: 2.05, text: 1 });
   w('w_tv', 'Duvar TV', 500, 7, { ww: 1.4, wy: 1.5 });
   w('w_diploma', 'Çerçeveli Diploma', 300, 9, { ww: 0.6, wy: 1.8 });
   w('w_frames', 'Fotoğraf Duvarı', 140, 2, { ww: 1.0, wy: 1.7 });

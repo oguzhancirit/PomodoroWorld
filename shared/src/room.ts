@@ -1,11 +1,15 @@
 // The personal room, exactly as the original game stored it (js/app.js + js/safety.js),
 // plus the rule the server needs: you may only show what you own and what your level allows.
+import { cleanText, censor } from './chat';
 import { ROOM_FURN, ROOM_THEMES, ROOM_VIEWS, ROOM_SIZES, FLOOR_TYPES, WALL_PATTERNS, MOOD_NAMES, SURFACE_LVL, MOOD_LVL, WOOD_TONE_IDS, OLD_DEFAULT_ROOM } from './roomCatalog';
 import { levelFromXP, type Wallet } from './economy';
 
 export type WallId = 'w0' | 'w1' | 'w2' | 'w3';
-export interface FloorItem { id: string; x: number; z: number; r: number; c?: string; wd?: string }
-export interface WallItem { id: string; w: WallId; x: number }
+/** personal touches (user 2026-11-03): c colour, t own short text (neon sign, garland), v design number (posters…) */
+export interface FloorItem { id: string; x: number; z: number; r: number; c?: string; wd?: string; t?: string; v?: number }
+export interface WallItem { id: string; w: WallId; x: number; c?: string; t?: string; v?: number }
+export const ITEM_TEXT_MAX = 18;
+export const ITEM_VARIANTS = 16;
 export type PlacedItem = FloorItem | WallItem;
 export interface Room {
   name: string; desc: string; cat: string; open: boolean; token: string; ban: string[];
@@ -46,15 +50,26 @@ const num = (v: unknown, lo: number, hi: number, def: number) => (typeof v === '
 const str = (v: unknown, max: number, def = '') => (typeof v === 'string' ? v.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, max) : def);
 const round = (v: number) => Math.round(v * 1000) / 1000;
 
+/** colour, own text (short, clean, rude words hidden) and design number, when they are valid */
+function touches<T extends { c?: string; t?: string; v?: number }>(o: T, it: Record<string, unknown>): T {
+  if (typeof it.c === 'string' && HEX.test(it.c)) o.c = it.c;
+  const t = censor(cleanText(it.t, ITEM_TEXT_MAX).replace(/[<>]/g, '')).trim();
+  if (t) o.t = t;
+  if (typeof it.v === 'number' && Number.isInteger(it.v) && it.v >= 0 && it.v < ITEM_VARIANTS) o.v = it.v;
+  return o;
+}
+
 function cleanItem(it: unknown): PlacedItem | null {
   if (!obj(it) || typeof it.id !== 'string') return null;
   const def = FURN.get(it.id); if (!def) return null;
-  if (def.wall) return WALLS.includes(it.w as WallId) ? { id: it.id, w: it.w as WallId, x: round(num(it.x, -LIM, LIM, 0)) } : null;
+  if (def.wall) {
+    if (!WALLS.includes(it.w as WallId)) return null;
+    return touches({ id: it.id, w: it.w as WallId, x: round(num(it.x, -LIM, LIM, 0)) }, it);
+  }
   if (it.w) return null;
   const o: FloorItem = { id: it.id, x: round(num(it.x, -LIM, LIM, 0)), z: round(num(it.z, -LIM, LIM, 0)), r: Math.round(num(it.r, 0, 3, 0)) };
-  if (typeof it.c === 'string' && HEX.test(it.c)) o.c = it.c;
   if (typeof it.wd === 'string' && WOODS.has(it.wd)) o.wd = it.wd;
-  return o;
+  return touches(o, it);
 }
 
 /** Repair a room that came from storage, an old save or the network. */

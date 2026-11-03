@@ -12,7 +12,7 @@ const world = fs.readFileSync(root + 'js/world.js', 'utf8');
 const grab = (name) => { const m = world.match(new RegExp(`PW\\.${name} = (\\[[^\\n]*\\]);`)); if (!m) throw new Error(name); return JSON.parse(m[1].replace(/'/g, '"')); };
 const moods = [...world.matchAll(/^\s{4}(\w+): \{ env: [\d.]+, name: '([^']+)'/gm)].map((m) => [m[1], m[2]]);
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefined).map((k) => [k, o[k]]));
-const furn = PW.ROOM_ITEMS.map((i) => pick(i, ['id', 'sub', 'name', 'price', 'lvl', 'wall', 'top', 'seat']));
+const furn = PW.ROOM_ITEMS.map((i) => pick(i, ['id', 'sub', 'name', 'price', 'lvl', 'wall', 'top', 'seat', 'text', 'tint', 'vars']));
 const themes = PW.THEMES.map((i) => pick(i, ['id', 'name', 'price', 'lvl']));
 const views = PW.VIEWS.map((i) => pick(i, ['id', 'name', 'price', 'lvl']));
 const sizes = PW.SIZES.map((i) => pick(i, ['id', 'name', 'price', 'lvl', 'size']));

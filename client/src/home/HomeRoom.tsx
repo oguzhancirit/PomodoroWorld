@@ -225,7 +225,7 @@ export function HomeRoom() {
     remove() { if (!selItem) return; change((x) => ({ ...x, items: x.items.filter((_, i) => i !== sel) })); },
     move() {
       if (!selItem) return; const it = selItem;
-      pendingGhost.current = { id: it.id, r: 'r' in it ? it.r : 0, extra: 'w' in it ? {} : { c: it.c, wd: it.wd } };
+      pendingGhost.current = { id: it.id, r: 'r' in it ? it.r : 0, extra: 'w' in it ? { c: it.c, t: it.t, v: it.v } : { c: it.c, wd: it.wd, t: it.t, v: it.v } };
       change((x) => ({ ...x, items: x.items.filter((_, i) => i !== sel) }));
     },
     copy() {
@@ -234,6 +234,8 @@ export function HomeRoom() {
       startGhost(selItem.id, selItem.r || 0, { c: selItem.c, wd: selItem.wd });
     },
     tint(k: 'c' | 'wd', v: string) { if (!selItem || 'w' in selItem) return; change((x) => { (x.items[sel] as Record<string, unknown>)[k] = v; return x; }, true); },
+    /** personal touches on any item: colour, own text, design number */
+    touch(k: 'c' | 't' | 'v', v: string | number) { if (!selItem) return; change((x) => { const it = x.items[sel] as Record<string, unknown>; if (v === '') delete it[k]; else it[k] = v; return x; }, true); },
     walls() { const w = engine.world; if (!w) return; const next = ({ cut: 'up', up: 'down', down: 'cut' } as Record<string, string>)[w.wallMode || 'cut']; w.setWallMode(next); flash({ cut: 'Kesik duvarlar', up: 'Duvarlar yukarıda', down: 'Duvarlar aşağıda' }[next]!); setTick((t) => t + 1); },
     top() { engine.world?.toggleTopView(); setTick((t) => t + 1); },
     cancel() { engine.world?.cancelGhost(); setTick((t) => t + 1); },

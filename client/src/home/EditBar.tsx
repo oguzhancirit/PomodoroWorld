@@ -1,5 +1,5 @@
 // The room editor bar, the same tabs and tools as the original game (js/ui.js renderEditBar).
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   CATALOG, available, owns, itemById, FLOOR_TYPES, WALL_PATTERNS, MOOD_NAMES, SURFACE_LVL, MOOD_LVL,
   type Room, type Wallet, type PlacedItem, type Item,
@@ -25,7 +25,7 @@ interface Props {
   onUndo(): void; onRedo(): void; onDone(): void;
   onChange(fn: (r: Room) => Room, keepSel?: boolean): void;
   onGhost(id: string, r?: number, extra?: Record<string, unknown>): void;
-  actions: { rotate(): void; remove(): void; move(): void; copy(): void; tint(k: 'c' | 'wd', v: string): void; walls(): void; top(): void; cancel(): void };
+  actions: { rotate(): void; remove(): void; move(): void; copy(): void; tint(k: 'c' | 'wd', v: string): void; touch(k: 'c' | 't' | 'v', v: string | number): void; walls(): void; top(): void; cancel(): void };
 }
 
 export function EditBar(p: Props) {
@@ -75,8 +75,11 @@ export function EditBar(p: Props) {
       );
     });
   } else if (tab === 'furn') {
+    const touches = selItem ? <Touches it={selItem} touch={actions.touch} /> : null;
+    if (!selFloor && touches) sub = touches;
     if (selFloor) sub = (
       <>
+        {touches}
         <div className="swatches"><span className="lbl">Kumaş / renk</span>{(PW.FABRIC_COLORS as string[]).map((c) => <button key={c} className={`sw ${selFloor.c === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Renk" onClick={() => actions.tint('c', c)} />)}</div>
         <div className="swatches"><span className="lbl">Ahşap</span>{Object.entries(PW.WOOD_TONES as Record<string, string>).map(([k, c]) => <button key={k} className={`sw ${selFloor.wd === k ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label={k} onClick={() => actions.tint('wd', k)} />)}</div>
       </>
@@ -157,5 +160,34 @@ export function EditBar(p: Props) {
         </div>
       )}
     </section>
+  );
+}
+
+/** personal touches for the selected item (user 2026-11-03): your own words, the neon colour, the poster design */
+function Touches({ it, touch }: { it: PlacedItem; touch: (k: 'c' | 't' | 'v', v: string | number) => void }) {
+  const def = PW.ITEM[it.id] as { text?: number; tint?: number; vars?: number } | undefined;
+  const cur = it as { c?: string; t?: string; v?: number };
+  const [text, setText] = useState(cur.t ?? '');
+  useEffect(() => setText(cur.t ?? ''), [it]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!def || !(def.text || def.tint || def.vars)) return null;
+  const save = () => { if (text.trim() !== (cur.t ?? '')) touch('t', text.trim()); };
+  return (
+    <>
+      {def.text && (
+        <div className="swatches touch-text"><span className="lbl">Yazın</span>
+          <input value={text} maxLength={18} placeholder="Kendi sözünü yaz" aria-label="Eşyanın üstündeki yazı"
+            onChange={(e) => setText(e.target.value)} onBlur={save} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') { save(); (e.target as HTMLInputElement).blur(); } }} />
+          <button type="button" className="ghost sm" onClick={save}>Yaz</button>
+        </div>
+      )}
+      {def.tint && (
+        <div className="swatches"><span className="lbl">Işık rengi</span>{(PW.NEON_COLORS as string[]).map((c) => <button key={c} className={`sw ${cur.c === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Işık rengi" onClick={() => touch('c', c)} />)}</div>
+      )}
+      {def.vars && (
+        <div className="swatches touch-vars"><span className="lbl">Desen</span>{Array.from({ length: def.vars }, (_, v) => (
+          <button key={v} className={`var ${(cur.v ?? 0) === v ? 'on' : ''}`} aria-label={`Desen ${v + 1}`} onClick={() => touch('v', v)}><img alt="" src={PW.posterThumb(v)} /></button>
+        ))}</div>
+      )}
+    </>
   );
 }

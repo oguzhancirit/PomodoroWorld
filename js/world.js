@@ -245,7 +245,7 @@
       this.surfaceAt = surfaceAt;
       items.forEach((it, i) => {
         const d = PW.ITEM[it.id]; if (!d) return;
-        const g = PW.buildItem(it.id, { seed: i * 13 + 5, c: it.c, wd: it.wd }); g.userData.itemIndex = i;
+        const g = PW.buildItem(it.id, { seed: i * 13 + 5, c: it.c, wd: it.wd, t: it.t, v: it.v }); g.userData.itemIndex = i;
         if (d.wall) { const wg = this.wallGroups[it.w] || this.wallGroups.w0; g.position.set(it.x || 0, d.wy || 1.6, WALL_T / 2 + 0.005); wg.userData.tall.add(g); }
         else { g.position.set(it.x, d.top ? surfaceAt(it.x, it.z) : 0, it.z); g.rotation.y = (it.r || 0) * Math.PI / 2; G.add(g); }
         g.traverse((o) => { if (o.isMesh) { if (!o.material.transparent && !d.rug) o.castShadow = true; o.receiveShadow = true; } });

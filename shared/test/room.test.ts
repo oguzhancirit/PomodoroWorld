@@ -144,3 +144,27 @@ describe('step 4: who may enter someone else\'s room', () => {
     expect(parseInvite('')).toBeNull();
   });
 });
+
+describe('personal touches on items (user 2026-11-03: everyone shows their own style)', () => {
+  const room = (items: unknown[]) => sanitizeRoom({ ...defaultRoom(), items });
+  it('keeps a short own text, a design number and a colour on floor and wall items', () => {
+    const r = room([{ id: 'w_neon_text', w: 'w0', x: 0, t: 'Odaklan Ozi!', c: '#FF4FA0' }, { id: 'w_poster_art', w: 'w1', x: 1, v: 3 }, { id: 'f_beanbag', x: 1, z: 1, r: 0, c: '#3E7CB1', v: 2 }]);
+    expect(r.items[0]).toEqual({ id: 'w_neon_text', w: 'w0', x: 0, t: 'Odaklan Ozi!', c: '#FF4FA0' });
+    expect(r.items[1]).toEqual({ id: 'w_poster_art', w: 'w1', x: 1, v: 3 });
+    expect(r.items[2]).toMatchObject({ c: '#3E7CB1', v: 2 });
+  });
+  it('cleans the text: short, no tags or control characters, rude words hidden, empty dropped', () => {
+    const [a, b, c] = room([
+      { id: 'w_neon_text', w: 'w0', x: 0, t: '<b>çok uzun bir yazı buraya sığmaz</b>\n' },
+      { id: 'w_neon_text', w: 'w0', x: 1, t: '   ' },
+      { id: 'w_neon_text', w: 'w0', x: 2, t: 'siktir' },
+    ]).items as { t?: string }[];
+    expect(a.t!.length).toBeLessThanOrEqual(18); expect(a.t).not.toMatch(/[<>\n]/);
+    expect(b.t).toBeUndefined();
+    expect(c.t).not.toBe('siktir');
+  });
+  it('ignores a bad design number or colour', () => {
+    const [a] = room([{ id: 'w_poster_art', w: 'w1', x: 1, v: 99, c: 'red' }]).items as { v?: number; c?: string }[];
+    expect(a.v).toBeUndefined(); expect(a.c).toBeUndefined();
+  });
+});

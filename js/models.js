@@ -224,6 +224,62 @@
       cyl(pad, 0.012, 0.012, 0.02, '#1C1D22', -0.035, 0.04, 0, 8); for (const [bx, bc] of [[0.04, '#FF8466'], [0.06, '#4FA8E8']]) sph(pad, 0.008, bc, bx, 0.04, 0);
     }
   };
+  /* ---------- personal wall pieces (user 2026-11-03) ---------- */
+  // the player's own words in neon: the tube colour is d.c, the words are d.t
+  B.w_neon_text = (g, d = {}) => {
+    const col = d.c || '#FF4FA0', text = (d.t || 'Odaklan').slice(0, 18);
+    const tex = PW.canvasTex(512, 128, (c, w, h) => {
+      c.clearRect(0, 0, w, h);
+      const f = (n) => `800 ${n}px "Sora", "Trebuchet MS", sans-serif`;
+      let fs = 70; c.font = f(fs);
+      while (c.measureText(text).width > w - 48 && fs > 24) { fs -= 4; c.font = f(fs); }
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.shadowColor = col; c.shadowBlur = 26; c.fillStyle = col; c.fillText(text, w / 2, h / 2 + 4);
+      c.shadowBlur = 8; c.fillStyle = '#FFFFFF'; c.globalAlpha = 0.85; c.fillText(text, w / 2, h / 2 + 4);
+    });
+    tex.premultiplyAlpha = false;
+    const m = new THREE.MeshStandardMaterial({ map: tex, emissive: col, emissiveMap: tex, emissiveIntensity: 1.6, transparent: true, depthWrite: false });
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.35), m); p.position.z = 0.032; g.add(p);
+    // a dark acrylic board behind the tubes, so the glow reads on a light wall too
+    rbox(g, 1.46, 0.42, 0.02, 0.04, mat('#17141F', { rough: 0.25 }), 0, 0, 0.012);
+    for (const sx of [-1, 1]) cyl(g, 0.012, 0.012, 0.03, metal('#C9C2B4'), sx * 0.66, 0.16, 0.03, 8).rotation.x = Math.PI / 2;
+    g.userData.lightAt = [0, 0, 0.4]; g.userData.lightColor = col; g.userData.lightPower = 0.6;
+  };
+  // a poster: pick one of eight designs (d.v)
+  const POSTERS = [
+    (c, w, h) => { const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#FF9A62'); gr.addColorStop(1, '#6A3FA0'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#FFE08A'; c.beginPath(); c.arc(w / 2, h * 0.52, w * 0.26, Math.PI, 0); c.fill(); c.fillStyle = '#3A2063'; for (let i = 0; i < 5; i++) c.fillRect(0, h * 0.54 + i * 14, w, 6); },
+    (c, w, h) => { c.fillStyle = '#0E1530'; c.fillRect(0, 0, w, h); c.fillStyle = '#FFF'; for (let i = 0; i < 60; i++) c.fillRect((i * 37) % w, (i * 61) % h, 2, 2); c.fillStyle = '#E8B04A'; c.beginPath(); c.arc(w * 0.62, h * 0.38, 36, 0, 7); c.fill(); c.strokeStyle = '#F6D58A'; c.lineWidth = 5; c.beginPath(); c.ellipse(w * 0.62, h * 0.38, 62, 14, -0.3, 0, 7); c.stroke(); },
+    (c, w, h) => { c.fillStyle = '#DCEFF5'; c.fillRect(0, 0, w, h); c.fillStyle = '#7FA7B8'; c.beginPath(); c.moveTo(0, h * 0.75); c.lineTo(w * 0.35, h * 0.3); c.lineTo(w * 0.6, h * 0.62); c.lineTo(w * 0.8, h * 0.42); c.lineTo(w, h * 0.7); c.lineTo(w, h); c.lineTo(0, h); c.fill(); c.fillStyle = '#FFF'; c.beginPath(); c.moveTo(w * 0.28, h * 0.39); c.lineTo(w * 0.35, h * 0.3); c.lineTo(w * 0.42, h * 0.39); c.fill(); c.fillStyle = '#3F6E5A'; c.fillRect(0, h * 0.86, w, h * 0.14); },
+    (c, w, h) => { c.fillStyle = '#F4E9D8'; c.fillRect(0, 0, w, h); const cols = ['#E8553D', '#F2C14E', '#3E7CB1', '#2F7D5B']; for (let i = 0; i < 4; i++) { c.fillStyle = cols[i]; c.beginPath(); c.arc(w * (0.3 + (i % 2) * 0.4), h * (0.3 + Math.floor(i / 2) * 0.4), w * 0.17, 0, 7); c.fill(); } },
+    (c, w, h) => { c.fillStyle = '#1F8A8A'; c.fillRect(0, 0, w, h); c.strokeStyle = '#BFF1EA'; c.lineWidth = 6; for (let i = 0; i < 7; i++) { c.beginPath(); for (let x = 0; x <= w; x += 8) c.lineTo(x, h * 0.2 + i * 26 + Math.sin(x / 18 + i) * 8); c.stroke(); } },
+    (c, w, h) => { c.fillStyle = '#FCE7EF'; c.fillRect(0, 0, w, h); c.fillStyle = '#2A2440'; c.beginPath(); c.ellipse(w / 2, h * 0.6, 54, 46, 0, 0, 7); c.fill(); c.beginPath(); c.moveTo(w / 2 - 46, h * 0.5); c.lineTo(w / 2 - 34, h * 0.3); c.lineTo(w / 2 - 14, h * 0.45); c.fill(); c.beginPath(); c.moveTo(w / 2 + 46, h * 0.5); c.lineTo(w / 2 + 34, h * 0.3); c.lineTo(w / 2 + 14, h * 0.45); c.fill(); c.fillStyle = '#F2C14E'; c.beginPath(); c.arc(w / 2 - 18, h * 0.58, 7, 0, 7); c.arc(w / 2 + 18, h * 0.58, 7, 0, 7); c.fill(); },
+    (c, w, h) => { c.fillStyle = '#16141F'; c.fillRect(0, 0, w, h); c.fillStyle = '#FF8466'; c.font = 'bold 44px sans-serif'; c.textAlign = 'center'; c.fillText('25:00', w / 2, h * 0.45); c.fillStyle = '#F4F1EC'; c.font = 'bold 16px sans-serif'; c.fillText('ODAKLAN', w / 2, h * 0.62); c.fillText('KAZAN', w / 2, h * 0.72); },
+    (c, w, h) => { const cols = ['#2F3542', '#E8553D', '#F2C14E', '#F4F1EC']; for (let y = 0; y < 6; y++) for (let x = 0; x < 4; x++) { c.fillStyle = cols[(x + y * 3) % 4]; c.fillRect(x * w / 4, y * h / 6, w / 4, h / 6); } },
+  ];
+  B.w_poster_art = (g, d = {}) => {
+    const v = Math.max(0, Math.min(POSTERS.length - 1, d.v | 0));
+    box(g, 0.62, 0.84, 0.02, '#F6F4EF', 0, 0, 0.01);
+    const tex = PW.canvasTex(192, 256, POSTERS[v]);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.78), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 })); p.position.z = 0.022; g.add(p);
+  };
+  PW.POSTER_COUNT = POSTERS.length;
+  PW.posterThumb = (v) => { const c = document.createElement('canvas'); c.width = 48; c.height = 64; const g = c.getContext('2d'); g.scale(48 / 192, 64 / 256); POSTERS[v](g, 192, 256); return c.toDataURL(); };
+  PW.NEON_COLORS = ['#FF4FA0', '#FF8466', '#F2C14E', '#7CF29A', '#4FD8FF', '#8E6CFF', '#FFFFFF'];
+  // a letter garland: one paper flag per letter of d.t, on a string
+  B.w_garland = (g, d = {}) => {
+    const text = (d.t || 'MERHABA').toLocaleUpperCase('tr').replace(/\s+/g, ' ').slice(0, 12);
+    const letters = [...text]; const n = Math.max(1, letters.length), span = Math.min(1.7, 0.17 * n + 0.12);
+    const cols = ['#E8553D', '#F2C14E', '#3E7CB1', '#2F7D5B', '#E58BB0', '#8E6CC1'];
+    const sag = (x) => -0.06 * (1 - Math.pow((2 * x) / span, 2));
+    const pts = []; for (let i = 0; i <= 16; i++) { const x = -span / 2 + (span * i) / 16; pts.push(new THREE.Vector3(x, sag(x), 0.03)); }
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#6B5B4B' })));
+    letters.forEach((ch, i) => {
+      const x = -span / 2 + (span * (i + 0.5)) / n;
+      const tex = PW.canvasTex(64, 80, (c, w, h) => { c.fillStyle = cols[i % cols.length]; c.beginPath(); c.moveTo(0, 0); c.lineTo(w, 0); c.lineTo(w / 2, h); c.fill(); c.fillStyle = '#FFF'; c.font = 'bold 34px sans-serif'; c.textAlign = 'center'; c.fillText(ch, w / 2, 38); });
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.19), new THREE.MeshStandardMaterial({ map: tex, transparent: true, alphaTest: 0.3, side: THREE.DoubleSide }));
+      f.position.set(x, sag(x) - 0.095, 0.035); f.rotation.z = (i % 2 ? 1 : -1) * 0.04; g.add(f);
+    });
+  };
   B.w_tv = (g) => { rbox(g, 1.4, 0.8, 0.05, 0.01, '#111', 0, 0, 0.025); const tex = PW.canvasTex(256, 144, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#1F2C55'); gr.addColorStop(1, '#6A4FA3'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#F2C14E'; c.beginPath(); c.arc(190, 50, 22, 0, 7); c.fill(); c.fillStyle = '#0F1530'; c.beginPath(); c.moveTo(0, 144); c.lineTo(60, 80); c.lineTo(110, 120); c.lineTo(170, 70); c.lineTo(256, 144); c.fill(); c.fillStyle = '#FFF'; c.font = 'bold 16px sans-serif'; c.fillText('lo-fi odak radyosu', 12, 24); }); const p = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.74), new THREE.MeshStandardMaterial({ map: tex, emissive: '#FFFFFF', emissiveMap: tex, emissiveIntensity: 0.8 })); p.position.z = 0.052; g.add(p); };
 
 
