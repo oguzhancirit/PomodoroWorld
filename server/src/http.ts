@@ -5,6 +5,7 @@ import { buy, levelFromXP, BuyRequest, ProfileRequest, RoomRequest, QuestRequest
 import { matchMaker } from '@colyseus/core';
 import { HomeRoom } from './rooms/HomeRoom';
 import { LibraryRoom } from './rooms/LibraryRoom';
+import { SocialRoom } from './rooms/SocialRoom';
 import { profiles } from './profiles';
 
 const QUEST_REASON: Record<string, string> = { unknown: 'Böyle bir görev yok.', not_done: 'Bu görev henüz bitmedi.', claimed: 'Bu ödülü zaten aldın.' };
@@ -58,7 +59,8 @@ export function routes(app: express.Application, json: express.RequestHandler) {
       .sort((a, b) => b.n - a.n).slice(0, 60)
       .map(({ owner, ownerName, name, cat, n, cap }) => ({ owner, ownerName, name, cat, n, cap }));
     let library = 0; for (const r of LibraryRoom.live) library += r.state.players.size;
-    res.json({ rooms, library });
+    const social: Record<string, number> = {}; for (const r of SocialRoom.live) social[r.space] = (social[r.space] ?? 0) + r.state.players.size;
+    res.json({ rooms, library, social });
   });
   app.post('/api/quest', (req, res) => {
     const b = QuestRequest.safeParse(req.body);
@@ -88,9 +90,10 @@ export function routes(app: express.Application, json: express.RequestHandler) {
       profiles.setSocial(p, r.social);
     }
     // where everyone is right now (one server process: the live rooms are in memory)
-    const at = new Map<string, { name: string; room: HomeRoom | LibraryRoom }>();
+    const at = new Map<string, { name: string; room: HomeRoom | LibraryRoom | SocialRoom }>();
     for (const room of HomeRoom.live.values()) for (const [pid, nm] of room.whoIsHere()) if (!at.has(pid) || room.owner === pid) at.set(pid, { name: nm, room });
     for (const room of LibraryRoom.live) for (const [pid, nm] of room.whoIsHere()) if (!at.has(pid)) at.set(pid, { name: nm, room });
+    for (const room of SocialRoom.live) for (const [pid, nm] of room.whoIsHere()) if (!at.has(pid)) at.set(pid, { name: nm, room });
     let renamed = false;
     const list = Object.entries(p.social.friends).map(([pid, f]) => {
       const here = at.get(pid);

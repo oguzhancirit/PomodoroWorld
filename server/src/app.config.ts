@@ -4,6 +4,7 @@ import express from 'express';
 import { StudyRoom } from './rooms/StudyRoom';
 import { HomeRoom } from './rooms/HomeRoom';
 import { LibraryRoom } from './rooms/LibraryRoom';
+import { SocialRoom } from './rooms/SocialRoom';
 import { routes } from './http';
 
 export const server = defineServer({
@@ -15,6 +16,8 @@ export const server = defineServer({
     home: defineRoom(HomeRoom).filterBy(['owner']),
     // step 4f: the 10-seat public library (everyone keeps their own timer, so any length fits)
     library: defineRoom(LibraryRoom),
+    // step 4g: v1 social spaces, one set of salons per space
+    social: defineRoom(SocialRoom).filterBy(['space']),
   },
   greet: false,
   express: (app) => routes(app, express.json({ limit: '48kb' })),
