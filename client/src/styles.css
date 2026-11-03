@@ -214,7 +214,9 @@ input:focus, select:focus { border-color: var(--acc2); }
 .e-buy { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; background: rgba(0, 0, 0, .3); border: 1px solid var(--line); }
 .e-buy img { width: 48px; height: 48px; object-fit: contain; } .e-buy div { flex: 1; display: grid; gap: 2px; font-size: 13px; }
 .e-buy span { display: flex; align-items: center; gap: 4px; color: var(--muted); } .e-buy em { color: var(--gold); font-style: normal; font-size: 12.5px; }
-.shop-card.pic img { width: 100%; height: 96px; object-fit: contain; }
+.shop-card.pic img, .shop-card .pic-wait { width: 100%; height: 96px; object-fit: contain; border-radius: 10px; }
+.shop-card .pic-wait, .lvl-unlocks .pic-wait { display: block; background: linear-gradient(100deg, rgba(255,255,255,.03) 30%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.03) 70%) 0 0 / 200% 100%; animation: pic-wait 1.2s linear infinite; }
+@keyframes pic-wait { to { background-position: -200% 0; } }
 .chips.subs { margin: 6px 0 2px; }
 @media (max-width: 720px) {
   .e-sel { display: none; } .e-tools { width: 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } .e-tools > * { flex: none; }
@@ -540,7 +542,7 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lvl-sheet h2 { margin: 2px 0 4px; font: 800 24px var(--f-display); }
 .lvl-unlocks { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .lvl-unlocks li { display: grid; justify-items: center; gap: 4px; width: 78px; font-size: 12px; color: var(--muted); }
-.lvl-unlocks img, .lvl-ico { width: 56px; height: 56px; border-radius: 14px; background: rgba(255, 255, 255, .06); object-fit: contain; display: grid; place-items: center; font-size: 26px; }
+.lvl-unlocks img, .lvl-unlocks .pic-wait, .lvl-ico { width: 56px; height: 56px; border-radius: 14px; background: rgba(255, 255, 255, .06); object-fit: contain; display: grid; place-items: center; font-size: 26px; }
 .lvl-unlocks li.none { width: auto; font-size: 14px; }
 @media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
 .lvl-ok { min-width: 160px; height: 44px; padding: 0 22px; border-radius: 999px; background: var(--acc); color: #fff; font: 800 16px var(--f-display); border: 0; }

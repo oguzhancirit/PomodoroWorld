@@ -1,11 +1,12 @@
 // Level-up window with confetti (v1 js/ui.js ui.levelUp + index.html #m-level): big level number, new title,
 // what just opened in the shop, a cheer emote and the "done" sound.
 import { useEffect, useMemo, useState } from 'react';
-import { titleFor, unlocksAt } from '@pw/shared';
+import { titleFor, unlocksAt, encodeAvatar } from '@pw/shared';
 import { useStore } from '../store';
 import { sendEmote } from '../net';
 import { sfx } from '../sound';
 import { thumb } from '../home/engine';
+import { PartPic } from './Wallet';
 
 const SLOT: Record<string, string> = { head: 'saç', body: 'üst', legs: 'alt', feet: 'ayakkabı' };
 const COLORS = ['#E8553D', '#F2C14E', '#6CBF6A', '#8FB8FF', '#E58BB0'];
@@ -13,6 +14,7 @@ const COLORS = ['#E8553D', '#F2C14E', '#6CBF6A', '#8FB8FF', '#E58BB0'];
 export function LevelUp() {
   const r = useStore((s) => s.reward);
   const [lv, setLv] = useState(0);
+  const base = encodeAvatar(useStore((s) => s.profile.avatar));
   useEffect(() => {
     if (!r?.levelUp) return;
     setLv(r.levelUp); sfx('done');
@@ -31,7 +33,7 @@ export function LevelUp() {
         <h2>{titleFor(lv)}</h2>
         <ul className="lvl-unlocks">
           {items.length ? items.map((it) => (
-            <li key={it.id}>{it.cat !== 'avatar' ? <img alt="" src={thumb(it.id)} /> : <span className="lvl-ico">👕</span>}<span>{it.cat === 'avatar' ? `${it.name} ${SLOT[it.slot!] ?? ''}` : it.name}</span></li>
+            <li key={it.id}>{it.cat !== 'avatar' ? <img alt="" src={thumb(it.id)} /> : <PartPic it={it} base={base} />}<span>{it.cat === 'avatar' ? `${it.name} ${SLOT[it.slot!] ?? ''}` : it.name}</span></li>
           )) : <li className="none">Mağazada yeni fiyatlar seni bekliyor.</li>}
         </ul>
         <button className="t-go lvl-ok" autoFocus onClick={close}>Harika!</button>

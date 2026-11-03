@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CATALOG, ACHIEVEMENTS, levelFromXP, titleFor, owns, isFree, partName, type Item, type Slot } from '@pw/shared';
+import { CATALOG, ACHIEVEMENTS, encodeAvatar, levelFromXP, titleFor, owns, isFree, partName, type Item, type Slot } from '@pw/shared';
 import { useStore } from '../store';
 import { buyItem } from '../economy';
 import { thumb } from '../home/engine';
+import { usePartThumb } from '../avatar/partThumb';
 
 const COIN = <svg className="coin" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.5" /><path d="M10 5.5v9M7.5 8h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4" /></svg>;
 
@@ -20,12 +21,19 @@ export function WalletChip() {
   );
 }
 
+/** an outfit part shown on the player's own character (a soft placeholder until the photo is ready) */
+export function PartPic({ it, base }: { it: Item; base: string }) {
+  const url = usePartThumb(it, base);
+  return url ? <img alt="" src={url} /> : <span className="pic-wait" aria-hidden="true" />;
+}
+
 const SLOT_LABEL: Record<Slot, string> = { head: 'Saç ve yüz', body: 'Üst', legs: 'Alt', feet: 'Ayakkabı' };
 const FURN_SUBS = [...new Set(CATALOG.filter((i) => i.cat === 'furn').map((i) => i.sub!))];
 
 export function ShopModal() {
   const open = useStore((s) => s.shop), w = useStore((s) => s.wallet), g = useStore((s) => s.profile.avatar.g);
   const want = useStore((s) => s.shopTab);
+  const base = encodeAvatar(useStore((s) => s.profile.avatar));
   const [tab, setTab] = useState<'avatar' | 'furn' | 'room' | 'ach'>('avatar');
   const [sub, setSub] = useState('');
   const [msg, setMsg] = useState('');
@@ -38,8 +46,8 @@ export function ShopModal() {
     const have = owns(w, it.id), count = w.owned[it.id] ?? 0, locked = level < it.lvl;
     const once = it.cat !== 'furn';
     return (
-      <article key={it.id} className={`shop-card ${have && once ? 'own' : ''} ${locked ? 'locked' : ''} ${it.cat !== 'avatar' ? 'pic' : ''}`}>
-        {it.cat !== 'avatar' && <img alt="" loading="lazy" src={thumb(it.id)} />}
+      <article key={it.id} className={`shop-card ${have && once ? 'own' : ''} ${locked ? 'locked' : ''} pic`}>
+        {it.cat === 'avatar' ? <PartPic it={it} base={base} /> : <img alt="" loading="lazy" src={thumb(it.id)} />}
         <b>{it.name}</b>
         <span className="meta">{it.cat === 'avatar' ? SLOT_LABEL[it.slot!] : it.cat === 'furn' ? (count ? `${count} adet sende` : it.sub) : it.cat === 'theme' ? 'Hazır tema' : it.cat === 'view' ? 'Pencere manzarası' : 'Oda boyutu'}</span>
         {once && have ? <span className="tag ok">{isFree(it) ? 'Ücretsiz' : 'Sende'}</span>
