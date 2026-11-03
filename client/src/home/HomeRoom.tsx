@@ -8,6 +8,7 @@ import { ToolButtons, Panels } from '../ui/Panels';
 import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
 import { MonsterGame } from '../ui/MonsterGame';
+import { useRoomLikes } from '../likes';
 import { TimerCard, ChatPanel, EmoteBar, DaySummary, NetBanner } from '../ui/RoomUI';
 import { FocusScreen, useCompanions, isRunning } from './FocusScreen';
 import { TravelScreen } from '../ui/Travel';
@@ -272,6 +273,7 @@ export function HomeRoom() {
       <div ref={tags} className="home-tags" />
       <header className="topbar home-top" hidden={focusOpen}>
         <div className="brand"><span className="dot" />{library ? 'Kütüphane' : place?.kind === 'social' ? place.name : visiting ? (place.ownerName ? `${possessive(place.ownerName)} odası` : 'Arkadaşının odası') : room?.name || 'Odam'}{visiting && !library && place?.kind !== 'social' && room?.name && <small className="owner-note"> · {room.name}</small>}</div>
+        <LikeChip owner={place && !library && place.kind !== 'social' ? place.owner : ''} mine={!!place?.mine} />
         {place && <button className="people-pill people-btn" title="Odadakiler: arkadaş ekle, sayacına katıl, odandan çıkar" onClick={() => usePeople.setState({ open: true })}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.5" /><path d="M15.5 13.7c2.9-.4 5.5 1.5 5.5 4.8" /></svg>{Object.keys(players).length} / {place.cap}</button>}
         <WalletChip />
         {!editing && <ToolButtons />}
@@ -319,3 +321,11 @@ export function possessive(name: string) {
   return `${name}'${'aeıioöuü'.includes(name.slice(-1).toLocaleLowerCase('tr')) ? 'n' : ''}${suf}`;
 }
 export const itemName = (id: string) => itemById(id)?.name ?? PW.ITEM?.[id]?.name ?? id;
+
+/** ❤ likes of the room you are in: like a friend's room once; in your own room, see how many liked it */
+function LikeChip({ owner, mine }: { owner: string; mine: boolean }) {
+  const { likes, like } = useRoomLikes(owner);
+  if (!owner || !likes || (mine && likes.n === 0)) return null;
+  if (mine) return <span className="like-chip" title="Odanı beğenen kişi sayısı">❤ {likes.n}</span>;
+  return <button className={`like-chip btn ${likes.liked ? 'on' : ''}`} disabled={likes.liked} onClick={like} title={likes.liked ? 'Bu odayı beğendin' : 'Bu odayı beğen'}>{likes.liked ? '❤' : '♡'} {likes.liked ? 'Beğendin' : 'Beğen'} · {likes.n}</button>;
+}

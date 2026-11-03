@@ -3,12 +3,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { newWallet, sanitizeWallet, cleanName, encodeAvatar, decodeAvatar, defaultRoom, roomAllowedFor, PlayerId, PlayerSecret, emptySocial, sanitizeSocial, type Wallet, type Room, type Social } from '@pw/shared';
+import { sanitizeLikes, type Likes, newWallet, sanitizeWallet, cleanName, encodeAvatar, decodeAvatar, defaultRoom, roomAllowedFor, PlayerId, PlayerSecret, emptySocial, sanitizeSocial, type Wallet, type Room, type Social } from '@pw/shared';
 
 /** look: name + avatar code, kept for Google accounts so the same character opens on every device */
 export interface Look { name: string; avatar: string }
 /** social: friends and blocks (step 4e) */
-export interface Profile { pid: string; hash: string; wallet: Wallet; room: Room; created: number; seen: number; social: Social; look?: Look }
+export interface Profile { pid: string; hash: string; wallet: Wallet; room: Room; created: number; seen: number; social: Social; look?: Look; likes?: Likes }
 const hashOf = (secret: string) => crypto.createHash('sha256').update('pw:' + secret).digest('hex');
 
 export class ProfileStore {
@@ -17,7 +17,7 @@ export class ProfileStore {
   constructor(private file: string) {
     try {
       const raw = JSON.parse(fs.readFileSync(file, 'utf8')) as Profile[];
-      for (const p of Array.isArray(raw) ? raw : []) if (p && PlayerId.safeParse(p.pid).success && typeof p.hash === 'string') { const wallet = sanitizeWallet(p.wallet); this.map.set(p.pid, { ...p, wallet, room: roomAllowedFor(wallet, p.room ?? defaultRoom()), social: sanitizeSocial(p.social) }); }
+      for (const p of Array.isArray(raw) ? raw : []) if (p && PlayerId.safeParse(p.pid).success && typeof p.hash === 'string') { const wallet = sanitizeWallet(p.wallet); this.map.set(p.pid, { ...p, wallet, room: roomAllowedFor(wallet, p.room ?? defaultRoom()), social: sanitizeSocial(p.social), likes: p.likes ? sanitizeLikes(p.likes) : undefined }); }
     } catch { /* first start or broken file: begin empty */ }
   }
   /** Returns the profile, creating it on first use; null when the id or secret is invalid or wrong. */
@@ -47,6 +47,7 @@ export class ProfileStore {
     const avatar = typeof look.avatar === 'string' && encodeAvatar(decodeAvatar(look.avatar)) === look.avatar ? look.avatar : p.look?.avatar || '';
     if (name && avatar) { p.look = { name, avatar }; this.save(); }
   }
+  setLikes(p: Profile, likes: Likes) { p.likes = likes; this.save(); }
   update(p: Profile, wallet: Wallet) { p.wallet = wallet; this.save(); }
   setSocial(p: Profile, social: Social) { p.social = social; this.save(); }
   /** an existing profile (no secret: only for server-side reads such as showing a room) */

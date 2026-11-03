@@ -1,7 +1,7 @@
 // Small HTTP API next to the game rooms: read your wallet and buy from the shop.
 // Prices always come from the server's own catalog; the client only says which item.
 import type express from 'express';
-import { buy, levelFromXP, BuyRequest, ProfileRequest, RoomRequest, QuestRequest, clock, loginTick, claimQuest, claimLogin, setPledge, cancelPledge, noteDecor, FriendsRequest, socialOp, friendCode, type Room } from '@pw/shared';
+import { likeRoom, sanitizeLikes, buy, levelFromXP, BuyRequest, ProfileRequest, RoomRequest, QuestRequest, clock, loginTick, claimQuest, claimLogin, setPledge, cancelPledge, noteDecor, FriendsRequest, socialOp, friendCode, type Room } from '@pw/shared';
 import { matchMaker } from '@colyseus/core';
 import { HomeRoom } from './rooms/HomeRoom';
 import { LibraryRoom } from './rooms/LibraryRoom';
@@ -49,6 +49,18 @@ export function routes(app: express.Application, json: express.RequestHandler) {
     if (!b.success || !p) return void res.status(403).json({ ok: false, error: 'Oyuncu kimliği doğrulanamadı.' });
     profiles.setLook(p, req.body as { name?: unknown; avatar?: unknown });
     res.json({ ok: true, look: p.look ?? null });
+  });
+  // room likes (user 2026-11-03): a visitor likes a friend's room once; anyone may ask the count
+  app.post('/api/like', (req, res) => {
+    const b = ProfileRequest.safeParse(req.body);
+    const p = b.success ? profiles.open(b.data.pid, b.data.secret) : null;
+    if (!b.success || !p) return void res.status(403).json({ ok: false, error: 'Oyuncu kimliği doğrulanamadı.' });
+    const body = req.body as { owner?: unknown; op?: unknown };
+    const owner = typeof body.owner === 'string' ? profiles.get(body.owner) : null;
+    if (!owner) return void res.status(404).json({ ok: false, error: 'Bu oda bulunamadı.' });
+    let likes = sanitizeLikes(owner.likes);
+    if (body.op === 'like') { const r = likeRoom(likes, p.pid, owner.pid); if (r.ok) { likes = r.likes; profiles.setLikes(owner, likes); } }
+    res.json({ ok: true, n: likes.n, liked: likes.by.includes(p.pid) });
   });
   app.post('/api/buy', (req, res) => {
     const b = BuyRequest.safeParse(req.body);

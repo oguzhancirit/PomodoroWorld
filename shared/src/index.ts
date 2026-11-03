@@ -12,3 +12,4 @@ export * from './library';
 export * from './social';
 export * from './backup';
 export * from './monsters';
+export * from './likes';

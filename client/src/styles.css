@@ -838,3 +838,8 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .bundle .buy { display: inline-flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 10px; background: var(--acc); font-weight: 800; }
 
 .wr-none { display: grid; place-items: center; height: 72px; font-size: 26px; color: var(--muted); }
+
+/* room likes in the top bar */
+.like-chip { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border-radius: 999px; background: rgba(229, 139, 176, .14); border: 1px solid rgba(229, 139, 176, .35); color: #ffc2d6; font: 800 12.5px var(--f-body); white-space: nowrap; }
+.like-chip.btn { cursor: pointer; } .like-chip.btn:hover:not(:disabled) { background: rgba(229, 139, 176, .25); }
+.like-chip.on { background: rgba(229, 139, 176, .3); color: #fff; }
