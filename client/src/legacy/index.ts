@@ -101,3 +101,4 @@ PW.seatsFor = function (id: string) {
   if (id === 'f_sofa_l') return [{ x: -0.55, z: 0.1, h: 0.48 }, { x: 0.15, z: 0.1, h: 0.48 }, { x: 0.86, z: 0.8, h: 0.48 }];
   return oldSeatsFor(id);
 };
+

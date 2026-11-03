@@ -11,7 +11,9 @@ type State = 'stand' | 'walk' | 'sit';
 const SIT: Record<string, string> = { write: 'SitWrite', type: 'SitType', read: 'SitRead', talk: 'SitTalk' };
 /** desk clip → the props that go with it (book, notebook + pen, laptop) */
 const PROP: Record<string, DeskAct> = { SitRead: 'read', SitWrite: 'write', SitType: 'type' };
-const STAND: Record<string, string> = { wave: 'Wave', dance: 'Dance', clap: 'Wave', cheer: 'Wave' };
+const STAND: Record<string, string> = { wave: 'Wave', dance: 'Dance', clap: 'Clap', cheer: 'Cheer', heart: 'Heart', coffee: 'Drink' };
+/** reactions while sitting (tools/retarget.mjs emotePose) */
+const SIT_EMOTE: Record<string, string> = { wave: 'SitWave', clap: 'SitClap', cheer: 'SitCheer', heart: 'SitHeart', coffee: 'SitDrink' };
 /** hips sit this far above the seat surface */
 const HIP_OVER_SEAT = 0.08;
 /** how far a character leans in towards the desk while working (metres) */
@@ -79,7 +81,7 @@ export class NewAvatar {
   private want(): string {
     const act = this.emote ?? this.act;
     if (this.state === 'walk') return 'Walk';
-    if (this.state === 'sit') return SIT[act] ?? (performance.now() < this.talkUntil ? 'SitTalk' : 'Sit');
+    if (this.state === 'sit') return (this.emote && SIT_EMOTE[this.emote]) || SIT[act] || (performance.now() < this.talkUntil ? 'SitTalk' : 'Sit');
     return STAND[act] ?? 'Idle';
   }
 

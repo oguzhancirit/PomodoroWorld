@@ -26,7 +26,12 @@ export const CLIPS = {
   SitDown: ['Sitting_Enter'], Sit: ['Sitting_Idle_Loop'], SitTalk: ['Sitting_Talking_Loop'], StandUp: ['Sitting_Exit'],
   Talk: ['Idle_Talking_Loop'], Dance: ['Dance_Loop'], Interact: ['Interact'],
   SitType: ['Sitting_Idle_Loop', 'type', 4], SitWrite: ['Sitting_Idle_Loop', 'write', 4], SitRead: ['Sitting_Idle_Loop', 'read', 6],
+  // reactions (user, 2026-11-03: the emoji buttons must do something, sitting or standing)
+  SitWave: ['Sitting_Idle_Loop', 'wave', 2], SitClap: ['Sitting_Idle_Loop', 'clap', 2], Clap: ['Idle_Loop', 'clap', 2],
+  SitCheer: ['Sitting_Idle_Loop', 'cheer', 2], Cheer: ['Idle_Loop', 'cheer', 2], SitHeart: ['Sitting_Idle_Loop', 'heart', 2], Heart: ['Idle_Loop', 'heart', 2],
+  SitDrink: ['Sitting_Idle_Loop', 'drink', 3], Drink: ['Idle_Loop', 'drink', 3],
 };
+const EMOTE = ['wave', 'clap', 'cheer', 'heart', 'drink'];
 // Native clips of the modular rig that look better than a retarget
 const NATIVE = ['Idle', 'Walk', 'Wave', 'Interact'];
 // desk top height in metres in the room; the female rig is drawn at 0.9 scale (it is modelled taller)
@@ -60,9 +65,9 @@ function basis(f, up) {
   const x = f.clone().normalize(), z = new THREE.Vector3().crossVectors(x, up).normalize(), y = new THREE.Vector3().crossVectors(z, x);
   return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
 }
-function placeHand(TB, side, fwd) {
-  const wr = TB['Wrist' + side], up = new THREE.Vector3(0, 1, 0);
-  const rest = basis(new THREE.Vector3(side === 'L' ? 1 : -1, 0, 0), up), want = basis(fwd, up);
+function placeHand(TB, side, fwd, up = new THREE.Vector3(0, 1, 0)) {
+  const wr = TB['Wrist' + side];
+  const rest = basis(new THREE.Vector3(side === 'L' ? 1 : -1, 0, 0), new THREE.Vector3(0, 1, 0)), want = basis(fwd, up);
   const w = want.multiply(rest.invert()).multiply(REST_W[side]);
   wr.quaternion.copy(wq(wr.parent).invert().multiply(w)); wr.updateMatrixWorld(true);
 }
@@ -87,7 +92,48 @@ function tilt(bone, axis, angle) { bone.quaternion.multiply(new THREE.Quaternion
 function curl(TB, side, amount) {
   for (const f of ['Index', 'Middle', 'Ring', 'Pinky']) for (const i of [1, 2, 3]) { const b = TB[f + i + side]; if (b) tilt(b, new THREE.Vector3(1, 0, 0), -amount * (i === 1 ? 0.6 : 1)); }
 }
+/* ---------- reactions: hands placed by IK on top of the sitting / standing idle ---------- */
+function emotePose(TB, kind, t) {
+  const C = wp(TB.Chest), Hd = wp(TB.Head), v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const pole = (s) => v(s * 0.9, -0.6, -0.4).normalize();
+  const out = (side) => v(side === 'L' ? 1 : -1, 0, 0);
+  if (kind === 'clap') {
+    // hands meet in front of the chest about three times a second
+    const open = 0.5 + 0.5 * Math.cos(2 * Math.PI * t * 1.5), gap = 0.035 + 0.11 * open;
+    for (const [side, sx] of [['L', 1], ['R', -1]]) {
+      armIK(TB, side, v(C.x + sx * gap, C.y + 0.02, C.z + 0.3), pole(sx));
+      placeHand(TB, side, v(0, 0.55, 1), out(side)); curl(TB, side, 0.1);
+    }
+  } else if (kind === 'cheer') {
+    // both arms up, bouncing
+    const b = 0.05 * Math.abs(Math.sin(2 * Math.PI * t));
+    for (const [side, sx] of [['L', 1], ['R', -1]]) {
+      armIK(TB, side, v(C.x + sx * 0.28, Hd.y + 0.3 + b, C.z + 0.06), pole(sx));
+      placeHand(TB, side, v(sx * 0.2, 1, 0.1), v(0, 0, -1)); curl(TB, side, 0.75);
+    }
+  } else if (kind === 'heart') {
+    // fingertips together in front of the chest, a small beat
+    const k = 1 + 0.06 * Math.max(0, Math.sin(2 * Math.PI * t * 1.2)) ** 4;
+    for (const [side, sx] of [['L', 1], ['R', -1]]) {
+      armIK(TB, side, v(C.x + sx * 0.05 * k, C.y + 0.04, C.z + 0.28), pole(sx));
+      placeHand(TB, side, v(-sx * 0.7, 0.75, 0.15), v(0, 0, 1)); curl(TB, side, 0.55);
+    }
+  } else if (kind === 'drink') {
+    // the right hand brings a cup up to the mouth twice
+    const sip = Math.max(0, Math.sin(2 * Math.PI * (t / 1.5))) ** 2;
+    const rest = v(C.x - 0.12, C.y - 0.06, C.z + 0.26), mouth = v(Hd.x - 0.03, Hd.y - 0.06, Hd.z + 0.13);
+    armIK(TB, 'R', rest.clone().lerp(mouth, sip), pole(-1));
+    placeHand(TB, 'R', v(1, 0.2, 0.3), v(0, 0, 1)); curl(TB, 'R', 0.95);
+    tilt(TB.Head, new THREE.Vector3(1, 0, 0), -0.25 * sip);
+  } else if (kind === 'wave') {
+    // right hand up by the head, swinging
+    const sw = 0.09 * Math.sin(2 * Math.PI * t * 1.5);
+    armIK(TB, 'R', v(C.x - 0.3 + sw, Hd.y + 0.08, C.z + 0.12), pole(-1));
+    placeHand(TB, 'R', v(sw * 2, 1, 0.05), v(0, 0, -1)); curl(TB, 'R', 0.05);
+  }
+}
 function deskPose(TB, kind, t, deskY) {
+  if (EMOTE.includes(kind)) return emotePose(TB, kind, t);
   const H = wp(TB.Hips);
   const X = new THREE.Vector3(1, 0, 0);
   // lean in and look down at the desk
