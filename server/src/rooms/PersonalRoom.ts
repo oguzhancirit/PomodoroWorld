@@ -13,6 +13,8 @@ import { Timer } from './state';
 
 const TimerMsg = z.object({ action: z.enum(['start', 'stop', 'pause', 'resume', 'skip']), preset: z.string().max(8).optional() });
 const FollowMsg = z.object({ id: z.string().max(40) });
+/** a running timer brought from the previous room */
+const Carried = z.object({ phase: z.enum(['focus', 'short_break', 'long_break']), phaseEndsAt: z.number(), round: z.number().int().min(0).max(999), pausedLeft: z.number().min(0) });
 const IDLE: TimerState = { phase: 'idle', phaseEndsAt: 0, round: 0 };
 
 export class PersonalRoom extends StudyRoom {
@@ -50,6 +52,18 @@ export class PersonalRoom extends StudyRoom {
     p.timer = new Timer();
     p.timer.phase = 'idle'; p.timer.phaseEndsAt = 0; p.timer.round = 0; p.timer.pausedLeft = 0;
     p.preset = presetById(parseJoin(options).preset).id;
+    // my timer comes with me (v1: the timer belonged to the player, not to the room); only a sane one is accepted
+    const c = Carried.safeParse((options as { timer?: unknown } | undefined)?.timer);
+    if (c.success) {
+      const t = c.data, now = Date.now(), max = durationOf(t.phase as Phase, this.presetOf(client.sessionId)) + 2000;
+      const left = t.pausedLeft > 0 ? t.pausedLeft : t.phaseEndsAt - now;
+      if (left > 0 && left <= max) {
+        this.setPlayerTimer(client.sessionId, t.pausedLeft > 0 ? { ...t, phaseEndsAt: 0 } : { ...t, pausedLeft: 0 });
+        // minutes count from now on; the full-pomodoro bonus needs the whole focus in one room
+        const focusing = t.phase === 'focus' && !(t.pausedLeft > 0);
+        this.track.set(client.sessionId, { since: focusing ? now : null, accMs: 0, fromStart: false, intact: true });
+      }
+    }
   }
 
   protected chatOpen(id: string) { return isChatAllowed(this.timerOf(id).phase); }

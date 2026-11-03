@@ -102,4 +102,22 @@ describe('personal timers', () => {
     const cb = await colyseus.sdk.joinOrCreate('library', { pid: b.pid, secret: b.secret, name: 'Fatih', preset: 'p90' });
     expect(ca.roomId).toBe(cb.roomId);
   });
+
+  it('my running timer comes with me to another room (checked by the server)', async () => {
+    const a = await player('Gul');
+    const now = Date.now();
+    const timer = { phase: 'focus', phaseEndsAt: now + 10 * 60_000, round: 1, pausedLeft: 0 };
+    const c = await colyseus.sdk.joinOrCreate('library', { pid: a.pid, secret: a.secret, name: 'Gul', preset: 'p25', timer });
+    await wait(60);
+    const t = c.state.players.get(c.sessionId)!.timer;
+    expect(t).toMatchObject({ phase: 'focus', phaseEndsAt: timer.phaseEndsAt, round: 1 });
+  });
+
+  it('a carried timer that is longer than its length allows is refused (starts idle)', async () => {
+    const a = await player('Hale');
+    const timer = { phase: 'focus', phaseEndsAt: Date.now() + 99 * 60_000, round: 0, pausedLeft: 0 };
+    const c = await colyseus.sdk.joinOrCreate('library', { pid: a.pid, secret: a.secret, name: 'Hale', preset: 'p25', timer });
+    await wait(60);
+    expect(c.state.players.get(c.sessionId)!.timer.phase).toBe('idle');
+  });
 });
