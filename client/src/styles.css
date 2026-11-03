@@ -639,19 +639,15 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .paused .flip-sep i, .idle .flip-sep i { opacity: .55; box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .fl-fall, .fl-land { animation-duration: .01s; animation-delay: 0s; } }
 
-/* in the focus screen */
-.fx-clock { display: grid; justify-items: center; gap: 12px; padding: 6px 0 2px; }
-.fx-flip { --fs: clamp(64px, 19vw, 96px); }
-.focus-screen.idle .fx-flip { --fs: 60px; }
-.fx-prog { width: 100%; max-width: 360px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .08); overflow: hidden; }
-.fx-prog i { display: block; height: 100%; border-radius: inherit; background: var(--acc2); transition: width .9s linear; }
-.focus-screen.short_break .fx-prog i, .focus-screen.long_break .fx-prog i { background: #4cc38a; }
-.focus-screen.idle .fx-prog { display: none; }
-.fx-clock .fx-catlbl { color: rgba(255, 255, 255, .8); }
-@media (max-width: 899px) { .fx-flip { --fs: 64px; } .focus-screen.idle .fx-flip { --fs: 44px; } }
-@media (min-width: 900px) and (max-height: 860px) { .focus-screen.idle .fx-flip { --fs: 50px; } }
-@media (max-height: 760px) and (max-width: 899px) { .focus-screen.idle .fx-clock { display: none; } }
+@media (min-width: 900px) and (max-height: 860px) { .focus-screen.idle .fx-ring { width: 170px; } .focus-screen.idle .fx-time { font-size: 46px; } }
 
 /* in the small timer card */
 .timer-card .t-flip { --fs: 44px; justify-self: center; padding: 2px 0; }
 @media (max-width: 860px) { .timer-card .t-flip { --fs: 32px; } }
+
+/* chat and the day summary sit side by side on one line at the bottom right, same height (user, 2026-11-03) */
+@media (min-width: 861px) {
+  .home-ui .chat { bottom: 14px; }
+  .chat.closed header { height: 46px; padding-top: 0; padding-bottom: 0; }
+  .room-ui .day-sum { left: auto; right: calc(14px + 330px + 10px); transform: none; }
+}

@@ -1,7 +1,6 @@
 // The v1 focus screen ("openFocus"), ported: a big ring, what you work on, kind of work, length (presets or
 // "Özel"), one main button (Başlat / Duraklat / Devam et), and tools: to-dos, sounds, reset, skip, back to the room.
 // Alone it is your own timer; with a friend in the room the same timer is shared ("Birlikte").
-import { FlipClock } from '../ui/FlipClock';
 import { useEffect, useRef, useState } from 'react';
 import { PRESETS, CATEGORIES, presetById, customPresetId, remainingMs, activityFor, isPaused, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
@@ -84,10 +83,13 @@ export function FocusScreen({ onClose }: { onClose(): void }) {
       <button className="fx-icon fx-close" onClick={onClose} title="Odaya dön" aria-label="Odaya dön"><Svg d='<path d="M6 6l12 12M18 6L6 18"/>' /></button>
       <div className="fx-center">
         <div className="fx-phase"><span>{paused ? 'Duraklatıldı' : PHASE[timer.phase]}{shared}</span><span className="fx-dots">{[0, 1, 2, 3].map((i) => <i key={i} className={i < dots ? 'on' : ''} />)}</span></div>
-        <div className="fx-clock">
-          <FlipClock text={fmt(left)} className="fx-flip" />
-          <div className="fx-prog" aria-hidden="true"><i style={{ width: `${Math.round(k * 1000) / 10}%` }} /></div>
-          <span className="fx-catlbl" style={{ ['--c' as string]: CAT_COLOR[todo?.c ?? cat[0]] ?? '#FF8466' }}><i />{todo ? todo.t : cat[1]}</span>
+        {/* the plain ring clock: calm in the close-up focus view (user, 2026-11-03: flip cards only in the room) */}
+        <div className="fx-ring">
+          <svg viewBox="0 0 300 300" aria-hidden="true"><circle className="trk" cx="150" cy="150" r="136" /><circle className="bar" cx="150" cy="150" r="136" pathLength={100} strokeDasharray="100" strokeDashoffset={100 - k * 100} /></svg>
+          <div className="fx-in">
+            <div className="fx-time" aria-live="off">{fmt(left)}</div>
+            <span className="fx-catlbl" style={{ ['--c' as string]: CAT_COLOR[todo?.c ?? cat[0]] ?? '#FF8466' }}><i />{todo ? todo.t : cat[1]}</span>
+          </div>
         </div>
         {idle && (
           <div className="fx-setup">
