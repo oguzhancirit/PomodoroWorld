@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { unlocksAt, ECON, levelFromXP, xpStep, newWallet, rewardFocus, buy, CATALOG, itemById, isFree, avatarAllowed, titleFor, ACHIEVEMENTS } from '../src/economy';
+import { unlocksAt, ECON, levelFromXP, xpStep, newWallet, rewardFocus, buy, CATALOG, itemById, isFree, avatarAllowed, titleFor, ACHIEVEMENTS, BUNDLES, bundlePrice, bundleLevel } from '../src/economy';
 import { defaultAvatar, PARTS } from '../src/avatar';
 
 describe('level pace (user, 2026-11-03: XP should take some effort, not too much)', () => {
@@ -152,5 +152,32 @@ describe('unlocksAt (level-up window, v1 ui.levelUp)', () => {
   });
   it('is empty for a level nothing opens at', () => {
     expect(unlocksAt(999)).toEqual([]);
+  });
+});
+
+describe('corner sets (user 2026-11-03: a richer shop)', () => {
+  it('every set lists real room things and costs less than buying them one by one', () => {
+    for (const b of BUNDLES) {
+      const items = b.items.map((id) => itemById(id));
+      expect(items.every((i) => i && i.cat === 'furn')).toBe(true);
+      const full = items.reduce((a, i) => a + i!.price, 0);
+      expect(bundlePrice(b)).toBeLessThan(full);
+      expect(bundleLevel(b)).toBe(Math.max(...items.map((i) => i!.lvl)));
+    }
+  });
+  it('buying a set adds one of each thing and takes the set price', () => {
+    const b = BUNDLES[0];
+    const w0 = { ...newWallet(), coins: 99999, xp: 10_000_000 };
+    const r = buy(w0, b.id);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.wallet.coins).toBe(w0.coins - bundlePrice(b));
+    for (const id of b.items) expect(r.wallet.owned[id] ?? 0).toBe((w0.owned[id] ?? 0) + b.items.filter((x) => x === id).length);
+  });
+  it('needs the level and the coins like a single thing', () => {
+    const b = BUNDLES.find((x) => bundleLevel(x) > 1)!;
+    expect(buy({ ...newWallet(), coins: 99999 }, b.id)).toMatchObject({ ok: false, reason: 'level' });
+    expect(buy({ ...newWallet(), coins: 1, xp: 10_000_000 }, b.id)).toMatchObject({ ok: false, reason: 'coins' });
+    expect(buy(newWallet(), 'set.nope')).toMatchObject({ ok: false, reason: 'unknown' });
   });
 });

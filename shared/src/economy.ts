@@ -165,7 +165,32 @@ export const isFree = (i: Item) => i.price === 0;
 export const owns = (w: Wallet, id: string) => { const i = BY_ID.get(id); return !!i && ((i.cat === 'avatar' && isFree(i)) || (w.owned[id] ?? 0) > 0); };
 
 export type BuyResult = { ok: true; wallet: Wallet; item: Item } | { ok: false; reason: 'unknown' | 'owned' | 'level' | 'coins' };
+/** ready-made corners (user 2026-11-03: a richer shop): things that look good together, cheaper as a set */
+export interface Bundle { id: string; name: string; desc: string; items: string[] }
+export const BUNDLES: Bundle[] = [
+  { id: 'set.lofi', name: 'Lo-fi Çalışma Köşesi', desc: 'Masa lambası, kupa, kulaklık, kitaplar ve desenli poster.', items: ['d_lamp', 'd_mug', 'd_headphones', 'd_books', 'w_poster_art', 'd_plant'] },
+  { id: 'set.reading', name: 'Okuma Köşesi', desc: 'Berjer, lambader, kitaplık, kum saati ve peluş halı.', items: ['f_armchair', 'f_lamp_floor', 'f_bookshelf', 'd_hourglass', 'f_rug_shag'] },
+  { id: 'set.jungle', name: 'Bitki Cenneti', desc: 'Deve tabanı, cennet kuşu, sukulentler, sarmaşık ve çiçekli vazo.', items: ['f_monstera', 'f_bird_paradise', 'f_succulents', 'w_ivy', 'f_flower_vase'] },
+  { id: 'set.game', name: 'Oyun Köşesi', desc: 'Konsol ve TV, armut koltuk, örgü puf, kendi neon yazın.', items: ['f_console', 'f_beanbag', 'f_pouf', 'w_neon_text'] },
+  { id: 'set.zen', name: 'Sakin Yoga Köşesi', desc: 'Yoga matı, mum seti, bonsai, kristal küre ve ay lambası.', items: ['f_yoga_mat', 'f_candles', 'f_bonsai', 'd_crystal', 'w_moon'] },
+  { id: 'set.cozy', name: 'Masal Odası', desc: 'Mantar lamba, yıldız perdesi, tavşan, harfli flama ve yazılı paspas.', items: ['f_lamp_mushroom', 'w_star_lights', 'f_bunny', 'w_garland', 'f_doormat'] },
+];
+const BUNDLE_OFF = 0.8; // a set costs 20% less than its things one by one
+export const bundleById = (id: string) => BUNDLES.find((b) => b.id === id);
+export const bundlePrice = (b: Bundle) => Math.round(b.items.reduce((a, id) => a + (BY_ID.get(id)?.price ?? 0), 0) * BUNDLE_OFF / 10) * 10;
+export const bundleLevel = (b: Bundle) => Math.max(1, ...b.items.map((id) => BY_ID.get(id)?.lvl ?? 1));
+
 export function buy(w0: Wallet, id: string): BuyResult {
+  const set = bundleById(id);
+  if (set) {
+    if (levelFromXP(w0.xp).level < bundleLevel(set)) return { ok: false, reason: 'level' };
+    const price = bundlePrice(set);
+    if (w0.coins < price) return { ok: false, reason: 'coins' };
+    const w = clone(w0); w.coins -= price;
+    for (const it of set.items) w.owned[it] = (w.owned[it] ?? 0) + 1;
+    checkAchievements(w, {});
+    return { ok: true, wallet: w, item: { id: set.id, name: set.name, cat: 'furn', price, lvl: bundleLevel(set) } };
+  }
   const item = BY_ID.get(id);
   if (!item) return { ok: false, reason: 'unknown' };
   if (item.cat !== 'furn' && owns(w0, id)) return { ok: false, reason: 'owned' };

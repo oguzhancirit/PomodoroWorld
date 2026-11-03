@@ -824,3 +824,15 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .fx-row .fxb.on { border-color: var(--acc2); background: rgba(239, 90, 60, .18); }
 .fx-row .fxb:disabled { opacity: .45; }
 .fx-row { flex-wrap: wrap; }
+
+/* shop: ready-made corner sets */
+.bundles { margin-bottom: 6px; }
+.bundle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.bundle { display: grid; gap: 5px; padding: 12px; border-radius: 16px; background: linear-gradient(160deg, rgba(239, 90, 60, .12), rgba(255, 255, 255, .03)); border: 1px solid rgba(239, 90, 60, .28); }
+.bundle.locked { opacity: .55; }
+.b-pics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 4px; }
+.b-pics img { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 10px; background: rgba(255, 255, 255, .05); }
+.bundle .meta { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.b-buy { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.b-buy s { font-size: 12px; color: var(--muted); }
+.bundle .buy { display: inline-flex; align-items: center; gap: 4px; padding: 7px 12px; border-radius: 10px; background: var(--acc); font-weight: 800; }

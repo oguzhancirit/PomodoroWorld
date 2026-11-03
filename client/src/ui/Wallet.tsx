@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CATALOG, ACHIEVEMENTS, encodeAvatar, levelFromXP, titleFor, owns, isFree, partName, type Item, type Slot } from '@pw/shared';
+import { CATALOG, ACHIEVEMENTS, BUNDLES, bundlePrice, bundleLevel, encodeAvatar, levelFromXP, titleFor, owns, isFree, partName, type Item, type Slot } from '@pw/shared';
 import { useStore } from '../store';
 import { buyItem, demoBoost } from '../economy';
 import { DEMO_ONLY } from '../config';
@@ -83,6 +83,20 @@ export function ShopModal() {
         ))}
         {tab === 'furn' && <>
           <p className="note">Aldığın eşyaları <b>Odam → Odayı düzenle</b> ile istediğin yere koyarsın. Eşyalardan istediğin kadar alabilirsin.</p>
+          {!q && (sub === '' || sub === '*new') && (
+            <section className="bundles"><h4>Hazır köşe setleri · %20 indirim</h4>
+              <div className="bundle-grid">{BUNDLES.map((b) => {
+                const full = b.items.reduce((a, id) => a + (CATALOG.find((i) => i.id === id)?.price ?? 0), 0), price = bundlePrice(b), lv = bundleLevel(b), locked = level < lv;
+                return (
+                  <article key={b.id} className={`bundle ${locked ? 'locked' : ''}`}>
+                    <div className="b-pics">{b.items.slice(0, 4).map((id) => <img key={id} alt="" loading="lazy" src={thumb(id)} />)}</div>
+                    <b>{b.name}</b><span className="meta">{b.desc}</span>
+                    <div className="b-buy">{locked ? <span className="tag">Seviye {lv}</span> : <button className="buy" disabled={w.coins < price} onClick={() => doBuy({ id: b.id, name: b.name, cat: 'furn', price, lvl: lv })}>{COIN}{price} · Seti al</button>}<s>{full}</s></div>
+                  </article>
+                );
+              })}</div>
+            </section>
+          )}
           <div className="shop-find"><input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Eşya ara: lamba, halı, kedi…" aria-label="Eşya ara" /></div>
           <div className="chips subs"><button className={!sub ? 'on' : ''} onClick={() => setSub('')}>Hepsi</button><button className={sub === '*new' ? 'on' : ''} onClick={() => setSub('*new')}>✨ Yeni</button><button className={sub === '*mine' ? 'on' : ''} onClick={() => setSub('*mine')}>🎨 Kişiselleştirilebilir</button>{FURN_SUBS.map((x) => <button key={x} className={sub === x ? 'on' : ''} onClick={() => setSub(x)}>{x}</button>)}</div>
           {(() => {
