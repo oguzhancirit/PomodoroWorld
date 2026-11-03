@@ -19,6 +19,8 @@ export interface TimerState {
   phaseEndsAt: number;
   /** completed focus rounds */
   round: number;
+  /** >0 while paused: the time that was left (ms); the clock does not run */
+  pausedLeft?: number;
 }
 
 export const PRESETS: readonly Preset[] = [
@@ -31,7 +33,19 @@ export const PRESETS: readonly Preset[] = [
 
 const MIN = 60_000;
 
+const clampInt = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(v) || lo));
+
+/** v1 "Özel" timer: focus 5..180 min, break 1..60 min, long break = max(15, 3 × break). Fits the 8-char preset id. */
+export function customPresetId(focusMin: number, breakMin: number): string {
+  return `c${clampInt(focusMin, 5, 180)}-${clampInt(breakMin, 1, 60)}`;
+}
+
 export function presetById(id: string | undefined): Preset {
+  const c = /^c(\d{1,3})-(\d{1,2})$/.exec(id ?? '');
+  if (c) {
+    const f = clampInt(+c[1], 5, 180), b = clampInt(+c[2], 1, 60);
+    return { id: `c${f}-${b}`, name: `${f} / ${b}`, hint: 'Sana özel', focusMin: f, shortMin: b, longMin: Math.max(15, b * 3), roundsPerLong: 4 };
+  }
   return PRESETS.find((p) => p.id === id) ?? (PRESETS.find((p) => p.id === 'p25') as Preset);
 }
 
@@ -62,13 +76,37 @@ export function advance(t: TimerState, p: Preset): TimerState {
 
 /** Catch up when one or more phases ended while nobody ticked (sleeping server, paused tab). */
 export function settle(t: TimerState, p: Preset, now: number): TimerState {
+  if (isPaused(t)) return t;
   let cur = t;
   for (let i = 0; i < 1000 && cur.phase !== 'idle' && cur.phaseEndsAt <= now; i++) cur = advance(cur, p);
   return cur;
 }
 
 export function remainingMs(t: TimerState, now: number): number {
-  return t.phase === 'idle' ? 0 : Math.max(0, t.phaseEndsAt - now);
+  if (t.phase === 'idle') return 0;
+  return isPaused(t) ? (t.pausedLeft as number) : Math.max(0, t.phaseEndsAt - now);
+}
+
+export function isPaused(t: TimerState): boolean {
+  return t.phase !== 'idle' && (t.pausedLeft ?? 0) > 0;
+}
+
+/** v1 "Duraklat": freeze the time left */
+export function pauseTimer(t: TimerState, now: number): TimerState {
+  if (t.phase === 'idle' || isPaused(t)) return t;
+  return { phase: t.phase, phaseEndsAt: 0, round: t.round, pausedLeft: Math.max(1, t.phaseEndsAt - now) };
+}
+
+/** v1 "Devam et": the frozen time left starts counting again from now */
+export function resumeTimer(t: TimerState, now: number): TimerState {
+  if (!isPaused(t)) return t;
+  return { phase: t.phase, phaseEndsAt: now + (t.pausedLeft as number), round: t.round };
+}
+
+/** v1 "Atla": end the current phase now; the next one counts from now */
+export function skipPhase(t: TimerState, p: Preset, now: number): TimerState {
+  if (t.phase === 'idle') return t;
+  return advance({ phase: t.phase, phaseEndsAt: now, round: t.round }, p);
 }
 
 /** Odakoo-style rule: chat is closed while the room focuses, open in breaks. */
