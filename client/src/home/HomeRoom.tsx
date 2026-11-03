@@ -213,6 +213,12 @@ export function HomeRoom() {
     // keep placing copies while you still have some (like the old editor)
     pendingGhost.current = available(wl, r, pos.id) > 1 ? { id: pos.id, r: 'r' in pos ? pos.r : 0, extra: { c: (pos as { c?: string }).c, wd: (pos as { wd?: string }).wd } } : null;
     change((x) => ({ ...x, items: [...x.items, pos] }));
+    // a thing you can make your own (own words, colour, design): select it right away so its options show
+    const def = PW.ITEM[pos.id] as { text?: number; tint?: number; vars?: number } | undefined;
+    if (def && (def.text || def.vars) && !pendingGhost.current) {
+      const idx = r.items.length;
+      setTimeout(() => { engine.world?.select(idx); setSel(idx); flash(def.text ? 'Şimdi altta kendi yazını yaz!' : 'Altta desenini seç!', 3500); }, 350);
+    }
   }
   const startGhost = (id: string, r = 0, extra: Record<string, unknown> = {}) => { const w = engine.world; if (!w) return; setSel(-1); w.select(-1); w.startGhost(id, r, extra); setTick((t) => t + 1); };
   const selItem = room && sel >= 0 ? room.items[sel] : undefined;
