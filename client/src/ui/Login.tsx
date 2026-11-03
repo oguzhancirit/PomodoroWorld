@@ -1,0 +1,94 @@
+// First page (user, 2026-11-03, laid out like the sign-in screen they showed): three tilted cards on the left
+// (the intro film playing, making friends, building your room) and the sign-in on the right: Google, Apple (later),
+// guest. A live "people focusing now" line shows you will not be alone.
+import { useEffect, useRef, useState } from 'react';
+import { continueAsGuest, googleReady, mountGoogleButton, GOOGLE_CLIENT_ID } from '../account';
+import { HTTP_BASE, DEMO_ONLY } from '../config';
+import { DEMO_PEOPLE } from '../localRoom';
+
+const ASSET = (f: string) => `${import.meta.env.BASE_URL}login/${f}`;
+
+function useLiveCount() {
+  const [n, setN] = useState<number | null>(DEMO_ONLY ? DEMO_PEOPLE : null);
+  useEffect(() => {
+    if (DEMO_ONLY) return;
+    let live = true;
+    const get = () => fetch(`${HTTP_BASE}/api/world`).then((r) => r.json()).then((d) => {
+      const social = Object.values((d.social ?? {}) as Record<string, number>).reduce((a, b) => a + (Number(b) || 0), 0);
+      const homes = ((d.rooms ?? []) as { n: number }[]).reduce((a, r) => a + (Number(r.n) || 0), 0);
+      if (live) setN(homes + (Number(d.library) || 0) + social);
+    }).catch(() => live && setN(null));
+    get(); const t = setInterval(get, 30_000);
+    return () => { live = false; clearInterval(t); };
+  }, []);
+  return n;
+}
+
+export function Login() {
+  const gRef = useRef<HTMLDivElement>(null);
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  const count = useLiveCount();
+  const ready = googleReady();
+  useEffect(() => {
+    if (!ready || !gRef.current) return;
+    mountGoogleButton(gRef.current, (err) => { setBusy(false); setMsg(err); }, Math.min(360, gRef.current.clientWidth || 320))
+      .catch(() => setMsg('Google girişi yüklenemedi. Misafir olarak devam edebilirsin.'));
+  }, [ready]);
+  const fakeGoogle = () => {
+    // the demo has no server, and a real server needs a Google client id first
+    if (DEMO_ONLY) { setMsg('Demoda Google girişi kapalı: misafir olarak açılıyor…'); setBusy(true); setTimeout(continueAsGuest, 1400); }
+    else setMsg(GOOGLE_CLIENT_ID ? 'Google girişi yüklenemedi.' : 'Google girişi bu sürümde henüz açık değil. Misafir olarak devam edebilirsin.');
+  };
+
+  return (
+    <main className="login">
+      <section className="lg-art" aria-label="Pomodoro World'den görüntüler">
+        <figure className="lg-card c1">
+          <video src={ASSET('film.webm')} poster={ASSET('film.webp')} autoPlay muted loop playsInline aria-label="Tanıtım filmi" />
+          <figcaption><i className="play" aria-hidden="true" />Tanıtım</figcaption>
+        </figure>
+        <figure className="lg-card c2">
+          <img src={ASSET('social.webp')} alt="Meydan Kafe'de sohbet eden oyuncular" />
+          <span className="lg-bubble b1">Mola! Kahve? ☕</span>
+          <span className="lg-bubble b2">Hadi bir tur daha 💪</span>
+          <figcaption>Arkadaşlarınla buluş</figcaption>
+        </figure>
+        <figure className="lg-card c3">
+          <img src={ASSET('room.webp')} alt="Eşyalarla döşenmiş bir oda" />
+          <span className="lg-chip">+ Koltuk</span>
+          <figcaption>Odanı kendin kur</figcaption>
+        </figure>
+      </section>
+
+      <section className="lg-side">
+        <div className="brand"><span className="dot" />Pomodoro World</div>
+        <p className="lg-kicker">Birlikte odaklan</p>
+        <h1>Çalış, sohbet et,<br />odanı büyüt.</h1>
+        <p className="lg-sub">25 dakika odaklan, molada arkadaşlarınla konuş. Her pomodoro jeton kazandırır; jetonlarla karakterini giydirir, odanı döşersin.</p>
+        {count !== null && count > 0 && <p className="lg-live"><i aria-hidden="true" />Şu an <b>{count}</b> kişi odaklanıyor{DEMO_ONLY ? ' (demo botları)' : ''}</p>}
+
+        <div className="lg-btns">
+          {ready ? <div className="lg-google" ref={gRef} aria-busy={busy} />
+            : <button type="button" className="lg-btn google" onClick={fakeGoogle} disabled={busy}><GoogleG />Google ile devam et</button>}
+          <button type="button" className="lg-btn apple" disabled title="Yakında"><AppleLogo />Apple ile devam et<em>Yakında</em></button>
+          <div className="lg-or"><span>ya da</span></div>
+          <button type="button" className="lg-btn guest" onClick={continueAsGuest} disabled={busy}>Misafir olarak devam et</button>
+        </div>
+        {msg && <p className="lg-msg" role="status">{msg}</p>}
+        <ul className="lg-notes">
+          <li>Şifre yok: Google sadece kim olduğunu söyler, e-postan kimseye görünmez.</li>
+          <li>Google ile girersen karakterin ve odan her cihazda seni bekler.</li>
+          <li>Misafir ilerlemen bu tarayıcıda kalır; sonra Google'a bağlarsan hiçbiri kaybolmaz.</li>
+        </ul>
+      </section>
+    </main>
+  );
+}
+
+function GoogleG() {
+  return <svg className="lg-ico" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" /><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" /><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z" /><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" /></svg>;
+}
+function AppleLogo() {
+  return <svg className="lg-ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.9C7 7.3 5.6 8.2 4.8 9.6c-1.7 2.9-.4 7.2 1.2 9.5.8 1.1 1.7 2.4 2.9 2.4 1.2-.1 1.6-.8 3-.8s1.8.8 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.6-1-2.6-3.8zM14.2 5.8c.6-.8 1.1-1.8 1-2.8-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.7-1 2.7 1 .1 2-.5 2.7-1.3z" /></svg>;
+}

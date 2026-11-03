@@ -5,7 +5,7 @@ import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
 import { useStore } from '../store';
 import { DEMO_ONLY } from '../net';
-import { BackupBox, IntroButton, NotifyToggle } from './Backup';
+import { BackupBox, IntroButton, NotifyToggle, AccountBox } from './Backup';
 import { Notice } from './RoomUI';
 import { AvatarPreview } from './AvatarPreview';
 import { SafeCanvas } from './SafeCanvas';
@@ -30,7 +30,7 @@ export function Lobby() {
   const allowed = !wallet || avatarAllowed(wallet, a);
   const [buyMsg, setBuyMsg] = useState('');
   // came back from the room ("Karakterim") rather than a first visit
-  const [back] = useState(() => !!cleanName(useStore.getState().profile.name));
+  const [back] = useState(() => useStore.getState().profile.made);
 
   return (
     <main className="lobby">
@@ -57,6 +57,7 @@ export function Lobby() {
               <button key={g} className={a.g === g ? 'on' : ''} onClick={() => setProfile({ avatar: { ...defaultAvatar(g), skin: a.skin, hair: a.hair } })}>{g === 'f' ? 'Kadın' : 'Erkek'}</button>
             ))}
           </div>
+          <button type="button" className="ghost dice" onClick={() => setProfile({ avatar: randomLook(a.g, wallet) })} title="Rastgele bir görünüm dene">🎲 Şansıma</button>
           <div className="tabs">{(Object.keys(SLOT_LABEL) as Slot[]).map((s) => <button key={s} className={slot === s ? 'on' : ''} onClick={() => setSlot(s)}>{SLOT_LABEL[s]}</button>)}</div>
           <div className="chips">{PARTS[a.g][slot].map((p) => {
             const it = itemById(`av.${a.g}.${p}`); const mine = !wallet || !it || owns(wallet, it.id);
@@ -94,12 +95,13 @@ export function Lobby() {
             <label className="ck"><input id="fast" type="checkbox" checked={profile.fast} onChange={(e) => setProfile({ fast: e.target.checked })} /> Hızlı deneme: 1 dakika = 1 saniye (25 dk odak 25 saniye sürer)</label>
           </div>
         )}
+        {back && <AccountBox />}
         {back && <IntroButton />}
         {back && <NotifyToggle />}
         {back && <BackupBox />}
         {error && <p className="err">{error}</p>}
         {/* step 4: the game lives in your room; the bigger places are in "Dünya" */}
-        <button className="go" disabled={!name || busy || !allowed} onClick={() => useStore.getState().set({ screen: 'home' })}>
+        <button className="go" disabled={!name || busy || !allowed} onClick={() => { setProfile({ made: true }); useStore.getState().set({ screen: 'home' }); }}>
           {busy ? 'Bağlanıyor…' : !name ? 'Önce adını yaz' : !allowed ? 'Önce parçaları al ya da ücretsizlere dön' : back ? 'Kaydet ve odama dön' : 'Odama gir'}
         </button>
         <ShopModal />
@@ -134,6 +136,15 @@ function Wardrobe() {
       <button type="button" className="ghost wr-shop" onClick={() => useStore.getState().set({ shop: true, shopTab: 'avatar' })}>Mağazada yeni parçalara bak</button>
     </div>
   );
+}
+
+/** a surprise look from the parts you may wear (free or owned) and any colours: fun, and fast for a new player */
+function randomLook(g: Avatar['g'], wallet: Parameters<typeof owns>[0] | null): Avatar {
+  const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
+  const part = (slot: Slot) => pick(PARTS[g][slot].filter((p) => { const it = itemById(`av.${g}.${p}`); return !wallet || !it || owns(wallet, it.id); }));
+  return { g, head: part('head'), body: part('body'), legs: part('legs'), feet: part('feet'),
+    skin: 1 + Math.floor(Math.random() * (SKIN_TONES.length - 1)), hair: Math.floor(Math.random() * HAIR_COLORS.length),
+    top: Math.floor(Math.random() * CLOTH_COLORS.length), bottom: Math.floor(Math.random() * CLOTH_COLORS.length) };
 }
 
 function Swatches({ title, list, value, onPick }: { title: string; list: string[]; value: number; onPick: (i: number) => void }) {

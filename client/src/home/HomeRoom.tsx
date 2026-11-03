@@ -107,6 +107,8 @@ export function HomeRoom() {
       engine.film = true; setFilm(true); setFocus(false);
       const done = await cinema.play({ name: profile.name || 'Sen', avatar: myCode, level, style: activityFor(profile.category) }, { first: true });
       engine.film = false; setProfile({ introSeen: true }); setFilm(false);
+      // a brand-new player watched the film before making a character: now the character screen
+      if (!useStore.getState().profile.made) { done?.(); useStore.getState().set({ screen: 'lobby' }); return; }
       // the room is drawn again by its own effects; then lift the black curtain
       setTimeout(() => done?.(), 500);
     }, 1200);

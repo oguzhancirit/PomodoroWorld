@@ -34,6 +34,8 @@ const botCode = (name: string) => ('demo' + name.toLocaleLowerCase('en').replace
 const REPLIES = ['Selam {n}!', 'Aynen, mola iyi geldi.', 'Hadi bir tur daha birlikte.', 'Sen ne çalışıyorsun {n}?', 'Kolay gelsin {n}!'];
 const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)];
 
+/** how many demo bots are around (the sign-in page's "focusing now" line in the demo) */
+export const DEMO_PEOPLE = Object.keys(HOSTS).length + 1;
 export function randomAvatar(g: Gender): string {
   const P = PARTS[g];
   return encodeAvatar({
