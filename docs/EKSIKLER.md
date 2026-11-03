@@ -32,3 +32,11 @@
 - Onboarding: welcome step, room-name field, "Odan hazır".
 - Moodlet (MOODS/celebrate); a11y focus trap + aria-live.
 - By decision, not ported: old face/clothes/personas (avatar b), PWA, Claude-room/P2P transports.
+
+## User feedback round (2026-11-03, after step 5)
+- ✔ Desk hands: palms down, fingers curl toward the palm (tools/retarget.mjs placeHand/curl sign).
+- ✔ Focus screen hides chat, reactions, hint, name tags. Reactions behind one smiley (bottom left); day summary (pomodoros, focus, break minutes; breaks counted in this browser, client/src/breaks.ts).
+- ✔ Slower levels: xpStep 100*L^1.4.
+- ✔ Social spaces: one host bot each (demo only); library bots removed; Elif kept in your own room (demo guide). Seat heights measured on the drawn cushion (legacy/index.ts).
+- ✔ Focus clock: white watch face, Oswald digits, 60 ticks as progress, one card with the setup.
+- Note: the artifact demo still has the old hand clips (clips-*.json are read-blocked, so they cannot be published from here).
