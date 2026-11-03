@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, PRESETS, CATEGORIES, encodeAvatar, defaultAvatar, cleanName, itemById, owns, avatarAllowed, levelFromXP, partName, type Slot, type Avatar } from '@pw/shared';
+import { CATALOG, ACCESSORIES, PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, PRESETS, CATEGORIES, encodeAvatar, defaultAvatar, cleanName, itemById, owns, avatarAllowed, levelFromXP, partName, type Slot, type Avatar } from '@pw/shared';
 import { WalletChip, ShopModal, PartPic } from './Wallet';
 import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
@@ -133,6 +133,15 @@ function Wardrobe() {
           </section>
         );
       })}
+      <section><h4>Takı ve şapka</h4>
+        <div className="wr-grid">
+          <button type="button" className={`wr-card ${!a.acc ? 'on' : ''}`} aria-pressed={!a.acc} onClick={() => setProfile({ avatar: { ...a, acc: undefined } })}><span className="wr-none">—</span><span>Yok</span></button>
+          {CATALOG.filter((i) => i.sub === 'Aksesuar' && (!wallet || owns(wallet, i.id))).map((it) => { const idx = ACCESSORIES.indexOf(it.part as typeof ACCESSORIES[number]); return (
+            <button key={it.id} type="button" className={`wr-card ${a.acc === idx ? 'on' : ''}`} aria-pressed={a.acc === idx} onClick={() => setProfile({ avatar: { ...a, acc: idx } })}>
+              <PartPic it={it} base={code} /><span>{it.name}</span>
+            </button>); })}
+        </div>
+      </section>
       <button type="button" className="ghost wr-shop" onClick={() => useStore.getState().set({ shop: true, shopTab: 'avatar' })}>Mağazada yeni parçalara bak</button>
     </div>
   );

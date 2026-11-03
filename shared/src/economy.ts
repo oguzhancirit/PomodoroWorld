@@ -1,7 +1,7 @@
 // Economy rules: XP, levels, coins, achievements and the shop. Pure functions; the server (or the
 // demo room) is the only one that applies them, so a player can never write their own coins.
 import { ROOM_FURN, ROOM_THEMES, ROOM_VIEWS, ROOM_SIZES, OLD_STARTER } from './roomCatalog';
-import { PARTS, type Avatar, type Gender, type Slot } from './avatar';
+import { PARTS, ACCESSORIES, ACC_NAMES, type Avatar, type Gender, type Slot } from './avatar';
 import { newQuestState, cloneQuests, progressFocus, sanitizeQuests, weekOf, clampTz, type QuestState } from './quests';
 
 export const ECON = {
@@ -135,6 +135,9 @@ const avatarItems: Item[] = (['f', 'm'] as Gender[]).flatMap((g) => (['head', 'b
     // the first two of every slot are free; the rest cost coins and some need a level
     price: i < 2 ? 0 : 60 + (i - 2) * 30, lvl: i < 3 ? 1 : Math.min(12, i),
   }))));
+// accessories (user 2026-11-03): for both bodies, bought once, worn from the wardrobe
+const ACC_PRICE: Record<string, [number, number]> = { glasses: [80, 1], sunglasses: [120, 2], catears: [150, 3], headphones: [180, 3], beanie: [120, 2], cap: [140, 4], flowers: [200, 5], crown: [400, 8] };
+const accItems: Item[] = ACCESSORIES.slice(1).map((a) => ({ id: `av.acc.${a}`, name: ACC_NAMES[a] ?? a, cat: 'avatar' as const, sub: 'Aksesuar', part: a, price: ACC_PRICE[a]?.[0] ?? 150, lvl: ACC_PRICE[a]?.[1] ?? 3 }));
 
 // The first v2 shop sold a few KayKit pieces before the personal room existed.
 // They are replaced by the original room catalog; whoever bought one gets the coins back.
@@ -149,7 +152,7 @@ const roomItems: Item[] = [
   ...ROOM_SIZES.map((t) => ({ ...t, cat: 'size' as const })),
 ];
 
-export const CATALOG: readonly Item[] = [...avatarItems, ...roomItems];
+export const CATALOG: readonly Item[] = [...avatarItems, ...accItems, ...roomItems];
 /** what opens exactly at level `lv` (the level-up window shows up to 8, like v1 ui.levelUp) */
 export const unlocksAt = (lv: number): Item[] => {
   const at = CATALOG.filter((i) => i.lvl === lv), seen = new Set<string>();
@@ -203,7 +206,7 @@ export function buy(w0: Wallet, id: string): BuyResult {
 
 /** May this wallet wear this avatar? Every visible part must be free or owned. */
 export function avatarAllowed(w: Wallet, a: Avatar): boolean {
-  return (['head', 'body', 'legs', 'feet'] as Slot[]).every((s) => owns(w, `av.${a.g}.${a[s]}`));
+  return (['head', 'body', 'legs', 'feet'] as Slot[]).every((s) => owns(w, `av.${a.g}.${a[s]}`)) && (!a.acc || owns(w, `av.acc.${ACCESSORIES[a.acc]}`));
 }
 
 /** Repair a wallet that came from storage or an old version. */

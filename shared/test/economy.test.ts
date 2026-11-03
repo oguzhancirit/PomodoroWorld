@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { unlocksAt, ECON, levelFromXP, xpStep, newWallet, rewardFocus, buy, CATALOG, itemById, isFree, avatarAllowed, titleFor, ACHIEVEMENTS, BUNDLES, bundlePrice, bundleLevel } from '../src/economy';
-import { defaultAvatar, PARTS } from '../src/avatar';
+import { defaultAvatar, PARTS, ACCESSORIES } from '../src/avatar';
 
 describe('level pace (user, 2026-11-03: XP should take some effort, not too much)', () => {
   // a 25-minute pomodoro pays 25 + 10 XP; a 4-pomodoro day with the set bonus pays 165 XP
@@ -179,5 +179,16 @@ describe('corner sets (user 2026-11-03: a richer shop)', () => {
     expect(buy({ ...newWallet(), coins: 99999 }, b.id)).toMatchObject({ ok: false, reason: 'level' });
     expect(buy({ ...newWallet(), coins: 1, xp: 10_000_000 }, b.id)).toMatchObject({ ok: false, reason: 'coins' });
     expect(buy(newWallet(), 'set.nope')).toMatchObject({ ok: false, reason: 'unknown' });
+  });
+});
+
+describe('accessories in the shop', () => {
+  it('every accessory is sold once and must be owned to wear', () => {
+    for (const acc of ACCESSORIES.slice(1)) expect(itemById(`av.acc.${acc}`)?.cat).toBe('avatar');
+    const w = newWallet();
+    const withAcc = { ...defaultAvatar('f'), acc: 1 };
+    expect(avatarAllowed(w, withAcc)).toBe(false);
+    const r = buy({ ...w, coins: 99999, xp: 10_000_000 }, `av.acc.${ACCESSORIES[1]}`);
+    expect(r.ok && avatarAllowed(r.wallet, withAcc)).toBe(true);
   });
 });

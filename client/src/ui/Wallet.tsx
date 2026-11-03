@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CATALOG, ACHIEVEMENTS, BUNDLES, bundlePrice, bundleLevel, encodeAvatar, levelFromXP, titleFor, owns, isFree, partName, type Item, type Slot } from '@pw/shared';
+import { CATALOG, ACHIEVEMENTS, BUNDLES, ACCESSORIES, decodeAvatar, bundlePrice, bundleLevel, encodeAvatar, levelFromXP, titleFor, owns, isFree, partName, type Item, type Slot } from '@pw/shared';
 import { useStore } from '../store';
 import { buyItem, demoBoost } from '../economy';
 import { DEMO_ONLY } from '../config';
@@ -24,7 +24,11 @@ export function WalletChip() {
 
 /** an outfit part shown on the player's own character (a soft placeholder until the photo is ready) */
 export function PartPic({ it, base }: { it: Item; base: string }) {
-  const url = usePartThumb(it, base);
+  // an accessory: the player's own head wearing it (the photo is framed on the head)
+  const acc = it.sub === 'Aksesuar' ? ACCESSORIES.indexOf(it.part as typeof ACCESSORIES[number]) : -1;
+  const me = decodeAvatar(base);
+  const shown = acc > 0 ? { ...it, id: `${it.id}.${me.g}`, g: me.g, slot: 'head' as const, part: me.head } : it;
+  const url = usePartThumb(shown, acc > 0 ? encodeAvatar({ ...me, acc }) : base);
   return url ? <img alt="" src={url} /> : <span className="pic-wait" aria-hidden="true" />;
 }
 
@@ -58,7 +62,7 @@ export function ShopModal() {
         {it.cat === 'avatar' ? <PartPic it={it} base={base} /> : <img alt="" loading="lazy" src={thumb(it.id)} />}
         {NEW_IDS.has(it.id) && <span className="new-badge">Yeni</span>}
         <b>{it.name}</b>
-        <span className="meta">{it.cat === 'avatar' ? SLOT_LABEL[it.slot!] : it.cat === 'furn' ? (count ? `${count} adet sende` : it.sub) : it.cat === 'theme' ? 'Hazır tema' : it.cat === 'view' ? 'Pencere manzarası' : 'Oda boyutu'}</span>
+        <span className="meta">{it.cat === 'avatar' ? (it.slot ? SLOT_LABEL[it.slot] : 'Aksesuar') : it.cat === 'furn' ? (count ? `${count} adet sende` : it.sub) : it.cat === 'theme' ? 'Hazır tema' : it.cat === 'view' ? 'Pencere manzarası' : 'Oda boyutu'}</span>
         {it.cat === 'furn' && isPersonal(it) && <span className="touch-badges">{touchesOf(it).tint && <i title="Rengini sen seçersin">🎨</i>}{touchesOf(it).text && <i title="Üstüne kendi yazını yazarsın">✍️</i>}{touchesOf(it).vars && <i title="Desenini sen seçersin">🖼️</i>}</span>}
         {once && have ? <span className="tag ok">{isFree(it) ? 'Ücretsiz' : 'Sende'}</span>
           : locked ? <span className="tag">Seviye {it.lvl}</span>
@@ -78,6 +82,7 @@ export function ShopModal() {
           <button className={tab === 'ach' ? 'on' : ''} onClick={() => setTab('ach')}>Başarımlar</button>
         </div>
         {msg && <p className="shop-msg">{msg}</p>}
+        {tab === 'avatar' && <section><h4>Aksesuar · gözlük, şapka, taç…</h4><div className="shop-grid">{CATALOG.filter((i) => i.sub === 'Aksesuar').map(card)}</div></section>}
         {tab === 'avatar' && (['head', 'body', 'legs', 'feet'] as Slot[]).map((slot) => (
           <section key={slot}><h4>{SLOT_LABEL[slot]}</h4><div className="shop-grid">{CATALOG.filter((i) => i.cat === 'avatar' && i.g === g && i.slot === slot).map(card)}</div></section>
         ))}
