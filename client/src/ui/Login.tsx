@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { continueAsGuest, googleReady, mountGoogleButton, GOOGLE_CLIENT_ID } from '../account';
 import { HTTP_BASE, DEMO_ONLY } from '../config';
-import { DEMO_PEOPLE } from '../localRoom';
+import { DEMO_PEOPLE } from '../demoHosts';
 
 const ASSET = (f: string) => `${import.meta.env.BASE_URL}login/${f}`;
 
@@ -53,16 +53,16 @@ export function Login() {
           <figcaption>↑ Pomodoro World'ü bir dakikada tanı.</figcaption>
         </figure>
         <figure className="lg-card c2">
-          <header><span>Sosyal Alan</span><small>02</small></header>
-          <div className="lg-media"><img src={ASSET('social.webp')} alt="Meydan Kafe'de sohbet eden oyuncular" /><span className="lg-tag">Meydan Kafe · mola</span></div>
-          <div className="lg-row"><span className="av">E</span><b>Elif</b> Mola! Kahve? ☕<em>az önce</em></div>
-          <figcaption>Molada arkadaşlarınla buluş, sohbet et.</figcaption>
+          <header><span>Kendi modelini yarat</span><small>02</small></header>
+          <div className="lg-media"><img src={ASSET('avatar.webp')} alt="Karakter yaratma ekranı: saç, kıyafet ve renk seçenekleri" /><span className="lg-tag">Karakterin</span></div>
+          <div className="lg-row"><span className="lg-sw" style={{ background: '#e58bb0' }} /><span className="lg-sw" style={{ background: '#3e7cb1' }} /><span className="lg-sw" style={{ background: '#f2c14e' }} /><b>Saç, kıyafet, renk</b><em>🎲 Şansıma</em></div>
+          <figcaption>Saçını, kıyafetini ve renklerini seç; tarzın senin olsun.</figcaption>
         </figure>
         <figure className="lg-card c3">
-          <header><span>Oda Kurma</span><small>03</small></header>
-          <div className="lg-media"><img src={ASSET('room.webp')} alt="Günler içinde eşyalarla dolan bir oda" /><span className="lg-tag">31. gün</span></div>
-          <div className="lg-row ok">🛋️ <b>Koltuk</b> odana eklendi<em>−120 jeton</em></div>
-          <figcaption>Kazandığın jetonlarla odanı istediğin gibi döşe.</figcaption>
+          <header><span>Sosyalleşmeyi unutma</span><small>03</small></header>
+          <div className="lg-media"><img src={ASSET('friends.webp')} alt="Sosyal alanda bir arada duran beş oyuncu" /><span className="lg-tag">Meydan Kafe · 5 kişi</span></div>
+          <div className="lg-row ok"><span className="av">E</span><b>Elif</b> Mola! Kahve? ☕<em>az önce</em></div>
+          <figcaption>Molada kütüphanede ya da kafede arkadaşlarınla buluş.</figcaption>
         </figure>
       </section>
 

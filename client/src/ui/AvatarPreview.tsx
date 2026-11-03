@@ -4,9 +4,10 @@ import { ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { Avatar, type Motion } from '../avatar/Avatar';
 
+/** a gentle left-right sway that keeps the face in view (a full spin showed the back half of the time) */
 function Turntable({ children }: { children: React.ReactNode }) {
   const g = useRef<THREE.Group>(null);
-  useFrame((_, dt) => { if (g.current) g.current.rotation.y += dt * 0.35; });
+  useFrame(({ clock }) => { if (g.current) g.current.rotation.y = Math.sin(clock.elapsedTime * 0.5) * 0.55; });
   return <group ref={g}>{children}</group>;
 }
 

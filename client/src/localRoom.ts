@@ -1,6 +1,7 @@
 // Demo mode: the same study-room rules running inside the browser, with a few bot classmates.
 // Used when no game server is reachable (for example inside a Claude artifact), so the 3D room,
 // the shared timer rules, the chat rules and the animations can be tried from a plain link.
+import { HOSTS } from './demoHosts';
 import {
   presetById, startTimer, settle, isChatAllowed, pauseTimer, resumeTimer, skipPhase, type Phase, type TimerState, type Preset,
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter, STUDY_ROOM, firstFreeSeat, isSeatFree,
@@ -19,15 +20,6 @@ export function layoutOf(room: object) { const r = room as Record<string, unknow
 export const libraryLayout = () => layoutOf(libraryRoom());
 
 /** the one bot of each social space: tells what the place is for (demo only) */
-const HOSTS: Record<string, { name: string; g: Gender; hello: string; lines: string[] }> = {
-  meydan: { name: 'Kafeci Deniz', g: 'm', hello: 'Hoş geldin {name}! Burası Meydan Kafe: molada uğrayıp sohbet edilen yer.', lines: [
-    'Burada sohbet hep açık, istediğin zaman yazabilirsin.', 'Boş bir koltuğa tıklarsan oturursun.', 'Arkadaşlarının nerede olduğunu Dünya’dan görebilirsin.', 'Mola bitince odana dönüp yeni tura başlamayı unutma.'] },
-  teras: { name: 'Bahçıvan Ece', g: 'f', hello: 'Selam {name}! Çatı Terası’na hoş geldin; şehrin manzarası eşliğinde nefeslen.', lines: [
-    'Uzun molada biraz gökyüzüne bakmak iyi gelir.', 'Burada herkes molada; sohbet açık.', 'Bir arkadaşını görürsen kartına tıkla, arkadaş ekleyebilirsin.', 'Gün batımında burası çok güzel olur.'] },
-  oyun: { name: 'Oyuncu Kerem', g: 'm', hello: 'Hoş geldin {name}! Oyun Salonu molada kafa dağıtma yeri. Konsolda Pomo Canavarları var, bir dene!', lines: [
-    'TV’nin altındaki konsolda Pomo Canavarları oynanıyor; alttaki “Konsolda oyna” ya bas.', 'Ateş yaprağı, yaprak suyu, su ateşi yener. Unutma!',
-    'Burada sohbet açık; molanı tatlı geçir.', 'Kutlamak için sol alttaki gülen yüze bas.', 'Mola bitince odana dön, sayacın seni bekliyor.', 'Yeni eşyaları jetonlarla mağazadan alabilirsin.'] },
-};
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
 const BREAK_LINES = ['Mola! Su içmeyi unutmayın.', 'Bu turda 3 soru çözdüm.', 'Gözlerimi biraz dinlendireyim.', 'Kim kahve alıyor?', 'Bir tur daha, hadi!', 'Okuduğum bölüm çok iyiydi.', 'Biraz esneyelim mi?', 'Odaklanmak bugün kolay geldi.'];
 /** demo bots get a friend code, so the person card shows every button */
@@ -35,8 +27,6 @@ const botCode = (name: string) => ('demo' + name.toLocaleLowerCase('en').replace
 const REPLIES = ['Selam {n}!', 'Aynen, mola iyi geldi.', 'Hadi bir tur daha birlikte.', 'Sen ne çalışıyorsun {n}?', 'Kolay gelsin {n}!'];
 const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)];
 
-/** how many demo bots are around (the sign-in page's "focusing now" line in the demo) */
-export const DEMO_PEOPLE = Object.keys(HOSTS).length + 1;
 export function randomAvatar(g: Gender): string {
   const P = PARTS[g];
   return encodeAvatar({
