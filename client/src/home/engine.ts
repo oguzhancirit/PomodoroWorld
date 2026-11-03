@@ -44,3 +44,6 @@ export const swatch = (kind: 'wallPat' | 'floorT', val: string, def: unknown): s
 
 /** Undo / redo of the room look ("it should be fun to make mistakes"). */
 export const hist = { u: [] as string[], r: [] as string[] };
+
+// dev server only: browser checks can move the camera
+if (import.meta.env.DEV) (window as unknown as { __engine: unknown }).__engine = engine;

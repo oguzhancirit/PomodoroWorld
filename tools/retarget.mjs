@@ -53,6 +53,24 @@ function aimBone(bone, childPos, target) {
   bone.quaternion.copy(wq(bone.parent).invert().multiply(w));
   bone.updateMatrixWorld(true);
 }
+// hand orientation on the desk: fingers point `fwd` (world), back of the hand faces up. The rig's rest pose
+// has fingers along ±X with the back of the hand up (+Y), so map that rest basis onto the wanted one.
+const REST_W = {};
+function basis(f, up) {
+  const x = f.clone().normalize(), z = new THREE.Vector3().crossVectors(x, up).normalize(), y = new THREE.Vector3().crossVectors(z, x);
+  return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+}
+function placeHand(TB, side, fwd) {
+  const wr = TB['Wrist' + side], up = new THREE.Vector3(0, 1, 0);
+  const rest = basis(new THREE.Vector3(side === 'L' ? 1 : -1, 0, 0), up), want = basis(fwd, up);
+  const w = want.multiply(rest.invert()).multiply(REST_W[side]);
+  wr.quaternion.copy(wq(wr.parent).invert().multiply(w)); wr.updateMatrixWorld(true);
+}
+/** fingers forward, turned `inward` (rad) toward the body's middle and tipped `down` toward the desk */
+const handDir = (side, inward, down) => {
+  const s = side === 'L' ? -1 : 1; // left hand sits at +X, so inward is -X
+  return new THREE.Vector3(s * Math.sin(inward), -Math.sin(down), Math.cos(inward)).normalize();
+};
 function armIK(TB, side, target, pole) {
   const up = TB['UpperArm' + side], lo = TB['LowerArm' + side], wr = TB['Wrist' + side];
   const a = wp(up), b = wp(lo), c = wp(wr);
@@ -64,13 +82,10 @@ function armIK(TB, side, target, pole) {
   const elbow = a.clone().add(dir.clone().multiplyScalar(cosA * l1)).add(n.multiplyScalar(sinA * l1));
   aimBone(up, b, elbow);
   aimBone(lo, wp(wr), a.clone().add(dir.multiplyScalar(d)));
-  // hand continues the forearm, tipped a little so the palm faces the desk
-  const w = wq(lo).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0.15));
-  wr.quaternion.copy(wq(wr.parent).invert().multiply(w)); wr.updateMatrixWorld(true);
 }
 function tilt(bone, axis, angle) { bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(axis, angle)); bone.updateMatrixWorld(true); }
 function curl(TB, side, amount) {
-  for (const f of ['Index', 'Middle', 'Ring', 'Pinky']) for (const i of [1, 2, 3]) { const b = TB[f + i + side]; if (b) tilt(b, new THREE.Vector3(1, 0, 0), amount * (i === 1 ? 0.6 : 1)); }
+  for (const f of ['Index', 'Middle', 'Ring', 'Pinky']) for (const i of [1, 2, 3]) { const b = TB[f + i + side]; if (b) tilt(b, new THREE.Vector3(1, 0, 0), -amount * (i === 1 ? 0.6 : 1)); }
 }
 function deskPose(TB, kind, t, deskY) {
   const H = wp(TB.Hips);
@@ -82,18 +97,21 @@ function deskPose(TB, kind, t, deskY) {
   if (kind === 'type') {
     armIK(TB, 'L', new THREE.Vector3(H.x + 0.15, deskY + 0.05 + tap(0), H.z + 0.42), pole(1));
     armIK(TB, 'R', new THREE.Vector3(H.x - 0.15, deskY + 0.05 + tap(0.5), H.z + 0.42), pole(-1));
-    curl(TB, 'L', 0.25 + 3 * tap(0.25)); curl(TB, 'R', 0.25 + 3 * tap(0.75));
+    placeHand(TB, 'L', handDir('L', 0.3, 0.12)); placeHand(TB, 'R', handDir('R', 0.3, 0.12));
+    curl(TB, 'L', 0.35 + 3 * tap(0.25)); curl(TB, 'R', 0.35 + 3 * tap(0.75));
   } else if (kind === 'write') {
     const wx = 0.035 * Math.sin(2 * Math.PI * t * 0.75), wz = 0.012 * Math.sin(2 * Math.PI * t * 3);
     armIK(TB, 'R', new THREE.Vector3(H.x - 0.1 + wx, deskY + 0.045, H.z + 0.4 + wz), pole(-1));
     armIK(TB, 'L', new THREE.Vector3(H.x + 0.22, deskY + 0.035, H.z + 0.34), pole(1));
-    curl(TB, 'R', 0.9); curl(TB, 'L', 0.15);
+    placeHand(TB, 'R', handDir('R', 0.45, 0.2)); placeHand(TB, 'L', handDir('L', 0.5, 0.05));
+    curl(TB, 'R', 0.85); curl(TB, 'L', 0.2);
   } else if (kind === 'read') {
     // a book lying open on the desk, a hand on each side of it; the right hand turns a page every few seconds
     const turn = Math.max(0, Math.sin(2 * Math.PI * (t / 6))) ** 8;
     armIK(TB, 'L', new THREE.Vector3(H.x + 0.17, deskY + 0.03, H.z + 0.36), pole(1));
     armIK(TB, 'R', new THREE.Vector3(H.x - 0.17 + 0.15 * turn, deskY + 0.03 + 0.05 * turn, H.z + 0.36 + 0.03 * turn), pole(-1));
-    curl(TB, 'L', 0.35); curl(TB, 'R', 0.35 + 0.3 * turn);
+    placeHand(TB, 'L', handDir('L', 0.45, 0.08)); placeHand(TB, 'R', handDir('R', 0.45 + 0.5 * turn, 0.08 - 0.3 * turn));
+    curl(TB, 'L', 0.25); curl(TB, 'R', 0.25 + 0.35 * turn);
   }
 }
 
@@ -110,6 +128,7 @@ export async function buildFor(targetFile, srcGltf, scale = 1) {
   const srcRestQ = {}, tgtRestQ = {}, tgtRestLocal = {};
   for (const [s, t] of Object.entries(MAP)) { if (!SB[s] || !TB[t]) throw new Error('missing ' + s + '/' + t); srcRestQ[s] = wq(SB[s]); tgtRestQ[t] = wq(TB[t]); }
   for (const [n, b] of Object.entries(TB)) tgtRestLocal[n] = { q: b.quaternion.clone(), p: b.position.clone() };
+  REST_W.L = wq(TB.WristL); REST_W.R = wq(TB.WristR);
   const srcPelvis0 = wp(SB.pelvis), tgtHips0 = wp(TB.Hips), body0 = wp(TB.Body);
   const ratio = tgtHips0.y / srcPelvis0.y;
   // foot offset relative to the lower leg in rest pose (for forward kinematics)
