@@ -7,6 +7,7 @@ import { HomeRoom } from './rooms/HomeRoom';
 import { LibraryRoom } from './rooms/LibraryRoom';
 import { SocialRoom } from './rooms/SocialRoom';
 import { profiles } from './profiles';
+import { verifyGoogle, googleLogin } from './auth';
 
 const QUEST_REASON: Record<string, string> = { unknown: 'Böyle bir görev yok.', not_done: 'Bu görev henüz bitmedi.', claimed: 'Bu ödülü zaten aldın.' };
 const furnCount = (room: Room) => { const m = new Map<string, number>(); for (const it of room.items) m.set(it.id, (m.get(it.id) ?? 0) + 1); return m; };
@@ -29,7 +30,25 @@ export function routes(app: express.Application, json: express.RequestHandler) {
     // opening the game is the daily login
     const tz = b.data.tz ?? p.wallet.tz;
     profiles.update(p, loginTick({ ...p.wallet, tz }, clock(Date.now(), tz)));
-    res.json({ ok: true, wallet: p.wallet, room: p.room, level: levelFromXP(p.wallet.xp) });
+    res.json({ ok: true, wallet: p.wallet, room: p.room, level: levelFromXP(p.wallet.xp), look: p.look ?? null });
+  });
+  // Google sign-in (step 6): the page sends Google's ID token (+ the guest id to carry its progress over)
+  app.post('/api/auth/google', async (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID || '';
+    if (!clientId) return void res.status(503).json({ ok: false, error: 'Google girişi bu sunucuda henüz açık değil.' });
+    const body = (req.body ?? {}) as { credential?: unknown; guest?: { pid?: unknown; secret?: unknown } };
+    const user = await verifyGoogle(typeof body.credential === 'string' ? body.credential : '', clientId);
+    if (!user) return void res.status(401).json({ ok: false, error: 'Google girişi doğrulanamadı, tekrar dene.' });
+    const r = googleLogin(profiles, user, body.guest);
+    res.json({ ok: true, pid: r.pid, secret: r.secret, isNew: r.isNew, moved: r.moved, look: r.look, google: { name: user.name ?? '', given: user.given ?? '', picture: user.picture ?? '' } });
+  });
+  // your name and character, so the same look opens on your other devices
+  app.post('/api/look', (req, res) => {
+    const b = ProfileRequest.safeParse(req.body);
+    const p = b.success ? profiles.open(b.data.pid, b.data.secret) : null;
+    if (!b.success || !p) return void res.status(403).json({ ok: false, error: 'Oyuncu kimliği doğrulanamadı.' });
+    profiles.setLook(p, req.body as { name?: unknown; avatar?: unknown });
+    res.json({ ok: true, look: p.look ?? null });
   });
   app.post('/api/buy', (req, res) => {
     const b = BuyRequest.safeParse(req.body);
