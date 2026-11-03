@@ -80,7 +80,7 @@ export function EditBar(p: Props) {
     if (selFloor) sub = (
       <>
         {touches}
-        <div className="swatches"><span className="lbl">Kumaş / renk</span>{(PW.FABRIC_COLORS as string[]).map((c) => <button key={c} className={`sw ${selFloor.c === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Renk" onClick={() => actions.tint('c', c)} />)}</div>
+        <div className="swatches"><span className="lbl">Kumaş / renk</span>{(PW.FABRIC_COLORS as string[]).map((c) => <button key={c} className={`sw ${selFloor.c === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Renk" onClick={() => actions.tint('c', c)} />)}<input type="color" className="sw-pick" value={selFloor.c || '#8E6CC1'} aria-label="Özel renk" onChange={(e) => actions.tint('c', e.target.value.toUpperCase())} /></div>
         <div className="swatches"><span className="lbl">Ahşap</span>{Object.entries(PW.WOOD_TONES as Record<string, string>).map(([k, c]) => <button key={k} className={`sw ${selFloor.wd === k ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label={k} onClick={() => actions.tint('wd', k)} />)}</div>
       </>
     );
@@ -98,7 +98,7 @@ export function EditBar(p: Props) {
       <>
         <div className="swatches"><span className="lbl">Duvar rengi</span>{(PW.WALL_COLORS as string[]).map((c) => <button key={c} className={`sw ${R.wall === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Duvar rengi" onClick={() => set({ wall: c })} />)}
           <input type="color" className="sw-pick" value={R.wall || '#E9DCC8'} aria-label="Özel renk" onChange={(e) => set({ wall: e.target.value.toUpperCase() })} /></div>
-        <div className="swatches"><span className="lbl">Süpürgelik</span>{TRIM_COLORS.map((c) => <button key={c} className={`sw ${R.trim === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Süpürgelik rengi" onClick={() => set({ trim: c })} />)}</div>
+        <div className="swatches"><span className="lbl">Süpürgelik</span>{TRIM_COLORS.map((c) => <button key={c} className={`sw ${R.trim === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Süpürgelik rengi" onClick={() => set({ trim: c })} />)}<input type="color" className="sw-pick" value={R.trim || '#F6F4EF'} aria-label="Özel süpürgelik rengi" onChange={(e) => set({ trim: e.target.value.toUpperCase() })} /></div>
       </>
     );
     list = WALL_PATTERNS.map(([k, n]) => { const lv = SURFACE_LVL[k] || 1; const lock = L < lv; return (
@@ -106,14 +106,14 @@ export function EditBar(p: Props) {
         <span className="pat" style={{ backgroundImage: `url(${swatch('wallPat', k, def)})` }}>{lock && <em>Sv {lv}</em>}</span><span>{n}</span>
       </button>); });
   } else if (tab === 'floor') {
-    sub = <div className="swatches"><span className="lbl">Zemin rengi</span>{(PW.FLOOR_COLORS as string[]).map((c) => <button key={c} className={`sw ${R.floorC === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Zemin rengi" onClick={() => set({ floorC: c })} />)}</div>;
+    sub = <div className="swatches"><span className="lbl">Zemin rengi</span>{(PW.FLOOR_COLORS as string[]).map((c) => <button key={c} className={`sw ${R.floorC === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Zemin rengi" onClick={() => set({ floorC: c })} />)}<input type="color" className="sw-pick" value={R.floorC || '#C49A6C'} aria-label="Özel zemin rengi" onChange={(e) => set({ floorC: e.target.value.toUpperCase() })} /></div>;
     list = FLOOR_TYPES.map(([k, n]) => { const lv = SURFACE_LVL[k] || 1; const lock = L < lv; return (
       <button key={k} className={`eit ${(R.floorT || surf.pat) === k ? 'on' : ''} ${lock ? 'none' : ''}`} disabled={lock} onClick={() => set({ floorT: k, floorC: R.floorC || surf.floor })}>
         <span className="pat" style={{ backgroundImage: `url(${swatch('floorT', k, def)})` }}>{lock && <em>Sv {lv}</em>}</span><span>{n}</span>
       </button>); });
   } else if (tab === 'mood') {
     const cur = R.mood || PW.defaultMoodFor(R.view);
-    sub = <div className="swatches"><span className="lbl">Perde</span>{CURTAIN_COLORS.map((c) => <button key={c} className={`sw ${R.curtain === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Perde rengi" onClick={() => set({ curtain: c })} />)}</div>;
+    sub = <div className="swatches"><span className="lbl">Perde</span>{CURTAIN_COLORS.map((c) => <button key={c} className={`sw ${R.curtain === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Perde rengi" onClick={() => set({ curtain: c })} />)}<input type="color" className="sw-pick" value={R.curtain || '#2F7D5B'} aria-label="Özel perde rengi" onChange={(e) => set({ curtain: e.target.value.toUpperCase() })} /></div>;
     list = MOOD_NAMES.map(([k, name]) => { const lv = MOOD_LVL[k] || 1; const lock = L < lv; return (
       <button key={k} className={`mood ${cur === k ? 'on' : ''}`} disabled={lock} onClick={() => set({ mood: k })}>
         <i style={{ background: MOOD_INFO[k]?.grad }} /><b>{name}</b><span>{lock ? `Seviye ${lv}` : MOOD_INFO[k]?.desc}</span>
@@ -181,7 +181,7 @@ function Touches({ it, touch }: { it: PlacedItem; touch: (k: 'c' | 't' | 'v', v:
         </div>
       )}
       {def.tint && (
-        <div className="swatches"><span className="lbl">Işık rengi</span>{(PW.NEON_COLORS as string[]).map((c) => <button key={c} className={`sw ${cur.c === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Işık rengi" onClick={() => touch('c', c)} />)}</div>
+        <div className="swatches"><span className="lbl">Işık rengi</span>{(PW.NEON_COLORS as string[]).map((c) => <button key={c} className={`sw ${cur.c === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Işık rengi" onClick={() => touch('c', c)} />)}<input type="color" className="sw-pick" value={cur.c || '#FF4FA0'} aria-label="Özel ışık rengi" onChange={(e) => touch('c', e.target.value.toUpperCase())} /></div>
       )}
       {def.vars && (
         <div className="swatches touch-vars"><span className="lbl">Desen</span>{Array.from({ length: def.vars }, (_, v) => (

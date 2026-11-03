@@ -379,7 +379,7 @@
     const cage = new THREE.Group(); cage.position.y = 1.1; g.add(cage);
     cyl(cage, 0.2, 0.2, 0.02, metal('#C9A15A'), 0, 0, 0, 18);
     for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; cyl(cage, 0.004, 0.004, 0.45, metal('#C9A15A'), Math.cos(a) * 0.19, 0.22, Math.sin(a) * 0.19, 4); }
-    const top = new THREE.Mesh(new THREE.SphereGeometry(0.2, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), metal('#C9A15A')); top.position.y = 0.44; top.scale.y = 0.5; cage.add(top);
+    for (let i = 0; i < 6; i++) { const arc = tor(cage, 0.19, 0.004, metal('#C9A15A'), 0, 0.44, 0, Math.PI); arc.rotation.y = (i / 6) * Math.PI; arc.scale.y = 0.55; } tor(cage, 0.03, 0.008, metal('#C9A15A'), 0, 0.56, 0);
     const perch = cyl(cage, 0.008, 0.008, 0.3, WOOD, 0, 0.15, 0, 6); perch.rotation.z = Math.PI / 2;
     const bird = new THREE.Group(); bird.position.set(0, 0.19, 0); cage.add(bird);
     const bd = sph(bird, 0.05, '#7FD34E', 0, 0.05, 0, 12, 10); bd.scale.set(0.9, 1.3, 0.9); sph(bird, 0.035, '#F2E14E', 0, 0.12, 0.01, 10, 8);
@@ -418,6 +418,15 @@
   B.f_rug_shag = (g, d = {}) => flatRug(g, 2, 1.4, (c, w, h) => { c.fillStyle = d.c || '#E8DCCB'; c.fillRect(0, 0, w, h); for (let i = 0; i < 2600; i++) { c.fillStyle = `rgba(${i % 2 ? 255 : 0},${i % 2 ? 255 : 0},${i % 2 ? 255 : 0},.08)`; c.fillRect((i * 53) % w, (i * 97) % h, 2, 5); } });
   B.f_rug_checker = (g, d = {}) => flatRug(g, 2, 2, (c, w, h) => { const a = d.c || '#2F3542', b = '#F4F1EC', n = 8; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { c.fillStyle = (x + y) % 2 ? a : b; c.fillRect((x * w) / n, (y * h) / n, w / n + 1, h / n + 1); } });
   B.f_rug_rainbow = (g) => flatRug(g, 2.2, 1.2, (c, w, h) => { c.fillStyle = '#F4EDE2'; c.fillRect(0, 0, w, h); const cols = ['#E8553D', '#F2A03D', '#F2C14E', '#7FB069', '#3E7CB1', '#8E6CC1']; cols.forEach((col, i) => { c.strokeStyle = col; c.lineWidth = 11; c.beginPath(); c.arc(w / 2, h * 0.95, w * 0.42 - i * 13, Math.PI, 0); c.stroke(); }); });
+  // a coir doormat with the player's own words (d.t) in their colour (d.c)
+  B.f_doormat = (g, d = {}) => flatRug(g, 1, 0.6, (c, w, h) => {
+    c.fillStyle = '#C69C6D'; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 1800; i++) { c.fillStyle = i % 2 ? 'rgba(90,60,30,.18)' : 'rgba(255,240,210,.12)'; c.fillRect((i * 37) % w, (i * 71) % h, 1, 3); }
+    c.strokeStyle = d.c || '#2F3542'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16);
+    const text = (d.t || 'Hoş geldin').slice(0, 18); let fs = 34;
+    c.font = `800 ${fs}px "Sora", sans-serif`; while (c.measureText(text).width > w - 36 && fs > 14) { fs -= 2; c.font = `800 ${fs}px "Sora", sans-serif`; }
+    c.fillStyle = d.c || '#2F3542'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, w / 2, h / 2 + 2);
+  });
   /* wall */
   B.w_ivy = (g) => {
     box(g, 0.5, 0.03, 0.18, WOOD, 0, 0, 0.09); vpot(g, 0.08, 0.13, '#E9E4DA', 0.015).position.z = 0.09;

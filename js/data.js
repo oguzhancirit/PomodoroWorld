@@ -158,6 +158,7 @@
   it('f_rug_shag', 'Halı', 'Peluş Halı', 150, 2, { rug: 1, fp: [2, 1.4], tint: 1 });
   it('f_rug_checker', 'Halı', 'Damalı Halı', 170, 3, { rug: 1, fp: [2, 2], tint: 1 });
   it('f_rug_rainbow', 'Halı', 'Gökkuşağı Halı', 220, 4, { rug: 1, fp: [2.2, 1.2] });
+  it('f_doormat', 'Halı', 'Yazılı Paspas', 90, 1, { rug: 1, fp: [1, 0.6], text: 1, tint: 1 });
   it('d_laptop', 'Masaüstü', 'Dizüstü Bilgisayar', 0, 1, { top: 1, fp: [0.4, 0.3] });
   it('d_lamp', 'Masaüstü', 'Masa Lambası', 0, 1, { top: 1, fp: [0.25, 0.25], light: 1 });
   it('d_books', 'Masaüstü', 'Kitap Yığını', 40, 1, { top: 1, fp: [0.3, 0.25] });
