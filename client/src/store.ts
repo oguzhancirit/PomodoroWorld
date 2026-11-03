@@ -11,12 +11,12 @@ export interface PlayerView {
 }
 export interface ChatLine { id: string; name: string; text: string; at: number; system?: boolean }
 /** task: what I work on (v1 focus screen field) · recent: last tasks · custom: v1 "Özel" focus / break minutes */
-/** introSeen: the first-run film was shown (v1 S.introSeen); toured: the guided tour ran once (v1 S.toured) */
-export interface Profile { name: string; avatar: Avatar; preset: string; category: string; fast: boolean; task: string; recent: string[]; custom: { f: number; b: number }; introSeen: boolean; toured: boolean }
+/** introSeen: the first-run film was shown (v1 S.introSeen); toured: the guided tour ran once (v1 S.toured); notify: desktop notices at phase ends (v1 settings.notify) */
+export interface Profile { name: string; avatar: Avatar; preset: string; category: string; fast: boolean; task: string; recent: string[]; custom: { f: number; b: number }; introSeen: boolean; toured: boolean; notify: boolean }
 
 const PROFILE_KEY = 'pw2.profile';
 function loadProfile(): Profile {
-  const d: Profile = { name: '', avatar: defaultAvatar('f'), preset: 'p25', category: 'Ders', fast: true, task: '', recent: [], custom: { f: 40, b: 8 }, introSeen: false, toured: false };
+  const d: Profile = { name: '', avatar: defaultAvatar('f'), preset: 'p25', category: 'Ders', fast: true, task: '', recent: [], custom: { f: 40, b: 8 }, introSeen: false, toured: false, notify: true };
   try { const raw = localStorage.getItem(PROFILE_KEY); if (raw) return { ...d, ...JSON.parse(raw) }; } catch { /* private mode */ }
   return d;
 }

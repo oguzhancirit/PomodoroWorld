@@ -56,3 +56,19 @@ export function IntroButton() {
     </div>
   );
 }
+
+/** v1 settings "Bildirimler": a desktop notice when a focus or break ends while you are in another tab */
+export function NotifyToggle() {
+  const on = useStore((s) => s.profile.notify);
+  const denied = typeof Notification !== 'undefined' && Notification.permission === 'denied';
+  const flip = () => {
+    const v = !on; useStore.getState().setProfile({ notify: v });
+    if (v) try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch { /* ignore */ }
+  };
+  return (
+    <div className="backup-box">
+      <div><b>Bildirimler</b><small>{denied ? 'Tarayıcın bildirimleri engelliyor; adres çubuğundaki kilitten açabilirsin.' : 'Başka sekmedeyken mola ve odak bitince haber verir.'}</small></div>
+      <div className="row"><button type="button" className={on ? 'ghost on' : 'ghost'} role="switch" aria-checked={on} onClick={flip}>{on ? 'Açık' : 'Kapalı'}</button></div>
+    </div>
+  );
+}

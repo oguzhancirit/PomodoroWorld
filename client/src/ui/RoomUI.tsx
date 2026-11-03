@@ -5,6 +5,7 @@ import { leaveRoom, sendChat, sendEmote, sendActivity, sendTimer } from '../net'
 import { WalletChip, ShopModal, RewardToast } from './Wallet';
 import { LevelUp } from './LevelUp';
 import { ToolButtons, Panels, TodoChip } from './Panels';
+import { flashing } from '../alerts';
 
 const PHASE: Record<Phase, string> = { focus: 'Odak', short_break: 'Mola', long_break: 'Uzun mola', idle: 'Hazır' };
 const fmt = (ms: number) => { const s = Math.ceil(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
@@ -61,7 +62,7 @@ export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; t
   const left = idle ? chosen.focusMin * 60_000 : remainingMs({ ...timer, pausedLeft: timer.pausedLeft ?? 0 }, serverNow());
   const total = (timer.phase === 'focus' ? preset.focusMin : timer.phase === 'long_break' ? preset.longMin : preset.shortMin) * 60_000;
   const k = idle || !total ? 0 : 1 - left / total;
-  useEffect(() => { document.title = idle ? 'Pomodoro World' : `${fmt(left)} · ${paused ? 'Duraklatıldı' : PHASE[timer.phase]} · Pomodoro World`; });
+  useEffect(() => { if (flashing) return; document.title = idle ? 'Pomodoro World' : `${fmt(left)} · ${paused ? 'Duraklatıldı' : PHASE[timer.phase]} · Pomodoro World`; });
   const label = idle ? PHASE.idle : paused ? 'Duraklatıldı' : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`;
   return (
     <section className={`timer-card ${timer.phase} ${paused ? 'paused' : ''}`}>

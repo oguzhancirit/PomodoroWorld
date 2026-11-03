@@ -21,7 +21,7 @@
 - Focus screen leftovers: autoNext, day timeline bar (fx-day), moodlet.
 - Camera: flyIn, focusOn/unfollow unused.
 - Settings form (#set-form): rename, sound on/off, NPC toggle, gfx quality, notifications, shareTask, filter toggle.
-- Desktop notifications, wake lock, blinking title at break; one-tab guard; timer survives reload (unverified).
+- ✔ Desktop notifications (toggle in Karakterim), wake lock during focus, blinking title at break, start/done sounds (client/src/alerts.ts, shared phaseAlert). Left: one-tab guard; timer survives reload (unverified).
 - ✔ People list (Kişiler).
 - HUD: title, league chip, "Bugün n/4" goal. Leagues (PW.LEAGUES, leagueFor) + weekly leaderboard (weekXP exists).
 - ✔ Level-up window with confetti + unlocked items (ui/LevelUp.tsx, shared unlocksAt). ✔ State gem moved above the name tag. Left: achievement toast outside rewards.

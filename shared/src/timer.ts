@@ -114,3 +114,17 @@ export function skipPhase(t: TimerState, p: Preset, now: number): TimerState {
 export function isChatAllowed(phase: Phase): boolean {
   return phase !== 'focus';
 }
+
+/** what the browser should do when your own timer changes phase (v1 js/app.js notify/requestWake/flashTitle) */
+export interface PhaseAlert { sound?: 'start' | 'done'; wake: boolean; ask?: boolean; title?: string; note?: { t: string; b: string } }
+export function phaseAlert(prev: Phase, next: Phase, round: number): PhaseAlert | null {
+  if (prev === next) return null;
+  const isBreak = (p: Phase) => p === 'short_break' || p === 'long_break';
+  if (prev === 'focus' && isBreak(next)) {
+    const long = next === 'long_break' || (round > 0 && round % 4 === 0);
+    return { sound: 'done', wake: true, title: 'Mola zamanı!', note: { t: 'Pomodoro tamamlandı', b: long ? 'Uzun mola zamanı. Kalk, biraz yürü.' : 'Mola zamanı: su iç, esne.' } };
+  }
+  if (isBreak(prev)) return { sound: 'start', wake: next === 'focus', note: { t: 'Mola bitti', b: 'Hazırsan yeni turu başlat.' } };
+  if (next === 'focus') return { sound: 'start', wake: true, ask: true };
+  return { wake: false };
+}

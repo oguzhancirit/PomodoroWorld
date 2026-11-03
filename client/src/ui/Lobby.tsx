@@ -5,7 +5,7 @@ import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
 import { useStore } from '../store';
 import { DEMO_ONLY } from '../net';
-import { BackupBox, IntroButton } from './Backup';
+import { BackupBox, IntroButton, NotifyToggle } from './Backup';
 import { Notice } from './RoomUI';
 import { AvatarPreview } from './AvatarPreview';
 import { SafeCanvas } from './SafeCanvas';
@@ -93,6 +93,7 @@ export function Lobby() {
           </div>
         )}
         {back && <IntroButton />}
+        {back && <NotifyToggle />}
         {back && <BackupBox />}
         {error && <p className="err">{error}</p>}
         {/* step 4: the game lives in your room; the bigger places are in "Dünya" */}
