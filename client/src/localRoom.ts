@@ -8,7 +8,9 @@ import {
 } from '@pw/shared';
 import { useStore, type PlayerView } from './store';
 import { rewardFocus, avatarAllowed, levelFromXP, defaultAvatar } from '@pw/shared';
-import { loadLocalWallet, saveLocalWallet } from './economy';
+import { loadLocalWallet, saveLocalWallet, myClock } from './economy';
+import { noteChat } from '@pw/shared';
+import { todoProgress } from './net';
 
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
 const BREAK_LINES = ['Mola! Su içmeyi unutmayın.', 'Bu turda 3 soru çözdüm.', 'Gözlerimi biraz dinlendireyim.', 'Kim kahve alıyor?', 'Bir tur daha, hadi!', 'Okuduğum bölüm çok iyiydi.', 'Biraz esneyelim mi?', 'Odaklanmak bugün kolay geldi.'];
@@ -31,6 +33,7 @@ export class LocalRoom {
   private loop = 0;
   private timeouts: number[] = [];
   private chatLimit = new RateLimiter(1, 3000);
+  private category = useStore.getState().profile.category;
 
   constructor(speed: number) {
     const st = useStore.getState();
@@ -84,10 +87,13 @@ export class LocalRoom {
   /** same reward rule as the server; in demo mode the wallet lives in this browser */
   private pay(round: number) {
     const st = useStore.getState();
-    const r = rewardFocus(st.wallet ?? loadLocalWallet(), { minutes: this.baseFocusMin, completed: true, round, others: Object.keys(st.players).length - 1, day: new Date().toISOString().slice(0, 10), longFocus: this.baseFocusMin >= 90 });
+    // the player's own calendar; in fast demo mode the "25 minutes" really took 25 seconds
+    const k = myClock(), startMin = (k.minute - this.baseFocusMin + 1440) % 1440;
+    const r = rewardFocus(st.wallet ?? loadLocalWallet(), { minutes: this.baseFocusMin, completed: true, round, others: Object.keys(st.players).length - 1, day: k.day, week: k.week, startMin, cat: this.category, longFocus: this.baseFocusMin >= 90 });
     saveLocalWallet(r.wallet);
     st.set({ wallet: r.wallet, reward: { ...r.gained, lines: r.lines, levelUp: r.levelUp, at: Date.now() } });
     st.upsertPlayer('me', { level: levelFromXP(r.wallet.xp).level });
+    todoProgress(this.baseFocusMin, true);
   }
 
   private isChatOpen() { return isChatAllowed(this.timer.phase as Phase); }
@@ -118,6 +124,8 @@ export class LocalRoom {
     if (!this.chatLimit.allow('me', Date.now())) { st.flash('Biraz yavaş: 3 saniyede bir mesaj.'); return; }
     this.bubble('me', text);
     st.addChat({ id: 'me', name: st.players.me?.name ?? 'Sen', text, at: Date.now() });
+    // break chat moves the social quest, as on the server
+    const w = noteChat(useStore.getState().wallet ?? loadLocalWallet(), myClock()); saveLocalWallet(w); st.set({ wallet: w });
     if (Math.random() < 0.8) {
       const ids = Object.keys(st.players).filter((x) => x !== 'me');
       this.later(1400 + Math.random() * 1600, () => this.botSay(pick(ids), pick(REPLIES).replace('{n}', st.players.me?.name ?? '')));
@@ -127,7 +135,7 @@ export class LocalRoom {
     this.emote('me', e);
     if (e === 'wave') { const ids = Object.keys(useStore.getState().players).filter((x) => x !== 'me'); this.later(900, () => this.emote(pick(ids), 'wave')); }
   }
-  activity(a: Activity) { useStore.getState().upsertPlayer('me', { activity: a }); }
+  activity(a: Activity, category?: string) { useStore.getState().upsertPlayer('me', { activity: a }); if (category) this.category = category; }
   sit(seat: number) {
     const st = useStore.getState();
     const taken = Object.values(st.players).filter((p) => p.id !== 'me').map((p) => p.seatIndex);

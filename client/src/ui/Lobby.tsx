@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, PRESETS, CATEGORIES, encodeAvatar, defaultAvatar, cleanName, itemById, owns, avatarAllowed, levelFromXP, partName, type Slot, type Avatar } from '@pw/shared';
 import { WalletChip, ShopModal } from './Wallet';
+import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
 import { useStore } from '../store';
 import { joinStudyRoom, DEMO_ONLY } from '../net';
@@ -38,7 +39,7 @@ export function Lobby() {
       </section>
 
       <section className="lobby-panel">
-        <div className="lobby-top"><h1>Birlikte çalış, odaklan, sohbet et.</h1><WalletChip /></div>
+        <div className="lobby-top"><h1>Birlikte çalış, odaklan, sohbet et.</h1><div className="row"><ToolButtons /><WalletChip /></div></div>
         <p className="sub">Odadaki herkes aynı sayacı görür. Odakta sohbet kapanır, molada açılır.</p>
 
         <label className="field">Adın
@@ -93,6 +94,7 @@ export function Lobby() {
         </button>
         <button className="go alt" onClick={() => useStore.getState().set({ screen: 'home' })}>Odama git <small>— eşyalarını yerleştir, odanı tasarla</small></button>
         <ShopModal />
+        <Panels />
       </section>
     </main>
   );

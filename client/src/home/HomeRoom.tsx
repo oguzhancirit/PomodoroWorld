@@ -4,6 +4,7 @@ import { available, itemById, levelFromXP, ROOM_KEYS, type Room, type PlacedItem
 import { useStore } from '../store';
 import { saveRoom, refreshWallet } from '../economy';
 import { WalletChip, ShopModal } from '../ui/Wallet';
+import { ToolButtons, Panels } from '../ui/Panels';
 import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
 
@@ -159,6 +160,7 @@ export function HomeRoom() {
       <header className="topbar home-top">
         <div className="brand"><span className="dot" />{room?.name || 'Odam'}</div>
         <WalletChip />
+        {!editing && <ToolButtons />}
         {!editing && <button className="acc" onClick={() => setEditing(true)}>Odayı düzenle</button>}
         <button className="ghost" onClick={() => useStore.getState().set({ screen: 'lobby' })}>Çalışma odası</button>
       </header>
@@ -171,6 +173,7 @@ export function HomeRoom() {
         />
       )}
       <ShopModal />
+      <Panels />
       <HomeNotice />
     </div>
   );

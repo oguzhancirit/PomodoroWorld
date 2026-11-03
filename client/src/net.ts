@@ -3,6 +3,7 @@ import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
 import { encodeAvatar, activityFor, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
 import { LocalRoom } from './localRoom';
+import { useTodos } from './todos';
 
 import { SERVER, DEMO_ONLY } from './config';
 import { identity } from './identity';
@@ -29,7 +30,7 @@ export async function joinStudyRoom() {
   try {
     const client = new Client(SERVER);
     room = await client.joinOrCreate('study_room', {
-      ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category),
+      ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category), category: profile.category,
     });
   } catch (e) {
     console.warn('join failed, falling back to demo mode', e);
@@ -55,8 +56,10 @@ export async function joinStudyRoom() {
     setTimeout(() => useStore.setState((s) => { if (s.emotes[m.id]?.until !== until) return s; const emotes = { ...s.emotes }; delete emotes[m.id]; return { emotes }; }), 2700);
   });
   r.onMessage('wallet', (m: { wallet: unknown }) => useStore.getState().set({ wallet: sanitizeWallet(m.wallet) }));
-  r.onMessage('reward', (m: { gained: { xp: number; coins: number }; lines: string[]; levelUp: number; wallet: unknown }) =>
-    useStore.getState().set({ wallet: sanitizeWallet(m.wallet), reward: { ...m.gained, lines: m.lines, levelUp: m.levelUp, at: Date.now() } }));
+  r.onMessage('reward', (m: { gained: { xp: number; coins: number }; lines: string[]; levelUp: number; wallet: unknown; completed?: boolean; minutes?: number }) => {
+    useStore.getState().set({ wallet: sanitizeWallet(m.wallet), reward: { ...m.gained, lines: m.lines, levelUp: m.levelUp, at: Date.now() } });
+    todoProgress(m.minutes ?? 0, !!m.completed);
+  });
   r.onMessage('notice', (m: { code: string }) => useStore.getState().flash(NOTICES[m.code] ?? m.code));
   r.onMessage('phase', (m: { phase: Phase }) => {
     const text = m.phase === 'focus' ? 'Odak başladı. Sohbet kapandı.' : m.phase === 'long_break' ? 'Uzun mola! Sohbet açık.' : 'Mola zamanı. Sohbet açık.';
@@ -83,7 +86,13 @@ export function leaveRoom() {
 }
 export const sendChat = (text: string) => (local ? local.chat(text) : room?.send('chat', { text }));
 export const sendEmote = (e: string) => (local ? local.emoteMine(e) : room?.send('emote', { e }));
-export const sendActivity = (activity: Activity) => (local ? local.activity(activity) : room?.send('activity', { activity }));
+export const sendActivity = (activity: Activity, category?: string) => (local ? local.activity(activity, category) : room?.send('activity', { activity, category }));
+
+/** a focus ended: the selected job moves forward; when its estimate is reached, ask if it is done */
+export function todoProgress(minutes: number, completed: boolean) {
+  const full = useTodos.getState().focusDone(minutes, completed);
+  if (full) useStore.getState().flash(`“${full.t}” için tahmin doldu (${full.done}/${full.est}). Bittiyse Yapılacaklar'dan işaretle.`, 6000);
+}
 export const sendSit = (seatIndex: number) => (local ? local.sit(seatIndex) : room?.send('sit', { seatIndex }));
 
 // tiny two-note chime made on the device (no audio files)

@@ -3,6 +3,7 @@ import { isChatAllowed, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityF
 import { useStore, serverNow } from '../store';
 import { leaveRoom, sendChat, sendEmote, sendActivity } from '../net';
 import { WalletChip, ShopModal, RewardToast } from './Wallet';
+import { ToolButtons, Panels, TodoChip } from './Panels';
 
 const PHASE: Record<Phase, string> = { focus: 'Odak', short_break: 'Mola', long_break: 'Uzun mola', idle: 'Hazır' };
 const fmt = (ms: number) => { const s = Math.ceil(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
@@ -18,6 +19,7 @@ export function RoomUI() {
       <Notice />
       <RewardToast />
       <ShopModal />
+      <Panels />
     </div>
   );
 }
@@ -27,13 +29,16 @@ function TopBar() {
   const preset = presetById(useStore((s) => s.preset));
   const profile = useStore((s) => s.profile), setProfile = useStore((s) => s.setProfile);
   const demo = useStore((s) => s.mode === 'demo');
+  // what I work on (chosen here or by picking a job in Yapılacaklar) → desk animation and statistics
+  useEffect(() => { sendActivity(activityFor(profile.category), profile.category); }, [profile.category]);
   return (
     <header className="topbar">
       <div className="brand"><span className="dot" />Çalışma odası · {preset.name}</div>
       {demo && <div className="people-pill demo" title="Sunucu olmadan, bot arkadaşlarla">Deneme modu{profile.fast ? ' · hızlı' : ''}</div>}
       <div className="people-pill">{n} / 12 kişi</div>
       <WalletChip />
-      <select aria-label="Ne çalışıyorsun?" value={profile.category} onChange={(e) => { setProfile({ category: e.target.value }); sendActivity(activityFor(e.target.value)); }}>
+      <ToolButtons />
+      <select aria-label="Ne çalışıyorsun?" value={profile.category} onChange={(e) => setProfile({ category: e.target.value })}>
         {CATEGORIES.map(([id, nm]) => <option key={id} value={id}>{nm}</option>)}
       </select>
       <button className="ghost" onClick={leaveRoom}>Çık</button>
@@ -54,7 +59,7 @@ function TimerCard() {
     <section className={`timer-card ${timer.phase}`}>
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" className="trk" /><circle cx="50" cy="50" r="44" className="bar" pathLength={100} strokeDasharray="100" strokeDashoffset={100 - k * 100} /></svg>
       <div className="t-in"><span className="ph">{PHASE[timer.phase]} · {timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur</span><b>{fmt(left)}</b>
-        <small>{isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small></div>
+        <small>{isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small><TodoChip /></div>
     </section>
   );
 }
