@@ -12,12 +12,21 @@ import { loadLocalWallet, saveLocalWallet, myClock } from './economy';
 import { noteChat } from '@pw/shared';
 import { todoProgress } from './net';
 import { DEMO_ONLY } from './config';
-import { homeCapacity, libraryRoom, LIBRARY_SEATS, LIBRARY_NAME, ROOM_KEYS, SOCIAL, socialRoom, roomSeats, SOCIAL_CAP, NPC_NAMES, NPC_LINES_SOCIAL } from '@pw/shared';
+import { homeCapacity, libraryRoom, LIBRARY_SEATS, LIBRARY_NAME, ROOM_KEYS, SOCIAL, socialRoom, roomSeats, SOCIAL_CAP } from '@pw/shared';
 
 /** what a visitor needs to draw the library (same keys the server sends for a room) */
 export function layoutOf(room: object) { const r = room as Record<string, unknown>; return JSON.stringify(Object.fromEntries(ROOM_KEYS.filter((k) => r[k] !== undefined).map((k) => [k, r[k]]))); }
 export const libraryLayout = () => layoutOf(libraryRoom());
 
+/** the one bot of each social space: tells what the place is for (demo only) */
+const HOSTS: Record<string, { name: string; g: Gender; hello: string; lines: string[] }> = {
+  meydan: { name: 'Kafeci Deniz', g: 'm', hello: 'Hoş geldin {name}! Burası Meydan Kafe: molada uğrayıp sohbet edilen yer.', lines: [
+    'Burada sohbet hep açık, istediğin zaman yazabilirsin.', 'Boş bir koltuğa tıklarsan oturursun.', 'Arkadaşlarının nerede olduğunu Dünya’dan görebilirsin.', 'Mola bitince odana dönüp yeni tura başlamayı unutma.'] },
+  teras: { name: 'Bahçıvan Ece', g: 'f', hello: 'Selam {name}! Çatı Terası’na hoş geldin; şehrin manzarası eşliğinde nefeslen.', lines: [
+    'Uzun molada biraz gökyüzüne bakmak iyi gelir.', 'Burada herkes molada; sohbet açık.', 'Bir arkadaşını görürsen kartına tıkla, arkadaş ekleyebilirsin.', 'Gün batımında burası çok güzel olur.'] },
+  oyun: { name: 'Oyuncu Kerem', g: 'm', hello: 'Hoş geldin {name}! Oyun Salonu molada kafa dağıtma yeri.', lines: [
+    'Burada sohbet açık; molanı tatlı geçir.', 'Kutlamak için sol alttaki gülen yüze bas.', 'Mola bitince odana dön, sayacın seni bekliyor.', 'Yeni eşyaları jetonlarla mağazadan alabilirsin.'] },
+};
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
 const BREAK_LINES = ['Mola! Su içmeyi unutmayın.', 'Bu turda 3 soru çözdüm.', 'Gözlerimi biraz dinlendireyim.', 'Kim kahve alıyor?', 'Bir tur daha, hadi!', 'Okuduğum bölüm çok iyiydi.', 'Biraz esneyelim mi?', 'Odaklanmak bugün kolay geldi.'];
 /** demo bots get a friend code, so the person card shows every button */
@@ -79,15 +88,14 @@ export class LocalRoom {
       const sp = SOCIAL.find((x) => x.id === space), room = socialRoom(space);
       const seats = room ? roomSeats(room) : 0;
       if (bots && DEMO_ONLY && sp) {
-        const names = [...NPC_NAMES].sort(() => Math.random() - 0.5).slice(0, Math.min(sp.npc, 6));
-        const taken: number[] = [];
-        names.forEach((n, i) => {
-          const seat = Math.random() < 0.7 ? firstFreeSeat(taken, seats) : -1; if (seat >= 0) taken.push(seat);
-          players['npc' + i] = { id: 'npc' + i, code: botCode(n), level: 2 + ((i * 5) % 14), name: n, avatar: randomAvatar(i % 2 ? 'm' : 'f'), seatIndex: seat, pose: seat >= 0 ? 'sit' : 'idle', activity: 'type', bubble: '', connected: true };
-        });
-        me.seatIndex = firstFreeSeat(taken, seats);
-        const talk = () => { const ids = Object.keys(useStore.getState().players).filter((x) => x !== 'me'); if (ids.length) this.botSay(pick(ids), pick(NPC_LINES_SOCIAL as string[])); this.later(6000 + Math.random() * 7000, talk); };
-        this.later(2500, talk);
+        // one host per space (user, 2026-11-03): stands, greets you and now and then tells what the place is for
+        const host = HOSTS[space] ?? HOSTS.meydan;
+        players.host = { id: 'host', code: botCode(host.name), level: 12, name: host.name, avatar: randomAvatar(host.g), seatIndex: -1, pose: 'idle', activity: 'type', bubble: '', connected: true };
+        me.seatIndex = firstFreeSeat([], seats);
+        let i = 0;
+        this.later(1800, () => this.botSay('host', host.hello.replace('{name}', me.name), true));
+        const talk = () => { this.botSay('host', host.lines[i++ % host.lines.length], true); this.later(25_000 + Math.random() * 15_000, talk); };
+        this.later(20_000, talk);
       } else me.seatIndex = -1;
       st.set({ wallet, net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'home', timer: { ...this.timer },
         place: { kind: 'social', owner: 'social:' + space, mine: false, name: sp?.name ?? '', layout: room ? layoutOf(room) : '', cap: SOCIAL_CAP } });
@@ -95,14 +103,7 @@ export class LocalRoom {
       return;
     }
     if (kind === 'library') {
-      // demo only: a few classmates already study here; the timer is running, like the real library
-      if (bots && DEMO_ONLY) {
-        const taken = [2];
-        BOTS.slice(0, 4).forEach(([n, g], i) => {
-          const seat = firstFreeSeat(taken, LIBRARY_SEATS); taken.push(seat);
-          players['bot' + i] = { id: 'bot' + i, code: botCode(n), level: 2 + i * 3, name: n, avatar: randomAvatar(g), seatIndex: seat, pose: 'sit', activity: pick(ACTIVITIES), bubble: '', connected: true };
-        });
-      }
+      // no bots here any more (user, 2026-11-03: only one host per social space, and Elif in your own room)
       this.later(50, () => Object.keys(players).filter((id) => id !== 'me').forEach((id) => this.botStart(id, Math.random() * 0.8)));
       st.set({ wallet, net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'home', timer: { ...this.timer },
         place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
