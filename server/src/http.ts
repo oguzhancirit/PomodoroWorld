@@ -95,14 +95,17 @@ export function routes(app: express.Application, json: express.RequestHandler) {
     for (const room of LibraryRoom.live) for (const [pid, nm] of room.whoIsHere()) if (!at.has(pid)) at.set(pid, { name: nm, room });
     for (const room of SocialRoom.live) for (const [pid, nm] of room.whoIsHere()) if (!at.has(pid)) at.set(pid, { name: nm, room });
     let renamed = false;
+    const week = clock(Date.now(), p.wallet.tz).week;
     const list = Object.entries(p.social.friends).map(([pid, f]) => {
-      const here = at.get(pid);
+      const here = at.get(pid), fw = profiles.get(pid)?.wallet;
+      // level and this week's XP for the weekly board (v1 renderProfile "Haftalık sıralama")
+      const rank = { lv: fw ? levelFromXP(fw.xp).level : 1, wx: fw?.stats.weekXP[week] ?? 0 };
       // the name follows what the friend calls themselves now (v1 friendSeen)
       if (here && here.name !== f.n) { f.n = here.name; renamed = true; }
       const seen = profiles.get(pid)?.seen ?? 0;
       return here
-        ? { pid, code: friendCode(pid), n: f.n, online: true, seen: Date.now(), where: { ...here.room.info, phase: here.room.phaseOfCode(pid) } }
-        : { pid, code: friendCode(pid), n: f.n, online: false, seen };
+        ? { pid, code: friendCode(pid), n: f.n, ...rank, online: true, seen: Date.now(), where: { ...here.room.info, phase: here.room.phaseOfCode(pid) } }
+        : { pid, code: friendCode(pid), n: f.n, ...rank, online: false, seen };
     }).sort((x, y) => Number(y.online) - Number(x.online) || y.seen - x.seen);
     if (renamed) profiles.setSocial(p, p.social);
     const blocked = Object.entries(p.social.blocked).map(([pid, e]) => ({ pid, n: e.n }));

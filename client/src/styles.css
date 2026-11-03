@@ -560,3 +560,24 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .tour-btns { display: flex; gap: 6px; align-items: center; }
 .tour-skip { background: none; border: 0; color: #8C84A3; font-weight: 800; padding: 8px; }
 .tour-next { background: var(--acc); color: #fff; border: 0; border-radius: 999px; height: 38px; padding: 0 18px; font: 800 14px var(--f-display); }
+
+/* league + weekly board (v1 profile) */
+.league { border: 1px solid color-mix(in srgb, var(--lg) 45%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--lg) 14%, transparent), transparent); border-radius: 16px; padding: 12px 14px; display: grid; gap: 8px; margin-bottom: 8px; }
+.lg-head { display: flex; align-items: center; gap: 12px; }
+.lg-head > div { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.lg-head b { font: 800 17px var(--f-display); color: var(--lg); }
+.lg-head small { color: var(--muted); font-size: 12.5px; }
+.lg-head em { font: 800 18px var(--f-display); font-style: normal; text-align: right; display: grid; }
+.lg-head em small { font: 600 11px var(--f-body); }
+.lg-badge { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; font-size: 22px; background: color-mix(in srgb, var(--lg) 25%, transparent); }
+.lg-bar { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; } .lg-bar i { display: block; height: 100%; background: var(--lg); border-radius: 99px; }
+.league h4 { margin: 4px 0 0; }
+.board { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.board li { display: grid; grid-template-columns: 26px 1fr auto auto; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, .04); font-size: 14px; }
+.board li i { font-style: normal; font-weight: 800; color: var(--muted); text-align: center; }
+.board li:nth-child(1) i { color: #E9C04F; } .board li:nth-child(2) i { color: #B9C2CC; } .board li:nth-child(3) i { color: #C98B5A; }
+.board li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.board li em { font-style: normal; color: var(--muted); font-size: 12px; }
+.board li b { font-weight: 800; }
+.board li.me { background: rgba(242, 193, 78, .14); outline: 1px solid rgba(242, 193, 78, .4); }
+.timer-card .t-goal.done { color: var(--ok); font-weight: 800; }

@@ -7,7 +7,8 @@ import { identity } from './identity';
 import { useStore } from './store';
 
 export interface FriendWhere { kind?: 'home' | 'library' | 'social'; space?: string; roomId?: string; owner: string; ownerName: string; name: string; open: boolean; n: number; cap: number; phase: string }
-export interface FriendView { pid: string; code: string; n: string; online: boolean; seen: number; where?: FriendWhere }
+/** lv / wx: level and this week's XP (weekly board) */
+export interface FriendView { pid: string; code: string; n: string; online: boolean; seen: number; lv?: number; wx?: number; where?: FriendWhere }
 type Op = 'list' | 'add' | 'remove' | 'block' | 'unblock';
 
 interface FriendsState { code: string; friends: FriendView[]; blocked: { pid: string; n: string }[]; loaded: boolean; offline: boolean }
@@ -15,10 +16,16 @@ export const useFriends = create<FriendsState>(() => ({ code: '', friends: [], b
 
 const LOCAL_KEY = 'pw2.social';
 const loadLocal = (): Social => { try { return sanitizeSocial(JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null')); } catch { return emptySocial(); } };
+// demo only: made-up but steady level / weekly XP for the bots, so the weekly board is not empty
+function demoRank(pid: string) {
+  if (!DEMO_ONLY && useStore.getState().mode !== 'demo') return {};
+  let h = 0; for (const c of pid) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return { lv: 2 + (h % 11), wx: 40 + (h % 860) };
+}
 function showLocal(s: Social) {
   useFriends.setState({
     code: friendCode(identity().pid), loaded: true, offline: true,
-    friends: Object.entries(s.friends).map(([pid, f]) => ({ pid, code: friendCode(pid), n: f.n, online: false, seen: 0 })),
+    friends: Object.entries(s.friends).map(([pid, f]) => ({ pid, code: friendCode(pid), n: f.n, online: false, seen: 0, ...demoRank(pid) })),
     blocked: Object.entries(s.blocked).map(([pid, e]) => ({ pid, n: e.n })),
   });
 }

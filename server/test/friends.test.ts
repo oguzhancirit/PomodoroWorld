@@ -5,6 +5,7 @@ import { matchMaker } from '@colyseus/core';
 import { server } from '../src/app.config';
 import type { HomeRoom } from '../src/rooms/HomeRoom';
 import { profiles } from '../src/profiles';
+import { clock, levelFromXP } from '@pw/shared';
 
 let colyseus: ColyseusTestServer;
 beforeAll(async () => { colyseus = await boot(server); });
@@ -48,6 +49,15 @@ describe('friends', () => {
     expect(eda.where).toBeUndefined();
     // online friends first
     expect(r.friends[0].pid).toBe(b.pid);
+  });
+
+  it('each friend comes with level and this week\'s XP (weekly board)', async () => {
+    const a = await player('Gul'), b = await player('Hale');
+    await friends(a, { op: 'add', target: b.pid, name: 'Hale' });
+    const pb = profiles.get(b.pid)!, week = clock(Date.now(), 0).week;
+    profiles.update(pb, { ...pb.wallet, xp: 500, stats: { ...pb.wallet.stats, weekXP: { [week]: 120, '2001-W01': 999 } } });
+    const r = await friends(a);
+    expect(r.friends[0]).toMatchObject({ pid: b.pid, lv: levelFromXP(500).level, wx: 120 });
   });
 
   it('cannot add yourself; a wrong secret is refused', async () => {

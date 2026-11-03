@@ -204,3 +204,30 @@ export function sanitizeWallet(v: unknown): Wallet {
     tz: clampTz(o.tz),
   };
 }
+
+/* ---------- leagues and the weekly board (v1 js/data.js PW.LEAGUES, js/ui.js renderProfile) ---------- */
+export interface League { id: string; name: string; min: number; color: string }
+export const LEAGUES: readonly League[] = [
+  { id: 'bronz', name: 'Bronz Lig', min: 0, color: '#C98B5A' },
+  { id: 'gumus', name: 'Gümüş Lig', min: 300, color: '#B9C2CC' },
+  { id: 'altin', name: 'Altın Lig', min: 900, color: '#E9C04F' },
+  { id: 'platin', name: 'Platin Lig', min: 1800, color: '#7FD3C8' },
+  { id: 'elmas', name: 'Elmas Lig', min: 3000, color: '#9DB7FF' },
+];
+/** the league for this week's XP */
+export const leagueFor = (wxp: number): League => LEAGUES.reduce((l, x) => (wxp >= x.min ? x : l), LEAGUES[0]);
+/** the next league up and the XP still missing this week; null at the top */
+export function nextLeague(wxp: number): { league: League; need: number } | null {
+  const n = LEAGUES.find((l) => l.min > wxp);
+  return n ? { league: n, need: n.min - wxp } : null;
+}
+export interface BoardRow { id: string; n: string; lv: number; wx: number; rank: number; me?: boolean }
+/** me + others sorted by weekly XP; top 10, and if I am not in it I take the last line with my real rank */
+export function weekBoard(me: Omit<BoardRow, 'rank' | 'me'>, others: Omit<BoardRow, 'rank' | 'me'>[]): BoardRow[] {
+  const all = [{ ...me, me: true }, ...others.filter((o) => o.id !== me.id)]
+    .sort((a, b) => b.wx - a.wx || Number(!!(b as BoardRow).me) - Number(!!(a as BoardRow).me))
+    .map((r, i) => ({ ...r, rank: i + 1 })) as BoardRow[];
+  const top = all.slice(0, 10);
+  if (top.some((r) => r.me)) return top;
+  return [...top.slice(0, 9), all.find((r) => r.me)!];
+}

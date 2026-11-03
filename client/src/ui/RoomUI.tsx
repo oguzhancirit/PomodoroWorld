@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { isChatAllowed, isPaused, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, type Phase } from '@pw/shared';
+import { isChatAllowed, isPaused, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, ECON, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
 import { leaveRoom, sendChat, sendEmote, sendActivity, sendTimer } from '../net';
 import { WalletChip, ShopModal, RewardToast } from './Wallet';
 import { LevelUp } from './LevelUp';
 import { ToolButtons, Panels, TodoChip } from './Panels';
+import { myClock } from '../economy';
 import { flashing } from '../alerts';
 
 const PHASE: Record<Phase, string> = { focus: 'Odak', short_break: 'Mola', long_break: 'Uzun mola', idle: 'Hazır' };
@@ -53,7 +54,8 @@ export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; t
   const timer = useStore((s) => s.timer);
   const preset = presetById(useStore((s) => s.preset));
   const chosen = presetById(useStore((s) => s.profile.preset));
-  const social = useStore((s) => s.place?.kind === 'social');
+  // v1 HUD "Bugün n/4": today's finished pomodoros against the daily goal
+  const today = useStore((s) => s.wallet?.stats.dayPomos[myClock().day] ?? 0);
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((x) => x + 1), 250); return () => clearInterval(t); }, []);
   const idle = timer.phase === 'idle';
@@ -66,7 +68,7 @@ export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; t
   const label = idle ? PHASE.idle : paused ? 'Duraklatıldı' : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`;
   return (
     <section className={`timer-card ${timer.phase} ${paused ? 'paused' : ''}`}>
-      <div className="t-head"><span className="ph"><i />{label}</span><small>{social || isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small></div>
+      <div className="t-head"><span className="ph"><i />{label}</span><small className={`t-goal ${today >= ECON.dailyGoal ? 'done' : ''}`} title={`Günlük hedef: ${ECON.dailyGoal} pomodoro (+${ECON.dailyGoalCoin} jeton)`}>Bugün {Math.min(today, ECON.dailyGoal)}/{ECON.dailyGoal}{today >= ECON.dailyGoal ? ' ✓' : ''}</small></div>
       <b className="t-time">{fmt(left)}</b>
       <div className="t-bar" aria-hidden="true"><i style={{ width: `${Math.round(k * 1000) / 10}%` }} /></div>
       <TodoChip />

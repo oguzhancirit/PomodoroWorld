@@ -2,10 +2,11 @@
 // Ortam sesleri (ambient sounds) and İstatistik (focus calendar, categories, hours of the day).
 import { useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
-import { QUESTS, LOGIN_REWARDS, PLEDGE_MIN, PLEDGE_DAYS, CATEGORIES, questView, questsReady, shiftDay, ACHIEVEMENTS, type QuestDef, type QuestProgress } from '@pw/shared';
+import { QUESTS, LOGIN_REWARDS, PLEDGE_MIN, PLEDGE_DAYS, CATEGORIES, questView, questsReady, shiftDay, ACHIEVEMENTS, levelFromXP, leagueFor, nextLeague, weekBoard, type QuestDef, type QuestProgress } from '@pw/shared';
 import { useStore } from '../store';
 import { questAction, myClock } from '../economy';
 import { useTodos, type Todo } from '../todos';
+import { useFriends, friendsCall } from '../friends';
 import { LAYERS, applySound, soundOk, suggest, sfx } from '../sound';
 
 export type Panel = '' | 'quests' | 'todo' | 'sound' | 'stats';
@@ -223,6 +224,30 @@ function Sounds() {
 }
 
 /* ---------- İstatistik ---------- */
+/** v1 profile: this week's league and the weekly board (you + your friends) */
+function LeagueBox() {
+  const w = useStore((s) => s.wallet), name = useStore((s) => s.profile.name);
+  const friends = useFriends((s) => s.friends);
+  useEffect(() => { friendsCall('list'); }, []);
+  if (!w) return null;
+  const wx = w.stats.weekXP[myClock().week] ?? 0, lg = leagueFor(wx), nx = nextLeague(wx);
+  const board = weekBoard({ id: 'me', n: name || 'Sen', lv: levelFromXP(w.xp).level, wx }, friends.map((f) => ({ id: f.pid, n: f.n, lv: f.lv ?? 1, wx: f.wx ?? 0 })));
+  return (
+    <section className="league" style={{ '--lg': lg.color } as React.CSSProperties}>
+      <div className="lg-head">
+        <span className="lg-badge" aria-hidden="true">🏆</span>
+        <div><b>{lg.name}</b><small>{nx ? `${nx.league.name} için bu hafta ${nx.need} XP daha` : 'En üst ligdesin!'}</small></div>
+        <em>{wx} XP<small>bu hafta</small></em>
+      </div>
+      {nx && <div className="lg-bar"><i style={{ width: `${Math.min(100, ((wx - lg.min) / (nx.league.min - lg.min)) * 100)}%` }} /></div>}
+      <h4>Haftalık sıralama <small>{friends.length ? 'sen ve arkadaşların' : 'arkadaş ekleyince burada yarışırsınız'}</small></h4>
+      <ol className="board">{board.map((b) => (
+        <li key={b.id} className={b.me ? 'me' : ''}><i>{b.rank}</i><span>{b.n}</span><em>Sv {b.lv}</em><b>{b.wx} XP</b></li>
+      ))}</ol>
+    </section>
+  );
+}
+
 const HEAT = ['rgba(255,255,255,.07)', '#5B2B2E', '#8E3A2E', '#C64A35', '#F0644A'];
 const heatLevel = (m: number) => (m <= 0 ? 0 : m < 25 ? 1 : m < 60 ? 2 : m < 120 ? 3 : 4);
 function Stats() {
@@ -256,6 +281,7 @@ function Stats() {
   const nAch = ACHIEVEMENTS.filter((a) => w.ach[a.id]).length;
   return (
     <div className="stats">
+      <LeagueBox />
       <div className="kpis">
         <div><b>{fmtMin(w.stats.focusMin)}</b><span>toplam odak</span></div>
         <div><b>{w.stats.pomos}</b><span>pomodoro</span></div>
