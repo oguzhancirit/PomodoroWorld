@@ -5,7 +5,7 @@
 - ✔ 4f Library: 10-seat public study room (Dünya → Kütüphane).
 - ✔ 4g Social spaces (NPCs demo-only). Left: Otur/Kalk buttons, walking/sitting not synced.
 - ✔ Room settings panel. Left: names of removed people (v1 banNames) — shows "Oyuncu #TAG" unless a friend.
-- 5: intro film (PW.cinema, 3 chapters), backup export/import (+ to-dos), help modal, guided tour (TOUR).
+- ✔ 5: intro film (plays once in Odam, "Tanıtımı izle" in Karakterim) and backup (account key + name/look/to-dos/sounds; v1 files refused: no coins from files). Left: help modal, guided tour (TOUR).
 
 ## Last step (user, 2026-11-03): login + accounts
 - Sign up / log in; a returning user is recognised and enters their room with the same saved character.

@@ -46,3 +46,13 @@ export function BackupBox() {
     </div>
   );
 }
+
+/** v1 "Tanıtımı izle": play the intro film again, back in your room */
+export function IntroButton() {
+  return (
+    <div className="backup-box">
+      <div><b>Tanıtım filmi</b><small>Oyunu bir dakikada anlatan kısa film.</small></div>
+      <div className="row"><button type="button" className="ghost" onClick={() => { useStore.getState().setProfile({ introSeen: false }); useStore.getState().set({ screen: 'home' }); }}>Tanıtımı izle</button></div>
+    </div>
+  );
+}

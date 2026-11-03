@@ -5,7 +5,7 @@ import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
 import { useStore } from '../store';
 import { DEMO_ONLY } from '../net';
-import { BackupBox } from './Backup';
+import { BackupBox, IntroButton } from './Backup';
 import { Notice } from './RoomUI';
 import { AvatarPreview } from './AvatarPreview';
 import { SafeCanvas } from './SafeCanvas';
@@ -92,6 +92,7 @@ export function Lobby() {
             <label className="ck"><input id="fast" type="checkbox" checked={profile.fast} onChange={(e) => setProfile({ fast: e.target.checked })} /> Hızlı deneme: 1 dakika = 1 saniye (25 dk odak 25 saniye sürer)</label>
           </div>
         )}
+        {back && <IntroButton />}
         {back && <BackupBox />}
         {error && <p className="err">{error}</p>}
         {/* step 4: the game lives in your room; the bigger places are in "Dünya" */}

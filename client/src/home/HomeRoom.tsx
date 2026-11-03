@@ -1,6 +1,6 @@
 // "Odam" — the player's own room, drawn by the original room engine with the original editor rules.
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { available, itemById, levelFromXP, ROOM_KEYS, avatarAllowed, defaultAvatar, encodeAvatar, defaultRoom, type Room, type PlacedItem } from '@pw/shared';
+import { available, itemById, levelFromXP, activityFor, ROOM_KEYS, avatarAllowed, defaultAvatar, encodeAvatar, defaultRoom, type Room, type PlacedItem } from '@pw/shared';
 import { useStore } from '../store';
 import { saveRoom, refreshWallet } from '../economy';
 import { WalletChip, ShopModal } from '../ui/Wallet';
@@ -10,6 +10,7 @@ import { EditBar } from './EditBar';
 import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
 import { FocusScreen, useCompanions, isRunning } from './FocusScreen';
 import { TravelScreen } from '../ui/Travel';
+import { cinema } from './cinema';
 import { RoomSettings, useRoomSettings } from './RoomSettings';
 import { PersonCard, openPerson, PeopleSheet, usePeople } from './PersonCard';
 import { useFriends, friendsCall, isBlocked } from '../friends';
@@ -20,7 +21,7 @@ import { openHome, leaveRoom, openProfile } from '../net';
 type Ghost = { id: string; r: number; extra: Record<string, unknown> } | null;
 
 export function HomeRoom() {
-  const myRoom = useStore((s) => s.room), wallet = useStore((s) => s.wallet), profile = useStore((s) => s.profile);
+  const myRoom = useStore((s) => s.room), wallet = useStore((s) => s.wallet), profile = useStore((s) => s.profile), setProfile = useStore((s) => s.setProfile);
   const place = useStore((s) => s.place);
   // a friend's room: draw the look the server sends; my room: my saved room (editing stays mine only)
   const visiting = !!place && !place.mine;
@@ -29,6 +30,9 @@ export function HomeRoom() {
   const look = room ? lookOf(room) : '';
   const host = useRef<HTMLDivElement>(null), tags = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  // the first-run film (v1 PW.cinema) borrows the engine: the room's own drawing waits while it plays
+  const [film, setFilm] = useState(false);
+  const live = ready && !film;
   const [failed, setFailed] = useState(false);
   const [editing, setEditing] = useState(false);
   // v1 focus screen: alone → "Odaklan", a friend in the room → "Birlikte odaklan"
@@ -57,11 +61,11 @@ export function HomeRoom() {
   // and setFocusCam(null) would set the camera distance to NaN for good (the room then never shows)
   const focusCamOn = useRef(false);
   useEffect(() => {
-    const w = engine.world; if (!ready || !w || editing) return;
+    const w = engine.world; if (!live || engine.film || !w || editing) return;
     if (focusOpen) { if (w.avatars.get('me')?.seatIdx == null) seatMe(); w.setFocusCam('me'); focusCamOn.current = true; }
     else if (focusCamOn.current) { focusCamOn.current = false; w.setFocusCam(null); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusOpen, ready, editing]);
+  }, [focusOpen, live, editing]);
 
   /* ---------- engine lifetime ---------- */
   useEffect(() => {
@@ -90,10 +94,24 @@ export function HomeRoom() {
   // the new character (decision b): only pieces you own, like in the study room
   const myCode = encodeAvatar(!wallet || avatarAllowed(wallet, profile.avatar) ? profile.avatar : defaultAvatar(profile.avatar.g));
   useEffect(() => {
-    const w = engine.world; if (!ready || !w || !room) return;
+    const w = engine.world; if (!live || engine.film || !w || !room) return;
     if (!w.avatars.has('me')) w.addAvatar('me', myCode, { name: profile.name || 'Sen', level, isMe: true });
     else w.updateAvatarInfo?.('me', { name: profile.name || 'Sen', level, isMe: true, cfg: myCode });
-  }, [ready, room, profile.name, myCode, level]);
+  }, [live, room, profile.name, myCode, level]);
+
+  /* ---------- the intro film: once for a new player, or when asked again from "Karakterim" ---------- */
+  useEffect(() => {
+    if (!ready || film || !room || !place?.mine || profile.introSeen || editing) return;
+    const t = setTimeout(async () => {
+      engine.film = true; setFilm(true); setFocus(false);
+      const done = await cinema.play({ name: profile.name || 'Sen', avatar: myCode, level, style: activityFor(profile.category) }, { first: true });
+      engine.film = false; setProfile({ introSeen: true }); setFilm(false);
+      // the room is drawn again by its own effects; then lift the black curtain
+      setTimeout(() => done?.(), 500);
+    }, 1200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, film, room, place?.mine, profile.introSeen, editing]);
 
   const parkMe = useCallback(() => {
     const w = engine.world; if (!w) return; w.standAvatar('me'); const me = w.avatars.get('me');
@@ -113,7 +131,7 @@ export function HomeRoom() {
   const players = useStore((s) => s.players), meId = useStore((s) => s.me), phase = useStore((s) => s.timer.phase), emotes = useStore((s) => s.emotes);
   const seen = useRef<Record<string, string>>({});
   useEffect(() => {
-    const w = engine.world; if (!ready || !w || editing) return;
+    const w = engine.world; if (!live || engine.film || !w || editing) return;
     // everyone has their own timer: the tag over each head shows that person's own phase
     const statusOf = (ph?: string) => (ph === 'focus' ? 'focus' : !ph || ph === 'idle' ? '' : 'break');
     const here = new Set<string>(['me']);
@@ -136,16 +154,16 @@ export function HomeRoom() {
     }
     for (const id of [...w.avatars.keys()] as string[]) if (!here.has(id)) w.removeAvatar(id);
   // `tick` changes right after a room is drawn: seats of the new room exist only then (a library has 10)
-  }, [ready, editing, players, meId, phase, look, profile.name, blocked, tick]);
+  }, [live, editing, players, meId, phase, look, profile.name, blocked, tick]);
   const emoted = useRef<Record<string, number>>({});
   useEffect(() => {
-    const w = engine.world; if (!ready || !w) return;
+    const w = engine.world; if (!live || engine.film || !w) return;
     for (const [id, v] of Object.entries(emotes)) if (emoted.current[id] !== v.until) { emoted.current[id] = v.until; w.emote(id === meId ? 'me' : id, v.e); }
-  }, [ready, emotes, meId]);
+  }, [live, emotes, meId]);
 
   /* ---------- draw the room whenever its look changes ---------- */
   useEffect(() => {
-    const w = engine.world; if (!ready || !w || !room) return;
+    const w = engine.world; if (!live || engine.film || !w || !room) return;
     w.loadRoom(defOf(room));
     if (!w.avatars.has('me')) w.addAvatar('me', myCode, { name: profile.name || 'Sen', level, isMe: true });
     if (latest.current.editing) {
@@ -155,15 +173,15 @@ export function HomeRoom() {
     } else seatMe();
     setTick((t) => t + 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, look]);
+  }, [live, look]);
 
   useEffect(() => {
-    const w = engine.world; if (!ready || !w) return;
+    const w = engine.world; if (!live || engine.film || !w) return;
     w.setEdit(editing); w.hideTags = editing; setSel(-1);
     if (editing) parkMe();
     else { if (w.wallMode && w.wallMode !== 'cut') w.setWallMode('cut'); if (w.topView) w.toggleTopView(); seatMe(); }
     setTick((t) => t + 1);
-  }, [ready, editing, parkMe, seatMe]);
+  }, [live, editing, parkMe, seatMe]);
   useEffect(() => { engine.world?.select(sel); }, [sel, tick]);
 
   /* ---------- changes (every change can be undone) ---------- */

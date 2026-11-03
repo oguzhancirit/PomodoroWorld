@@ -4,7 +4,8 @@ import { PW } from '../legacy';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type World = any;
-export const engine: { world: World | null } = { world: null };
+/** film: the intro film is driving the engine right now (checked synchronously, before React re-renders) */
+export const engine: { world: World | null; film: boolean } = { world: null, film: false };
 export { PW };
 
 /** What the engine draws (the old App.homeDef): the look keys plus the items. A fresh copy, the engine may tag items. */

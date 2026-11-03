@@ -25,7 +25,7 @@ const botCode = (name: string) => ('demo' + name.toLocaleLowerCase('en').replace
 const REPLIES = ['Selam {n}!', 'Aynen, mola iyi geldi.', 'Hadi bir tur daha birlikte.', 'Sen ne çalışıyorsun {n}?', 'Kolay gelsin {n}!'];
 const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)];
 
-function randomAvatar(g: Gender): string {
+export function randomAvatar(g: Gender): string {
   const P = PARTS[g];
   return encodeAvatar({
     g, head: pick(P.head.slice(0, 6)), body: pick(P.body), legs: pick(P.legs), feet: pick(P.feet),

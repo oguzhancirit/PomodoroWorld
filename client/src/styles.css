@@ -522,3 +522,9 @@ html, body, #root { font: 500 14px/1.5 var(--f-body); letter-spacing: -.003em; }
 .backup-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .04); border: 1px solid var(--line); }
 .backup-box > div:first-child { display: grid; } .backup-box small { color: var(--muted); font-size: 12px; }
 .backup-box .row { display: flex; gap: 8px; }
+/* while the intro film plays, the game's own controls step aside */
+body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: none !important; }
+@media (max-width: 1240px) and (min-width: 861px) {
+  .topbar .ghost.ico-btn .lbl { display: none; }
+  .topbar .ghost.ico-btn { width: var(--ctl); padding: 0; justify-content: center; }
+}

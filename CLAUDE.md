@@ -8,7 +8,7 @@
 ## Mission (user's own rule)
 Nothing from v1 is thrown away. First port every old feature **completely** into v2, then improve quality on top. Do not reinvent.
 - v1 = `index.html` + `js/*.js` (three r128 style, global `window.PW`). v2 = npm workspaces `shared/` (rules, pure TS) · `server/` (Colyseus 0.18 + express) · `client/` (Vite, React 19, R3F, zustand).
-- Port order: 1 economy+shop ✔ · 2 personal room "Odam" ✔ · 3 quests, to-dos, sounds, stats ✔ · 4 Odam-centred world ✔ (docs/ADIM4.md; personal timers, library, friends, social spaces) · **5 intro film + backup ← next** (backup required; offline/PWA NOT wanted) · 6 last: login/accounts (returning user → same character → own room; new user → intro film → own room). Gap list: docs/EKSIKLER.md.
+- Port order: 1 economy+shop ✔ · 2 personal room "Odam" ✔ · 3 quests, to-dos, sounds, stats ✔ · 4 Odam-centred world ✔ (docs/ADIM4.md; personal timers, library, friends, social spaces) · 5 intro film + backup ✔ (`home/cinema.ts` = v1 js/cinema.js ported; `shared/src/backup.ts` + `ui/Backup.tsx` in Karakterim) · **next: EKSIKLER.md leftovers** · 6 last: login/accounts (returning user → same character → own room; new user → intro film → own room). Gap list: docs/EKSIKLER.md.
 - Odam leftovers: room settings (name, desc, category, open/closed, invite link, ban list — old `js/ui.js` "roomset"), phone camera too close, solo timer in Odam. Step-3 leftovers: to-dos are browser-only (add to backup in step 5); "social" quest counts study-room break chat (add social-space chat in step 4).
 
 ## Avatar decision (made: b)
