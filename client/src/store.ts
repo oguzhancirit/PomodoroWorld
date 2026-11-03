@@ -7,11 +7,12 @@ export interface PlayerView {
   id: string; name: string; level?: number; avatar: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
 }
 export interface ChatLine { id: string; name: string; text: string; at: number; system?: boolean }
-export interface Profile { name: string; avatar: Avatar; preset: string; category: string; fast: boolean }
+/** task: what I work on (v1 focus screen field) · recent: last tasks · custom: v1 "Özel" focus / break minutes */
+export interface Profile { name: string; avatar: Avatar; preset: string; category: string; fast: boolean; task: string; recent: string[]; custom: { f: number; b: number } }
 
 const PROFILE_KEY = 'pw2.profile';
 function loadProfile(): Profile {
-  const d: Profile = { name: '', avatar: defaultAvatar('f'), preset: 'p25', category: 'Ders', fast: true };
+  const d: Profile = { name: '', avatar: defaultAvatar('f'), preset: 'p25', category: 'Ders', fast: true, task: '', recent: [], custom: { f: 40, b: 8 } };
   try { const raw = localStorage.getItem(PROFILE_KEY); if (raw) return { ...d, ...JSON.parse(raw) }; } catch { /* private mode */ }
   return d;
 }
@@ -30,7 +31,7 @@ interface State {
   error: string;
   me: string;
   players: Record<string, PlayerView>;
-  timer: { phase: Phase; phaseEndsAt: number; round: number };
+  timer: { phase: Phase; phaseEndsAt: number; round: number; pausedLeft?: number };
   preset: string;
   clockOffset: number; // server time − local time (ms)
   chat: ChatLine[];

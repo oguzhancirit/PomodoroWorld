@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { isChatAllowed, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, type Phase } from '@pw/shared';
+import { isChatAllowed, isPaused, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
 import { leaveRoom, sendChat, sendEmote, sendActivity, sendTimer } from '../net';
 import { WalletChip, ShopModal, RewardToast } from './Wallet';
@@ -46,24 +46,23 @@ function TopBar() {
   );
 }
 
-/** `home`: your own room, where the timer waits for someone to press start */
-export function TimerCard({ home = false }: { home?: boolean }) {
+/** `onOpen` (your room): the button opens the v1 focus screen; alone it says "Odaklan", with a friend "Birlikte odaklan" */
+export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; together?: boolean }) {
   const timer = useStore((s) => s.timer);
   const preset = presetById(useStore((s) => s.preset));
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((x) => x + 1), 250); return () => clearInterval(t); }, []);
-  const left = remainingMs(timer, serverNow());
+  const paused = isPaused({ ...timer, pausedLeft: timer.pausedLeft ?? 0 });
+  const left = remainingMs({ ...timer, pausedLeft: timer.pausedLeft ?? 0 }, serverNow());
   const total = (timer.phase === 'focus' ? preset.focusMin : timer.phase === 'long_break' ? preset.longMin : preset.shortMin) * 60_000;
   const k = total ? 1 - left / total : 0;
-  useEffect(() => { document.title = `${fmt(left)} · ${PHASE[timer.phase]} · Pomodoro World`; });
+  useEffect(() => { document.title = timer.phase === 'idle' ? 'Pomodoro World' : `${fmt(left)} · ${paused ? 'Duraklatıldı' : PHASE[timer.phase]} · Pomodoro World`; });
   return (
     <section className={`timer-card ${timer.phase}`}>
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" className="trk" /><circle cx="50" cy="50" r="44" className="bar" pathLength={100} strokeDasharray="100" strokeDashoffset={100 - k * 100} /></svg>
-      <div className="t-in"><span className="ph">{timer.phase === 'idle' ? PHASE.idle : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`}</span><b>{fmt(left)}</b>
+      <div className="t-in"><span className="ph">{timer.phase === 'idle' ? PHASE.idle : paused ? 'Duraklatıldı' : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`}</span><b>{fmt(left)}</b>
         <small>{isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small><TodoChip />
-        {home && (timer.phase === 'idle'
-          ? <button className="t-go" onClick={() => sendTimer('start')}>Başlat</button>
-          : <button className="t-stop" onClick={() => sendTimer('stop')} title="Sayacı herkes için durdurur">Durdur</button>)}</div>
+        {onOpen && <button className={timer.phase === 'idle' ? 't-go' : 't-stop'} onClick={onOpen}>{timer.phase !== 'idle' ? 'Odak ekranı' : together ? 'Birlikte odaklan' : 'Odaklan'}</button>}</div>
     </section>
   );
 }

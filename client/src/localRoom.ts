@@ -2,7 +2,7 @@
 // Used when no game server is reachable (for example inside a Claude artifact), so the 3D room,
 // the shared timer rules, the chat rules and the animations can be tried from a plain link.
 import {
-  presetById, startTimer, settle, isChatAllowed, type Phase, type TimerState, type Preset,
+  presetById, startTimer, settle, isChatAllowed, pauseTimer, resumeTimer, skipPhase, type Phase, type TimerState, type Preset,
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter, STUDY_ROOM, firstFreeSeat, isSeatFree,
   PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, encodeAvatar, activityFor, ACTIVITIES, type Activity, type Gender,
 } from '@pw/shared';
@@ -28,6 +28,8 @@ function randomAvatar(g: Gender): string {
   });
 }
 
+export type TimerAction = 'start' | 'stop' | 'pause' | 'resume' | 'skip';
+
 export class LocalRoom {
   private preset: Preset;
   private baseFocusMin: number;
@@ -38,7 +40,7 @@ export class LocalRoom {
   private category = useStore.getState().profile.category;
 
   /** 'home' = your own room (step 4): the timer waits for "Başlat"; in demo mode one bot friend drops by */
-  constructor(speed: number, private kind: 'study' | 'home' = 'study', bots = true) {
+  constructor(private speed: number, private kind: 'study' | 'home' = 'study', bots = true) {
     const st = useStore.getState();
     const base = presetById(st.profile.preset);
     this.baseFocusMin = base.focusMin;
@@ -156,9 +158,25 @@ export class LocalRoom {
     const taken = Object.values(st.players).filter((p) => p.id !== 'me').map((p) => p.seatIndex);
     if (isSeatFree(seat, taken, STUDY_ROOM.seats.length)) st.upsertPlayer('me', { seatIndex: seat });
   }
-  timerAction(action: 'start' | 'stop') {
+  timerAction(action: TimerAction) {
     const st = useStore.getState();
+    if (action === 'pause' || action === 'resume') {
+      this.timer = action === 'pause' ? pauseTimer(this.timer, Date.now()) : resumeTimer(this.timer, Date.now());
+      st.set({ timer: { ...this.timer } });
+      return;
+    }
+    if (action === 'skip' && this.timer.phase !== 'idle') {
+      this.timer = skipPhase(this.timer, this.preset, Date.now());
+      st.set({ timer: { ...this.timer } });
+      st.addChat({ id: 'sys', name: '', text: this.timer.phase === 'idle' ? 'Mola atlandı, sayaç durdu.' : 'Odak atlandı, mola başladı.', at: Date.now(), system: true });
+      return;
+    }
     if (action === 'start' && this.timer.phase === 'idle') {
+      // the length chosen on the focus screen (v1 presets or "Özel")
+      const base = presetById(st.profile.preset), k = this.speed;
+      this.baseFocusMin = base.focusMin;
+      this.preset = k === 1 ? base : { ...base, focusMin: base.focusMin / k, shortMin: base.shortMin / k, longMin: base.longMin / k };
+      st.set({ preset: base.id });
       this.timer = startTimer(Date.now(), this.preset);
       st.set({ timer: { ...this.timer } });
       for (const id of Object.keys(st.players)) st.upsertPlayer(id, { bubble: '' });

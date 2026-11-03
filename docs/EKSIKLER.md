@@ -17,7 +17,8 @@
 - ✔ Fixed: "Karakterim" button in Odam → character screen ("Kaydet ve odama dön").
 - Person card on avatar click (ui.openPerson): add friend, kick/ban from my room, block, wave, study together. Engine fires onClick avatar; HomeRoom.tsx ignores it.
 - Walking/sitting not synced: Player schema has no x/z; seat click in Odam not sent (sendSit only in R3F hall).
-- Focus screen (openFocus): pause/resume, skip, Space key, focus camera (setFocusCam), task text + recent, round dots, minimise/mini dock, custom preset, autoNext, category picker in Odam.
+- ✔ Fixed (user, 2026-11-03): v1 focus screen in Odam (home/FocusScreen.tsx): pause/resume, skip, reset, Space/Esc, focus camera, task text + recent, round dots, category picker, presets + "Özel". Alone the card says "Odaklan"; only with a friend in the room "Birlikte odaklan" / "Birlikte başlat". Sounds now play in Odam too.
+- Focus screen leftovers: autoNext, day timeline bar (fx-day), moodlet.
 - Camera: flyIn, focusOn/unfollow unused.
 - Settings form (#set-form): rename, sound on/off, NPC toggle, gfx quality, notifications, shareTask, filter toggle.
 - Desktop notifications, wake lock, blinking title at break; one-tab guard; timer survives reload (unverified).

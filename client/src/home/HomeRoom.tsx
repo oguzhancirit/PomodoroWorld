@@ -8,6 +8,7 @@ import { ToolButtons, Panels } from '../ui/Panels';
 import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
 import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
+import { FocusScreen, useCompanions } from './FocusScreen';
 import { RewardToast } from '../ui/Wallet';
 import { WorldButton, WorldPanel } from '../ui/World';
 import { openHome, leaveRoom, openProfile } from '../net';
@@ -25,6 +26,9 @@ export function HomeRoom() {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [editing, setEditing] = useState(false);
+  // v1 focus screen: alone → "Odaklan", a friend in the room → "Birlikte odaklan"
+  const [focusOpen, setFocus] = useState(false);
+  const together = useCompanions().length > 0;
   const [sel, setSel] = useState(-1);
   const [tick, setTick] = useState(0); // engine state that React does not own (ghost, wall mode, top view)
   const pendingGhost = useRef<Ghost>(null);
@@ -36,6 +40,14 @@ export function HomeRoom() {
   // the game lives in your room: open it live so friends can come in (once per visit to this screen)
   useEffect(() => { if (!place) openHome(); }, [place]);
   useEffect(() => { if (visiting && editing) setEditing(false); }, [visiting, editing]);
+  useEffect(() => { if (editing) setFocus(false); }, [editing]);
+  // v1: the camera comes close to your desk while the focus screen is open
+  useEffect(() => {
+    const w = engine.world; if (!ready || !w || editing) return;
+    if (focusOpen) { if (w.avatars.get('me')?.seatIdx == null) seatMe(); w.setFocusCam('me'); }
+    else w.setFocusCam(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusOpen, ready, editing]);
 
   /* ---------- engine lifetime ---------- */
   useEffect(() => {
@@ -203,7 +215,7 @@ export function HomeRoom() {
     <div className="home-room">
       <div ref={host} className="home-canvas" />
       <div ref={tags} className="home-tags" />
-      <header className="topbar home-top">
+      <header className="topbar home-top" hidden={focusOpen}>
         <div className="brand"><span className="dot" />{visiting ? (place.ownerName ? `${possessive(place.ownerName)} odası` : 'Arkadaşının odası') : room?.name || 'Odam'}{visiting && room?.name && <small className="owner-note"> · {room.name}</small>}</div>
         {place && <div className="people-pill" title="Odadakiler / sandalye sayısı">{Object.keys(players).length} / {place.cap} kişi</div>}
         <WalletChip />
@@ -213,8 +225,9 @@ export function HomeRoom() {
         {!editing && !visiting && <button className="ghost" onClick={openProfile}>Karakterim</button>}
         {!editing && <WorldButton />}
       </header>
-      {!editing && !visiting && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile istediğin yere koy. “Dünya”dan arkadaşını davet et.</p>}
-      {!editing && <div className="room-ui home-ui"><TimerCard home /><ChatPanel /><EmoteBar /><NetBanner /><RewardToast /></div>}
+      {!editing && !focusOpen && !visiting && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile istediğin yere koy. “Dünya”dan arkadaşını davet et.</p>}
+      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{!focusOpen && <TimerCard onOpen={() => setFocus(true)} together={together} />}<ChatPanel />{!focusOpen && <EmoteBar />}<NetBanner /><RewardToast /></div>}
+      {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
       <WorldPanel />
       {editing && room && wallet && (
         <EditBar

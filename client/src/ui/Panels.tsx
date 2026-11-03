@@ -12,7 +12,7 @@ export type Panel = '' | 'quests' | 'todo' | 'sound' | 'stats';
 export const usePanel = create<{ open: Panel; set(p: Panel): void }>((set) => ({ open: '', set: (open) => set({ open }) }));
 const close = () => usePanel.getState().set('');
 
-const CAT_COLOR: Record<string, string> = { Ders: '#E8553D', Proje: '#8FB8FF', Okuma: '#F2C14E', Kodlama: '#6CBF6A', Dil: '#E58BB0', Yazı: '#B48AFF', Diğer: '#C9C2DA' };
+export const CAT_COLOR: Record<string, string> = { Ders: '#E8553D', Proje: '#8FB8FF', Okuma: '#F2C14E', Kodlama: '#6CBF6A', Dil: '#E58BB0', Yazı: '#B48AFF', Diğer: '#C9C2DA' };
 const catName = (id: string) => CATEGORIES.find((c) => c[0] === id)?.[1] ?? id;
 const fmtMin = (m: number) => (m < 60 ? `${m} dk` : `${Math.floor(m / 60)} sa${m % 60 ? ` ${m % 60} dk` : ''}`);
 const ICON = {
@@ -188,7 +188,7 @@ export const useSound = create<SoundState>((set, get) => ({
 function SoundSync() {
   const { mix, vol, focusOnly } = useSound();
   const phase = useStore((s) => s.timer.phase), screen = useStore((s) => s.screen);
-  const inRoom = screen === 'room';
+  const inRoom = screen === 'room' || screen === 'home';
   const any = Object.values(mix).some((v) => v > 0);
   const play = any && (!focusOnly || (inRoom && phase === 'focus'));
   useEffect(() => { applySound(mix, play, vol); useSound.setState({ playing: play }); }, [JSON.stringify(mix), vol, play]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -202,7 +202,7 @@ function Sounds() {
   const screen = useStore((s) => s.screen), phase = useStore((s) => s.timer.phase);
   if (!soundOk()) return <p className="note">Tarayıcın ses üretmeyi (WebAudio) desteklemiyor.</p>;
   const sug = suggest(view);
-  const waiting = focusOnly && Object.values(mix).some((v) => v > 0) && !(screen === 'room' && phase === 'focus');
+  const waiting = focusOnly && Object.values(mix).some((v) => v > 0) && !((screen === 'room' || screen === 'home') && phase === 'focus');
   return (
     <div className="sounds">
       {Object.entries(LAYERS).map(([id, l]) => (

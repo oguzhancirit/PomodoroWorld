@@ -2,7 +2,7 @@
 import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
 import { encodeAvatar, activityFor, parseInvite, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
-import { LocalRoom } from './localRoom';
+import { LocalRoom, type TimerAction } from './localRoom';
 import { useTodos } from './todos';
 
 import { SERVER, DEMO_ONLY } from './config';
@@ -87,7 +87,7 @@ async function joinHome(owner: string, token: string): Promise<boolean> {
   if (!mine) st.flash('Arkadaşının odasına girdin. Sayaç herkes için aynı.', 4000);
   return true;
 }
-export const sendTimer = (action: 'start' | 'stop') => (local ? local.timerAction(action) : room?.send('timer', { action, preset: useStore.getState().profile.preset }));
+export const sendTimer = (action: TimerAction) => (local ? local.timerAction(action) : room?.send('timer', { action, preset: useStore.getState().profile.preset }));
 
 /** copy the server room into the store (study room and home rooms alike) */
 function wire(r: Room, screen: 'room' | 'home') {
@@ -96,7 +96,7 @@ function wire(r: Room, screen: 'room' | 'home') {
   const cb = Callbacks.get(r);
   cb.listen('preset', (v) => useStore.getState().set({ preset: v as string }));
   // the state arrives a moment after joining: subscribe to the timer object when it shows up
-  const syncTimer = (t: any) => useStore.getState().set({ timer: { phase: t.phase as Phase, phaseEndsAt: t.phaseEndsAt, round: t.round } });
+  const syncTimer = (t: any) => useStore.getState().set({ timer: { phase: t.phase as Phase, phaseEndsAt: t.phaseEndsAt, round: t.round, pausedLeft: t.pausedLeft || 0 } });
   cb.listen('timer', (t: any) => { if (!t) return; syncTimer(t); cb.onChange(t, () => syncTimer(t)); });
   cb.onAdd('players', (p: any, id: string) => {
     const put = () => useStore.getState().upsertPlayer(id, { level: p.level, name: p.name, avatar: p.avatar, seatIndex: p.seatIndex, pose: p.pose, activity: p.activity as Activity, bubble: p.bubble, connected: p.connected });
