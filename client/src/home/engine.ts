@@ -27,7 +27,15 @@ export const ROOM_STYLES = [
   { id: 'library', n: 'Gece Kütüphanesi', wall: '#2F4A3E', wallPat: 'wainscot', floorT: 'herring', floorC: '#6B4630', trim: '#C9A35A', curtain: '#22406E', mood: 'night' },
   { id: 'japan', n: 'Japon Sadeliği', wall: '#EFE6D2', wallPat: 'shoji', floorT: 'tatami', floorC: '#CDBB8A', trim: '#5B4636', curtain: '#E9DCC8', mood: 'candle' },
   { id: 'gamer', n: 'Neon Oyuncu', wall: '#2A2B3D', wallPat: 'stripe', floorT: 'concrete', floorC: '#3B3D4F', trim: '#2A2B33', curtain: '#22406E', mood: 'neon' },
-] as const;
+  // new looks with the new surfaces and floating effects (user 2026-11-03)
+  { id: 'cosmic', n: 'Kozmik Gece', wall: '#1E2240', wallPat: 'stars', floorT: 'carpet', floorC: '#2A2B4A', trim: '#C9A35A', curtain: '#22406E', mood: 'night', fx: 'stardust' },
+  { id: 'sakura', n: 'Sakura Bahçesi', wall: '#F6E7EC', wallPat: 'shoji', floorT: 'tatami', floorC: '#D8C79A', trim: '#5B4636', curtain: '#E58BB0', mood: 'day', fx: 'sakura' },
+  { id: 'cabin', n: 'Kış Kulübesi', wall: '#8A5A3B', wallPat: 'logs', floorT: 'plank', floorC: '#7A5233', trim: '#4A2E1E', curtain: '#C7432F', mood: 'candle', fx: 'snow' },
+  { id: 'cloud', n: 'Pastel Bulut', wall: '#DCEBFA', wallPat: 'clouds', floorT: 'hex', floorC: '#F3E6EE', trim: '#F6F4EF', curtain: '#A3C4D9', mood: 'day', fx: 'bubbles' },
+  { id: 'autumn', n: 'Sonbahar Kafe', wall: '#E9D6BE', wallPat: 'plaid', floorT: 'herring', floorC: '#9A6A44', trim: '#7A3B22', curtain: '#E8803A', mood: 'golden', fx: 'leaves' },
+  { id: 'marble', n: 'Modern Mermer', wall: '#EDEBE7', wallPat: 'geo', floorT: 'marble', floorC: '#E4E1DC', trim: '#2A2B33', curtain: '#5B6270', mood: 'day' },
+  { id: 'firefly', n: 'Ateş Böceği Ormanı', wall: '#2F4A3E', wallPat: 'floral', floorT: 'terrazzo', floorC: '#5E6B57', trim: '#C9A35A', curtain: '#2F7D5B', mood: 'night', fx: 'fireflies' },
+] as { id: string; n: string; wall: string; wallPat: string; floorT: string; floorC: string; trim: string; curtain: string; mood: string; fx?: string }[];
 export const TRIM_COLORS = ['#7A5233', '#F6F4EF', '#2A2B33', '#C9A35A', '#1F5FA8', '#2F7D5B'];
 export const CURTAIN_COLORS = ['#C98FA6', '#2F7D5B', '#22406E', '#E9DCC8', '#C7432F', '#F2C14E', '#5B6270', '#8E6CC1'];
 export const MOOD_INFO: Record<string, { grad: string; desc: string }> = {

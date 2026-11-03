@@ -66,12 +66,12 @@ export function EditBar(p: Props) {
   if (tab === 'style') {
     const cur = ROOM_STYLES.find((st) => (['wall', 'wallPat', 'floorT', 'floorC', 'mood'] as const).every((k) => R[k] === st[k]));
     list = ROOM_STYLES.map((st) => {
-      const lv = Math.max(SURFACE_LVL[st.wallPat] || 1, SURFACE_LVL[st.floorT] || 1, MOOD_LVL[st.mood] || 1); const lock = L < lv; const d = { ...def, ...st };
+      const lv = Math.max(SURFACE_LVL[st.wallPat] || 1, SURFACE_LVL[st.floorT] || 1, MOOD_LVL[st.mood] || 1, ROOM_FX.find((f) => f.id === st.fx)?.lvl || 1); const lock = L < lv; const d = { ...def, ...st };
       return (
         <button key={st.id} className={`stylecard ${cur === st ? 'on' : ''}`} disabled={lock}
-          onClick={() => set({ wall: st.wall, wallPat: st.wallPat, floorT: st.floorT, floorC: st.floorC, trim: st.trim, curtain: st.curtain, mood: st.mood })}>
+          onClick={() => set({ wall: st.wall, wallPat: st.wallPat, floorT: st.floorT, floorC: st.floorC, trim: st.trim, curtain: st.curtain, mood: st.mood, fx: st.fx })}>
           <span className="sw2"><i style={{ backgroundImage: `url(${swatch('wallPat', st.wallPat, d)})` }} /><i style={{ backgroundImage: `url(${swatch('floorT', st.floorT, d)})` }} /></span>
-          <b>{st.n}</b><span>{lock ? `Seviye ${lv}` : PW.MOODS[st.mood]?.name}</span>
+          <b>{st.n}</b><span>{lock ? `Seviye ${lv}` : `${PW.MOODS[st.mood]?.name ?? ''}${st.fx ? ` · ${FX_ICON[st.fx] ?? ''}` : ''}`}</span>
         </button>
       );
     });
