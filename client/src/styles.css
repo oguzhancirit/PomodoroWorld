@@ -504,3 +504,17 @@ html, body, #root { font: 500 14px/1.5 var(--f-body); letter-spacing: -.003em; }
   .topbar .world-btn { width: var(--ctl); padding: 0; justify-content: center; font-size: 0; gap: 0; }
   .topbar .world-btn svg { width: 18px; height: 18px; }
 }
+/* room settings (v1 roomset) */
+.sheet.roomset { width: min(520px, 100%); gap: 14px; }
+.rs-field { display: grid; gap: 7px; } .rs-field > span { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.rs-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.rs-cats button { padding: 7px 12px; border-radius: 99px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); font-size: 13px; font-weight: 700; }
+.rs-cats button.on { background: rgba(239, 90, 60, .18); border-color: var(--acc2); }
+.rs-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rs-seg button { display: grid; gap: 2px; text-align: left; padding: 11px 14px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .05); border: 1px solid var(--line); }
+.rs-seg button small { color: var(--muted); font-size: 12px; }
+.rs-seg button.on { background: rgba(239, 90, 60, .16); border-color: var(--acc2); }
+.rs-field .chip { justify-self: start; }
+.rs-bans { display: grid; gap: 6px; }
+.rs-bans > div { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .05); }
+.rs-bans small { color: var(--muted); } .rs-bans button { margin-left: auto; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, .08); font-weight: 700; font-size: 12.5px; }

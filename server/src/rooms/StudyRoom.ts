@@ -20,6 +20,8 @@ const RECONNECT_SECONDS = 30;
 
 export class StudyRoom extends Room {
   maxClients = STUDY_ROOM.maxClients;
+  // a slow phone may need longer than the default 15 s to open its connection after a seat is reserved
+  seatReservationTimeout = 45;
   state = new StudyRoomState();
 
   protected preset = presetById('p25');

@@ -6,6 +6,7 @@ import { LocalRoom, libraryLayout, layoutOf, type TimerAction } from './localRoo
 import { isFriend, isBlocked } from './friends';
 import { travel } from './ui/Travel';
 import { useTodos } from './todos';
+import { saveRoom } from './economy';
 
 import { SERVER, DEMO_ONLY } from './config';
 import { identity } from './identity';
@@ -49,7 +50,7 @@ async function enterLibrary(roomId?: string): Promise<boolean> {
   room = r;
   st.set({ players: {}, chat: [], emotes: {}, place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
   wire(r, 'home');
-  st.flash('Kütüphanedesin. Sayaç herkes için aynı ve hiç durmaz; molada sohbet açılır.', 4500);
+  st.flash('Kütüphanedesin. Herkes kendi sayacıyla çalışır; istersen birinin sayacına katıl.', 4500);
   return true;
 }
 
@@ -108,6 +109,7 @@ async function joinHome(owner: string, token: string): Promise<boolean> {
       // no server: my room still works in this browser with a local timer
       console.warn('home join failed, local room', e); local?.leave(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'home', false); return true;
     }
+    console.warn('visit failed', msg);
     st.set({ net: room || local ? 'online' : 'idle' });
     st.flash(/[ğüşıöçĞÜŞİÖÇ]/.test(msg) ? msg : 'Bu oda şu an açık değil.', 5000);
     return false;
@@ -120,7 +122,7 @@ async function joinHome(owner: string, token: string): Promise<boolean> {
   const cb = Callbacks.get(r);
   const put = (k: 'name' | 'layout' | 'ownerName') => (v: unknown) => { const p = useStore.getState().place; if (p) useStore.getState().set({ place: { ...p, [k]: String(v ?? '') } }); };
   cb.listen('name', put('name')); cb.listen('layout', put('layout')); cb.listen('ownerName', put('ownerName'));
-  if (!mine) st.flash('Arkadaşının odasına girdin. Sayaç herkes için aynı.', 4000);
+  if (!mine) st.flash('Arkadaşının odasına girdin. Herkes kendi sayacını kurar; “Birlikte odaklan” ile ona katılabilirsin.', 4500);
   return true;
 }
 export const sendTimer = (action: TimerAction) => (local ? local.timerAction(action) : room?.send('timer', { action, preset: useStore.getState().profile.preset }));
@@ -231,7 +233,13 @@ function chime(freq: number) {
   } catch { /* audio is optional */ }
 }
 /** person card "Odamdan çıkar": only the room owner; the server checks */
-export const sendKick = (id: string) => { if (local) local.kick(id); else room?.send('kick', { id }); };
+export const sendKick = (id: string) => {
+  if (local) { local.kick(id); return; }
+  room?.send('kick', { id });
+  // keep my copy of the room in step with the server's ban list, or my next save would quietly lift the ban
+  const st = useStore.getState(), code = st.players[id]?.code, mine = st.room;
+  if (code && mine && st.place?.mine && !mine.ban.includes(code)) saveRoom({ ...mine, ban: [...mine.ban, code] });
+};
 
 /** the live room's id (to tell which library a friend is in) */
 export const currentRoomId = () => room?.roomId ?? '';

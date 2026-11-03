@@ -10,6 +10,7 @@ import { EditBar } from './EditBar';
 import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
 import { FocusScreen, useCompanions, isRunning } from './FocusScreen';
 import { TravelScreen } from '../ui/Travel';
+import { RoomSettings, useRoomSettings } from './RoomSettings';
 import { PersonCard, openPerson, PeopleSheet, usePeople } from './PersonCard';
 import { useFriends, friendsCall, isBlocked } from '../friends';
 import { RewardToast } from '../ui/Wallet';
@@ -243,6 +244,7 @@ export function HomeRoom() {
         {!editing && <ToolButtons />}
         {!editing && !visiting && <button className="acc ico-btn" onClick={() => setEditing(true)} title="Odayı düzenle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13 7l4 4" /></svg><span className="lbl">Odayı düzenle</span></button>}
         {visiting && <button className="acc ico-btn" onClick={() => { leaveRoom(); }} title="Odama dön"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z" /></svg><span className="lbl">Odama dön</span></button>}
+        {!editing && !visiting && <button className="ghost ico-btn" onClick={() => useRoomSettings.setState({ open: true })} title="Oda ayarları"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" /></svg><span className="lbl">Ayarlar</span></button>}
         {!editing && !visiting && <button className="ghost ico-btn" onClick={openProfile} title="Karakterim"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></svg><span className="lbl">Karakterim</span></button>}
         {!editing && <WorldButton />}
       </header>
@@ -263,6 +265,7 @@ export function HomeRoom() {
       {!editing && <PeopleSheet />}
       <HomeNotice />
       <TravelScreen />
+      {!visiting && <RoomSettings />}
     </div>
   );
 }
