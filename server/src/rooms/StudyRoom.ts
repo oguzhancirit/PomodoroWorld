@@ -22,14 +22,14 @@ export class StudyRoom extends Room {
   maxClients = STUDY_ROOM.maxClients;
   state = new StudyRoomState();
 
-  private preset = presetById('p25');
+  protected preset = presetById('p25');
   private phaseTimer: { clear(): void } | null = null;
   private chatLimit = new RateLimiter(1, 3000);       // 1 message / 3 s per player
   private emoteLimit = new RateLimiter(6, 10_000);
   private timeLimit = new RateLimiter(5, 10_000);
-  private scale = 1;
-  private track = new Map<string, FocusTrack>();
-  private profileOf = new Map<string, Profile>();
+  protected scale = 1;
+  protected track = new Map<string, FocusTrack>();
+  protected profileOf = new Map<string, Profile>();
   /** what each player works on (Ders, Kodlama…), for their statistics */
   private categoryOf = new Map<string, string>();
 
@@ -54,7 +54,7 @@ export class StudyRoom extends Room {
     }),
     sit: validate(SitMsg, (client: Client, { seatIndex }) => {
       const p = this.state.players.get(client.sessionId);
-      if (!p || !isSeatFree(seatIndex, this.takenSeats(client.sessionId), STUDY_ROOM.seats.length)) return;
+      if (!p || !isSeatFree(seatIndex, this.takenSeats(client.sessionId), this.seatCount())) return;
       p.seatIndex = seatIndex;
     }),
     activity: validate(ActivityMsg, (client: Client, { activity, category }) => {
@@ -69,12 +69,9 @@ export class StudyRoom extends Room {
   };
 
   onCreate(options: unknown) {
-    this.preset = presetById(parseJoin(options).preset);
     // ops/testing only: PW_TIME_SCALE=60 makes a 25-minute focus last 25 seconds (never set in production)
-    const scale = Number(process.env.PW_TIME_SCALE) || 1;
-    this.scale = scale;
-    if (scale !== 1) this.preset = { ...this.preset, focusMin: this.preset.focusMin / scale, shortMin: this.preset.shortMin / scale, longMin: this.preset.longMin / scale };
-    this.state.preset = this.preset.id;
+    this.scale = Number(process.env.PW_TIME_SCALE) || 1;
+    this.usePreset(parseJoin(options).preset);
     this.setTimer(startTimer(Date.now(), this.preset));
     this.startTracking();
     this.setMetadata({ preset: this.preset.id });
@@ -92,7 +89,7 @@ export class StudyRoom extends Room {
     p.level = prof ? levelFromXP(prof.wallet.xp).level : 1;
     p.activity = o.activity ?? 'type';
     if (o.category) this.categoryOf.set(client.sessionId, cleanText(o.category, 20) || 'Diğer');
-    p.seatIndex = firstFreeSeat(this.takenSeats(), STUDY_ROOM.seats.length);
+    p.seatIndex = firstFreeSeat(this.takenSeats(), this.seatCount());
     p.pose = 'sit';
     p.bubble = '';
     p.connected = true;
@@ -125,15 +122,23 @@ export class StudyRoom extends Room {
 
   onDispose() { this.phaseTimer?.clear(); }
 
+  /** how many chairs this room has (seat indexes 0..n-1) */
+  protected seatCount() { return STUDY_ROOM.seats.length; }
+
   /* ---------- timer ---------- */
-  private setTimer(t: TimerState) {
+  protected usePreset(id: string | undefined) {
+    const p = presetById(id), k = this.scale;
+    this.preset = k === 1 ? p : { ...p, focusMin: p.focusMin / k, shortMin: p.shortMin / k, longMin: p.longMin / k };
+    this.state.preset = this.preset.id;
+  }
+  protected setTimer(t: TimerState) {
     this.state.timer.phase = t.phase;
     this.state.timer.phaseEndsAt = t.phaseEndsAt;
     this.state.timer.round = t.round;
     this.schedule();
   }
 
-  private current(): TimerState {
+  protected current(): TimerState {
     const s = this.state.timer;
     return { phase: s.phase as Phase, phaseEndsAt: s.phaseEndsAt, round: s.round };
   }
@@ -145,7 +150,7 @@ export class StudyRoom extends Room {
     this.phaseTimer = this.clock.setTimeout(() => this.onPhaseEnd(), Math.max(0, t.phaseEndsAt - Date.now()));
   }
 
-  private onPhaseEnd() {
+  protected onPhaseEnd() {
     const before = this.current();
     const next = settle(before, this.preset, Date.now());
     if (before.phase === 'focus' && next.phaseEndsAt !== before.phaseEndsAt) this.payFocus(before);
@@ -159,7 +164,7 @@ export class StudyRoom extends Room {
   }
 
   /** everyone present right now starts a fresh focus "from the start" */
-  private startTracking() {
+  protected startTracking() {
     const now = Date.now();
     this.state.players.forEach((p, id) => this.track.set(id, { since: p.connected ? now : null, accMs: 0, fromStart: p.connected, intact: p.connected }));
   }
@@ -187,7 +192,7 @@ export class StudyRoom extends Room {
     }
   }
 
-  private takenSeats(exceptId?: string): number[] {
+  protected takenSeats(exceptId?: string): number[] {
     const out: number[] = [];
     this.state.players.forEach((p, id) => { if (id !== exceptId) out.push(p.seatIndex); });
     return out;

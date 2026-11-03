@@ -2,6 +2,7 @@
 // Prices always come from the server's own catalog; the client only says which item.
 import type express from 'express';
 import { buy, levelFromXP, BuyRequest, ProfileRequest, RoomRequest, QuestRequest, clock, loginTick, claimQuest, claimLogin, setPledge, cancelPledge, noteDecor, type Room } from '@pw/shared';
+import { HomeRoom } from './rooms/HomeRoom';
 import { profiles } from './profiles';
 
 const QUEST_REASON: Record<string, string> = { unknown: 'Böyle bir görev yok.', not_done: 'Bu görev henüz bitmedi.', claimed: 'Bu ödülü zaten aldın.' };
@@ -44,6 +45,7 @@ export function routes(app: express.Application, json: express.RequestHandler) {
     const room = profiles.setRoom(p, b.data.room), after = furnCount(room);
     let added = 0; for (const [id, n] of after) added += Math.max(0, n - (before.get(id) ?? 0));
     if (added) profiles.update(p, noteDecor(p.wallet, added, clock(Date.now(), p.wallet.tz)));
+    HomeRoom.live.get(p.pid)?.applyRoom(room);
     res.json({ ok: true, room, wallet: p.wallet });
   });
   app.post('/api/quest', (req, res) => {

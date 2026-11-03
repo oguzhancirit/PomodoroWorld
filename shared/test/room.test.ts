@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultRoom, sanitizeRoom, placedCount, available, roomAllowedFor, ROOM_KEYS, roomSeats, homeCapacity, HOME_MAX } from '../src/room';
+import { defaultRoom, sanitizeRoom, placedCount, available, roomAllowedFor, ROOM_KEYS, roomSeats, homeCapacity, HOME_MAX, homeEntry, inviteCode, parseInvite } from '../src/room';
 import { newWallet, buy, itemById, CATALOG, sanitizeWallet, owns, xpStep, STARTER } from '../src/economy';
 import { ROOM_FURN, ROOM_THEMES, ROOM_VIEWS } from '../src/roomCatalog';
 
@@ -114,5 +114,33 @@ describe('step 4: study with friends in your own room', () => {
     expect(homeCapacity(chairs(4))).toBe(4);
     expect(homeCapacity(chairs(9))).toBe(5);
     expect(HOME_MAX).toBe(5);
+  });
+});
+
+describe('step 4: who may enter someone else\'s room', () => {
+  const room = (o: Partial<ReturnType<typeof defaultRoom>> = {}) => ({ ...defaultRoom(), token: 'abc123', ...o });
+  it('the owner always gets in', () => {
+    expect(homeEntry(room({ open: false, ban: ['own000000001'] }), { pid: 'own000000001', owner: 'own000000001', count: 9 })).toBe('ok');
+  });
+  it('an open room lets friends in until the seats are full', () => {
+    expect(homeEntry(room(), { pid: 'gst000000001', owner: 'own000000001', count: 1 })).toBe('ok');
+    expect(homeEntry(room(), { pid: 'gst000000001', owner: 'own000000001', count: 2 })).toBe('full');
+  });
+  it('a closed room needs the invite token', () => {
+    const r = room({ open: false });
+    expect(homeEntry(r, { pid: 'gst000000001', owner: 'own000000001', count: 1 })).toBe('closed');
+    expect(homeEntry(r, { pid: 'gst000000001', owner: 'own000000001', count: 1, token: 'zzz999' })).toBe('closed');
+    expect(homeEntry(r, { pid: 'gst000000001', owner: 'own000000001', count: 1, token: 'abc123' })).toBe('ok');
+  });
+  it('a banned player never gets in, even with the token', () => {
+    expect(homeEntry(room({ ban: ['gst000000001'] }), { pid: 'gst000000001', owner: 'own000000001', count: 0, token: 'abc123' })).toBe('banned');
+  });
+  it('invite codes: owner id + token, also read from a pasted link', () => {
+    expect(inviteCode('own000000001', 'abc123')).toBe('own000000001-abc123');
+    expect(parseInvite('own000000001-abc123')).toEqual({ owner: 'own000000001', token: 'abc123' });
+    expect(parseInvite('https://pw.example/?x=1#oda-own000000001-abc123')).toEqual({ owner: 'own000000001', token: 'abc123' });
+    expect(parseInvite(' own000000001 ')).toEqual({ owner: 'own000000001', token: '' });
+    expect(parseInvite('<script>')).toBeNull();
+    expect(parseInvite('')).toBeNull();
   });
 });

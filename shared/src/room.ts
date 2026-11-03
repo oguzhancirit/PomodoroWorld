@@ -102,3 +102,20 @@ export const HOME_MAX = 5;
 export const roomSeats = (room: Pick<Room, 'items'>) => room.items.reduce((n, i) => n + (FURN.get(i.id)?.seat ?? 0), 0);
 /** how many people may be in your room at once: its seats, at least you + one friend, at most HOME_MAX */
 export const homeCapacity = (room: Pick<Room, 'items'>) => Math.max(HOME_MIN, Math.min(HOME_MAX, roomSeats(room)));
+
+export type HomeVerdict = 'ok' | 'banned' | 'closed' | 'full';
+/** May this player enter the owner's room now? (`count` = people already inside) */
+export function homeEntry(room: Pick<Room, 'items' | 'open' | 'token' | 'ban'>, o: { pid: string; owner: string; count: number; token?: string }): HomeVerdict {
+  if (o.pid === o.owner) return 'ok';
+  if (room.ban.includes(o.pid)) return 'banned';
+  if (!room.open && o.token !== room.token) return 'closed';
+  return o.count >= homeCapacity(room) ? 'full' : 'ok';
+}
+/** the code a friend types or opens as a link (#oda-CODE), like the original game */
+export const inviteCode = (owner: string, token: string) => `${owner}-${token}`;
+export function parseInvite(input: unknown): { owner: string; token: string } | null {
+  if (typeof input !== 'string') return null;
+  const s = input.trim(); const at = s.lastIndexOf('#oda-');
+  const m = /^([a-z0-9]{12,24})(?:-([a-z0-9]{3,10}))?$/.exec(at >= 0 ? s.slice(at + 5) : s);
+  return m ? { owner: m[1], token: m[2] ?? '' } : null;
+}

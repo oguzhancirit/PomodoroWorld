@@ -28,6 +28,8 @@ export class ProfileStore {
     return p;
   }
   update(p: Profile, wallet: Wallet) { p.wallet = wallet; this.save(); }
+  /** an existing profile (no secret: only for server-side reads such as showing a room) */
+  get(pid: string): Profile | null { return this.map.get(pid) ?? null; }
   /** Stores the room as this player may show it (only owned things, level-gated surfaces). */
   setRoom(p: Profile, room: unknown) { p.room = roomAllowedFor(p.wallet, room); this.save(); return p.room; }
   save() { if (!this.timer) this.timer = setTimeout(() => { this.timer = null; this.saveNow(); }, 1000); }

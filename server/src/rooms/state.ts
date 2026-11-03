@@ -24,3 +24,14 @@ export const StudyRoomState = schema({
   preset: t.string(),
 }, 'StudyRoomState');
 export type StudyRoomState = SchemaType<typeof StudyRoomState>;
+
+/** someone's own room (step 4): the study room state plus whose room it is and how it looks */
+export const HomeRoomState = schema({
+  players: t.map(Player),
+  timer: Timer,
+  preset: t.string(),
+  owner: t.string(),         // owner's player id
+  name: t.string(),          // room name
+  layout: t.string(),        // JSON of the room's look (ROOM_KEYS only: never the invite token or ban list)
+}, 'HomeRoomState');
+export type HomeRoomState = SchemaType<typeof HomeRoomState>;
