@@ -170,7 +170,8 @@ export function EditBar(p: Props) {
 
 /** personal touches for the selected item (user 2026-11-03): your own words, the neon colour, the poster design */
 function Touches({ it, touch }: { it: PlacedItem; touch: (k: 'c' | 't' | 'v', v: string | number) => void }) {
-  const def = PW.ITEM[it.id] as { text?: number; tint?: number; vars?: number } | undefined;
+  const def = PW.ITEM[it.id] as { text?: number; tint?: number; vars?: number; sub?: string } | undefined;
+  const pet = def?.sub === 'Evcil';
   const cur = it as { c?: string; t?: string; v?: number };
   const [text, setText] = useState(cur.t ?? '');
   useEffect(() => setText(cur.t ?? ''), [it]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -179,8 +180,8 @@ function Touches({ it, touch }: { it: PlacedItem; touch: (k: 'c' | 't' | 'v', v:
   return (
     <>
       {def.text && (
-        <div className="swatches touch-text"><span className="lbl">Yazın</span>
-          <input value={text} maxLength={18} placeholder="Kendi sözünü yaz" aria-label="Eşyanın üstündeki yazı"
+        <div className="swatches touch-text"><span className="lbl">{pet ? 'Adı' : 'Yazın'}</span>
+          <input value={text} maxLength={pet ? 12 : 18} placeholder={pet ? 'Ona bir isim ver' : 'Kendi sözünü yaz'} aria-label={pet ? 'Evcil hayvanın adı' : 'Eşyanın üstündeki yazı'}
             onChange={(e) => setText(e.target.value)} onBlur={save} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') { save(); (e.target as HTMLInputElement).blur(); } }} />
           <button type="button" className="ghost sm" onClick={save}>Yaz</button>
         </div>

@@ -558,6 +558,19 @@
   B.w_cork = (g) => { box(g, 1.0, 0.7, 0.03, woodM({ wd: 'oak' }), 0, 0, 0.015); const tex = PW.canvasTex(256, 180, (c, w, h) => { c.fillStyle = '#C69C6D'; c.fillRect(0, 0, w, h); const r = U.seeded(2); for (let i = 0; i < 900; i++) { c.fillStyle = `rgba(${r() < 0.5 ? '90,60,30' : '230,200,150'},.3)`; c.fillRect(r() * w, r() * h, 2, 2); } [['#FFF3A0', 30, 20, -0.1, 'YKS!'], ['#BDE4FF', 120, 30, 0.08, '4x25'], ['#FFC6D9', 60, 100, 0.05, 'Mola'], ['#C8F0C0', 170, 105, -0.06, 'Hedef']].forEach(([col, x, y, rot, txt]) => { c.save(); c.translate(x, y); c.rotate(rot); c.fillStyle = col; c.fillRect(0, 0, 70, 56); c.fillStyle = '#333'; c.font = 'bold 16px sans-serif'; c.fillText(txt, 8, 32); c.fillStyle = '#C7432F'; c.beginPath(); c.arc(35, 6, 5, 0, 7); c.fill(); c.restore(); }); }); const p = new THREE.Mesh(new THREE.PlaneGeometry(0.94, 0.64), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 })); p.position.z = 0.031; g.add(p); };
   B.w_plantshelf = (g) => { rbox(g, 0.9, 0.035, 0.22, 0.01, woodM({ wd: 'light' }), 0, 0, 0.11); for (const sx of [-1, 1]) box(g, 0.02, 0.1, 0.18, brass(), sx * 0.32, -0.06, 0.09); const pl = new THREE.Group(); pl.position.set(-0.25, 0.02, 0.11); g.add(pl); B.d_plant(pl); const hang = new THREE.Group(); hang.position.set(0.22, 0.02, 0.11); g.add(hang); cyl(hang, 0.06, 0.05, 0.08, mat('#E9E1D3'), 0, 0.04, 0, 14); for (let i = 0; i < 6; i++) { const r = U.seeded(i + 4); const pts = []; for (let k = 0; k < 6; k++) pts.push(new THREE.Vector3(Math.sin(i) * 0.05 + (r() - 0.5) * 0.04, 0.07 - k * 0.08, 0.04 + Math.cos(i) * 0.03)); const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.006, 4), mat('#3F8A4A')); hang.add(tube); for (let k = 1; k < 6; k++) { const lf = sph(hang, 0.022, mat('#4C9A55', { rough: 0.5 }), pts[k].x + 0.015, pts[k].y, pts[k].z, 6, 4); lf.scale.set(1, 0.5, 0.7); } } books(g, 0.0, 0.02, 0.11, 0.2, 77, 0.16, 0.2); };
 
+  // pets can have a name (user 2026-11-03): a little wooden sign with the name stands next to them
+  function nameSign(g, text, x, z) {
+    const st = new THREE.Group(); st.position.set(x, 0, z); g.add(st);
+    cyl(st, 0.012, 0.012, 0.4, WOOD_D, 0, 0.2, 0, 6); st.rotation.y = 0.6;
+    const tex = PW.canvasTex(256, 96, (c, w, h) => { c.fillStyle = '#C99A6B'; c.fillRect(0, 0, w, h); c.strokeStyle = '#7A4F31'; c.lineWidth = 8; c.strokeRect(4, 4, w - 8, h - 8); let fs = 50; c.font = `800 ${fs}px "Sora", sans-serif`; while (c.measureText(text).width > w - 30 && fs > 18) { fs -= 3; c.font = `800 ${fs}px "Sora", sans-serif`; } c.fillStyle = '#3A2414'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, w / 2, h / 2 + 2); });
+    box(st, 0.4, 0.15, 0.018, WOOD_L, 0, 0.42, 0);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.385, 0.142), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 })); p.position.set(0, 0.42, 0.01); st.add(p);
+  }
+  for (const [id, x, z] of [['f_cat', 0.32, 0.1], ['f_dog', 0.45, 0.15], ['f_bunny', 0.28, 0.12], ['f_fishbowl', 0.3, 0.1], ['f_parrot', 0.32, 0.15]]) {
+    const f = B[id]; if (!f) continue;
+    B[id] = (g, d = {}) => { f(g, d); if (d.t) nameSign(g, String(d.t).slice(0, 12), x, z); };
+  }
+
   PW.buildItem = function (id, data = {}) {
     const g = new THREE.Group();
     const f = B[id];

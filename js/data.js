@@ -150,9 +150,9 @@
   it('f_easel', 'Hobi', 'Şövale ve Tuval', 320, 4, { fp: [0.7, 0.6], vars: 8 });
   it('f_yoga_mat', 'Hobi', 'Yoga Matı', 120, 2, { fp: [1.8, 0.65], rug: 1, tint: 1 });
   it('f_camera', 'Hobi', 'Kamera Tripodu', 260, 4, { fp: [0.6, 0.6] });
-  it('f_bunny', 'Evcil', 'Beyaz Tavşan', 380, 5, { fp: [0.4, 0.5] });
-  it('f_fishbowl', 'Evcil', 'Balık Fanusu', 220, 3, { fp: [0.4, 0.4] });
-  it('f_parrot', 'Evcil', 'Muhabbet Kuşu Kafesi', 450, 6, { fp: [0.5, 0.5] });
+  it('f_bunny', 'Evcil', 'Beyaz Tavşan', 380, 5, { fp: [0.4, 0.5], text: 1 });
+  it('f_fishbowl', 'Evcil', 'Balık Fanusu', 220, 3, { fp: [0.4, 0.4], text: 1 });
+  it('f_parrot', 'Evcil', 'Muhabbet Kuşu Kafesi', 450, 6, { fp: [0.5, 0.5], text: 1 });
   it('f_hammock', 'Oturma', 'Askılı Salıncak Koltuk', 520, 7, { fp: [1, 1], tint: 1 });
   it('f_pouf', 'Oturma', 'Örgü Puf', 110, 2, { fp: [0.5, 0.5], tint: 1 });
   it('f_rug_shag', 'Halı', 'Peluş Halı', 150, 2, { rug: 1, fp: [2, 1.4], tint: 1 });
@@ -175,8 +175,8 @@
   it('f_cushion', 'Oturma', 'Yer Minderi', 120, 2, { tint: 1, seat: 1, low: 1, fp: [0.6, 0.6] });
   it('f_teddy', 'Dekor', 'Peluş Ayı', 160, 3, { fp: [0.3, 0.3] });
   // pets
-  it('f_cat', 'Evcil', 'Tekir Kedi', 800, 6, { pet: 'cat', fp: [0.5, 0.3] });
-  it('f_dog', 'Evcil', 'Golden Köpek', 900, 8, { pet: 'dog', fp: [0.7, 0.4] });
+  it('f_cat', 'Evcil', 'Tekir Kedi', 800, 6, { pet: 'cat', fp: [0.5, 0.3], text: 1 });
+  it('f_dog', 'Evcil', 'Golden Köpek', 900, 8, { pet: 'dog', fp: [0.7, 0.4], text: 1 });
   // wall items
   const w = (id, name, price, lvl, extra = {}) => R.push(Object.assign({ id, cat: 'furn', sub: 'Duvar', name, price, lvl, wall: 1 }, extra));
   w('w_clock', 'Duvar Saati', 90, 1, { ww: 0.5, wy: 2.3 });
