@@ -139,6 +139,25 @@
   it('f_coffee', 'Mutfak', 'Kahve Köşesi', 200, 3, { fp: [0.8, 0.5] });
   it('f_fridge', 'Mutfak', 'Mini Buzdolabı', 260, 4, { fp: [0.6, 0.6] });
   // tabletop (top: placed on desks if possible)
+  // shop expansion (user 2026-11-03: a room that shows your own style) — many take your colour (c)
+  it('f_flower_vase', 'Bitki', 'Çiçekli Vazo', 110, 2, { fp: [0.35, 0.35], tint: 1 });
+  it('f_bird_paradise', 'Bitki', 'Cennet Kuşu Bitkisi', 300, 6, { fp: [0.7, 0.7] });
+  it('f_succulents', 'Bitki', 'Sukulent Tepsisi', 80, 1, { fp: [0.5, 0.3] });
+  it('f_lamp_mushroom', 'Aydınlatma', 'Mantar Lamba', 160, 3, { fp: [0.35, 0.35], light: 1, tint: 1 });
+  it('f_lantern', 'Aydınlatma', 'Fener', 130, 2, { fp: [0.3, 0.3], light: 1 });
+  it('f_skateboard', 'Dekor', 'Kaykay', 180, 3, { fp: [0.8, 0.25], tint: 1 });
+  it('f_vase_tall', 'Dekor', 'Uzun Seramik Vazo', 140, 2, { fp: [0.3, 0.3], tint: 1 });
+  it('f_easel', 'Hobi', 'Şövale ve Tuval', 320, 4, { fp: [0.7, 0.6], vars: 8 });
+  it('f_yoga_mat', 'Hobi', 'Yoga Matı', 120, 2, { fp: [1.8, 0.65], rug: 1, tint: 1 });
+  it('f_camera', 'Hobi', 'Kamera Tripodu', 260, 4, { fp: [0.6, 0.6] });
+  it('f_bunny', 'Evcil', 'Beyaz Tavşan', 380, 5, { fp: [0.4, 0.5] });
+  it('f_fishbowl', 'Evcil', 'Balık Fanusu', 220, 3, { fp: [0.4, 0.4] });
+  it('f_parrot', 'Evcil', 'Muhabbet Kuşu Kafesi', 450, 6, { fp: [0.5, 0.5] });
+  it('f_hammock', 'Oturma', 'Askılı Salıncak Koltuk', 520, 7, { fp: [1, 1], tint: 1 });
+  it('f_pouf', 'Oturma', 'Örgü Puf', 110, 2, { fp: [0.5, 0.5], tint: 1 });
+  it('f_rug_shag', 'Halı', 'Peluş Halı', 150, 2, { rug: 1, fp: [2, 1.4], tint: 1 });
+  it('f_rug_checker', 'Halı', 'Damalı Halı', 170, 3, { rug: 1, fp: [2, 2], tint: 1 });
+  it('f_rug_rainbow', 'Halı', 'Gökkuşağı Halı', 220, 4, { rug: 1, fp: [2.2, 1.2] });
   it('d_laptop', 'Masaüstü', 'Dizüstü Bilgisayar', 0, 1, { top: 1, fp: [0.4, 0.3] });
   it('d_lamp', 'Masaüstü', 'Masa Lambası', 0, 1, { top: 1, fp: [0.25, 0.25], light: 1 });
   it('d_books', 'Masaüstü', 'Kitap Yığını', 40, 1, { top: 1, fp: [0.3, 0.25] });
@@ -146,6 +165,10 @@
   it('d_mug', 'Masaüstü', 'Kahve Kupası', 30, 1, { top: 1, fp: [0.15, 0.15] });
   it('d_monitor', 'Masaüstü', 'Çift Monitör', 380, 5, { top: 1, fp: [0.9, 0.3] });
   it('d_tomato', 'Masaüstü', 'Domates Zamanlayıcı', 120, 2, { top: 1, fp: [0.15, 0.15] });
+  it('d_hourglass', 'Masaüstü', 'Kum Saati', 120, 2, { top: 1, fp: [0.15, 0.15] });
+  it('d_crystal', 'Masaüstü', 'Kristal Küre', 240, 5, { top: 1, fp: [0.2, 0.2] });
+  it('d_photo', 'Masaüstü', 'Çerçeveli Fotoğraf', 60, 1, { top: 1, fp: [0.2, 0.15] });
+  it('d_headphones', 'Masaüstü', 'Kulaklık', 120, 2, { top: 1, fp: [0.25, 0.2], tint: 1 });
   it('f_candles', 'Aydınlatma', 'Mum Seti', 90, 2, { fp: [0.4, 0.3], light: 1 });
   it('f_pendant', 'Aydınlatma', 'Sarkıt Lamba', 240, 4, { fp: [0.5, 0.5], light: 1, hang: 1 });
   it('f_cushion', 'Oturma', 'Yer Minderi', 120, 2, { seat: 1, low: 1, fp: [0.6, 0.6] });
@@ -168,6 +191,13 @@
   w('w_neon_text', 'Kendi Neon Yazın', 450, 4, { ww: 1.3, wy: 1.75, text: 1, tint: 1 });
   w('w_poster_art', 'Desenli Poster', 120, 1, { ww: 0.62, wy: 1.5, vars: 8 });
   w('w_garland', 'Harfli Flama', 180, 2, { ww: 1.4, wy: 2.05, text: 1 });
+  w('w_ivy', 'Sarkan Sarmaşık', 150, 3, { ww: 0.6, wy: 2.1 });
+  w('w_moon', 'Ay Lambası', 240, 4, { ww: 0.5, wy: 1.8, light: 1 });
+  w('w_star_lights', 'Yıldız Perdesi', 200, 3, { ww: 1.4, wy: 1.8 });
+  w('w_hoop', 'Basket Potası', 350, 5, { ww: 0.7, wy: 1.95 });
+  w('w_vinyl', 'Plak Duvarı', 160, 3, { ww: 1.1, wy: 1.6 });
+  w('w_polaroid', 'Polaroid İpi', 140, 2, { ww: 1.2, wy: 1.55 });
+  w('w_mirror', 'Yuvarlak Ayna', 200, 3, { ww: 0.6, wy: 1.5, tint: 1 });
   w('w_tv', 'Duvar TV', 500, 7, { ww: 1.4, wy: 1.5 });
   w('w_diploma', 'Çerçeveli Diploma', 300, 9, { ww: 0.6, wy: 1.8 });
   w('w_frames', 'Fotoğraf Duvarı', 140, 2, { ww: 1.0, wy: 1.7 });

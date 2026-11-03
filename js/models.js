@@ -280,6 +280,216 @@
       f.position.set(x, sag(x) - 0.095, 0.035); f.rotation.z = (i % 2 ? 1 : -1) * 0.04; g.add(f);
     });
   };
+  /* ---------- shop expansion (user 2026-11-03): many take the player's colour d.c ---------- */
+  const vpot = (g, r, h, col, y = 0) => lathe(g, [[0, 0], [r * 0.8, 0], [r, h * 0.85], [r * 1.05, h], [r * 0.95, h], [0, h]], mat(col, { rough: 0.7 }), 0, y, 0);
+  B.f_flower_vase = (g, d = {}) => {
+    lathe(g, [[0, 0], [0.09, 0], [0.12, 0.12], [0.07, 0.3], [0.08, 0.34], [0, 0.34]], mat('#E9E4DA', { rough: 0.3 }), 0, 0, 0);
+    const col = d.c || '#E58BB0', r = U.seeded(d.seed || 7);
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2, rr = 0.03 + r() * 0.05, h = 0.5 + r() * 0.18;
+      const st = cyl(g, 0.005, 0.005, h - 0.3, '#3E7A3E', Math.cos(a) * rr * 0.5, 0.3 + (h - 0.3) / 2, Math.sin(a) * rr * 0.5, 5); st.rotation.z = Math.cos(a) * 0.2; st.rotation.x = Math.sin(a) * 0.2;
+      sph(g, 0.035, i % 3 === 0 ? '#F2C14E' : col, Math.cos(a) * rr * 1.6, h, Math.sin(a) * rr * 1.6, 10, 8);
+    }
+  };
+  B.f_bird_paradise = (g) => {
+    vpot(g, 0.2, 0.32, '#C9C2B4');
+    const r = U.seeded(11);
+    for (let i = 0; i < 11; i++) {
+      const a = (i / 11) * Math.PI * 2 + r() * 0.3, h = 0.8 + r() * 0.6;
+      const st = cyl(g, 0.01, 0.012, h, '#4F7F3A', 0, 0.3 + h / 2, 0, 5); st.rotation.set(Math.sin(a) * 0.25, 0, Math.cos(a) * 0.25);
+      const lf = sph(g, 0.13, mat(i % 2 ? '#3E8A4A' : '#4F9A55', { rough: 0.6 }), Math.cos(a) * 0.25 * h * 0.5, 0.3 + h, Math.sin(a) * 0.25 * h * 0.5, 10, 8); lf.scale.set(0.55, 2.1, 0.12); lf.rotation.set(Math.sin(a) * 0.3, -a, Math.cos(a) * 0.3);
+    }
+    for (let i = 0; i < 2; i++) { const f = cone(g, 0.03, 0.16, '#FF8A2B', 0.08 - i * 0.16, 1.25 + i * 0.1, 0.05, 6); f.rotation.z = -1.2 + i * 2.4; }
+  };
+  B.f_succulents = (g) => {
+    rbox(g, 0.5, 0.08, 0.3, 0.02, '#B8875A', 0, 0.04, 0); box(g, 0.46, 0.01, 0.26, '#6B4A33', 0, 0.081, 0);
+    const cols = ['#7FB069', '#9CC5A1', '#5E8C61', '#C3D9A0', '#86A873'];
+    [[-0.16, -0.06], [-0.05, 0.05], [0.07, -0.05], [0.17, 0.06], [-0.18, 0.07]].forEach(([x, z], i) => {
+      for (let k = 0; k < 6; k++) { const l = cone(g, 0.022, 0.07, cols[i], x + Math.cos(k) * 0.02, 0.12, z + Math.sin(k) * 0.02, 6); l.rotation.set(Math.sin(k) * 0.6, 0, Math.cos(k) * 0.6); }
+    });
+  };
+  B.f_lamp_mushroom = (g, d = {}) => {
+    const col = d.c || '#E8553D';
+    lathe(g, [[0, 0], [0.09, 0], [0.06, 0.04], [0.045, 0.32], [0, 0.32]], mat('#F4ECDD', { rough: 0.6 }), 0, 0, 0);
+    const cap = sph(g, 0.17, mat(col, { emissive: col, ei: 0.35, rough: 0.5 }), 0, 0.32, 0, 24, 12); cap.scale.set(1, 0.62, 1);
+    for (let i = 0; i < 6; i++) { const a = i * 1.1; sph(g, 0.022, '#FFF7E8', Math.cos(a) * 0.1, 0.39 + (i % 2) * 0.01, Math.sin(a) * 0.1, 8, 6); }
+    g.userData.lightAt = [0, 0.3, 0]; g.userData.lightColor = col; g.userData.lightPower = 0.7;
+  };
+  B.f_lantern = (g) => {
+    box(g, 0.2, 0.03, 0.2, '#2A2B33', 0, 0.015, 0); box(g, 0.2, 0.03, 0.2, '#2A2B33', 0, 0.36, 0);
+    for (const [x, z] of [[-0.09, -0.09], [0.09, -0.09], [-0.09, 0.09], [0.09, 0.09]]) box(g, 0.015, 0.33, 0.015, '#2A2B33', x, 0.19, z);
+    box(g, 0.17, 0.3, 0.17, mat('#FFE7B0', { opacity: 0.35, rough: 0.1 }), 0, 0.19, 0);
+    cyl(g, 0.03, 0.03, 0.1, mat('#F6EEDC'), 0, 0.08, 0, 10); sph(g, 0.02, glow('#FFB347', 2), 0, 0.15, 0, 8, 6);
+    cone(g, 0.13, 0.08, '#2A2B33', 0, 0.41, 0, 4).rotation.y = Math.PI / 4; tor(g, 0.04, 0.006, '#2A2B33', 0, 0.48, 0);
+    g.userData.lightAt = [0, 0.2, 0]; g.userData.lightColor = '#FFB347'; g.userData.flicker = true; g.userData.lightPower = 0.6;
+  };
+  B.f_skateboard = (g, d = {}) => {
+    const col = d.c || '#3E7CB1';
+    const dk = rbox(g, 0.78, 0.02, 0.21, 0.09, col, 0, 0.09, 0);
+    box(g, 0.6, 0.004, 0.17, '#2A2B33', 0, 0.102, 0);
+    for (const sx of [-1, 1]) { box(g, 0.04, 0.03, 0.16, metal('#B9BEC6'), sx * 0.25, 0.065, 0); for (const sz of [-1, 1]) { const w = cyl(g, 0.03, 0.03, 0.03, '#F2C14E', sx * 0.25, 0.03, sz * 0.09, 12); w.rotation.x = Math.PI / 2; } }
+    dk.rotation.z = 0;
+  };
+  B.f_vase_tall = (g, d = {}) => {
+    lathe(g, [[0, 0], [0.1, 0], [0.13, 0.15], [0.12, 0.35], [0.06, 0.55], [0.07, 0.6], [0, 0.6]], mat(d.c || '#3E7CB1', { rough: 0.25 }), 0, 0, 0);
+    for (let i = 0; i < 3; i++) { const st = cyl(g, 0.004, 0.004, 0.5, '#B89B6E', 0, 0.8, 0, 4); st.rotation.set(0.15 * (i - 1), 0, 0.2 * (i - 1)); const t = cone(g, 0.03, 0.12, '#D9C8B0', Math.sin(0.2 * (i - 1)) * -0.25, 1.06, Math.sin(0.15 * (i - 1)) * 0.25, 6); t.rotation.z = 0.2 * (i - 1); }
+  };
+  B.f_easel = (g, d = {}) => {
+    for (const sx of [-1, 1]) { const l = box(g, 0.035, 1.5, 0.035, WOOD, sx * 0.25, 0.72, 0.05); l.rotation.z = -sx * 0.12; }
+    const bl = box(g, 0.035, 1.4, 0.035, WOOD, 0, 0.66, -0.3); bl.rotation.x = -0.3;
+    box(g, 0.62, 0.04, 0.08, WOOD_D, 0, 0.55, 0.08);
+    const v = Math.max(0, Math.min(7, d.v | 0));
+    box(g, 0.56, 0.72, 0.03, '#F6F4EF', 0, 0.94, 0.07);
+    const tex = PW.canvasTex(192, 256, POSTERS[v]);
+    const cv = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.68), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 })); cv.position.set(0, 0.94, 0.087); g.add(cv);
+    for (const [x, c] of [[-0.2, '#E8553D'], [-0.14, '#3E7CB1'], [0.18, '#F2C14E']]) cyl(g, 0.01, 0.01, 0.12, c, x, 0.63, 0.1, 6).rotation.z = 1.4;
+  };
+  B.f_yoga_mat = (g, d = {}) => {
+    const col = d.c || '#7FB069';
+    rbox(g, 1.7, 0.012, 0.6, 0.04, col, 0, 0.006, 0);
+    const roll = cyl(g, 0.07, 0.07, 0.6, col, 0.88, 0.07, 0, 18); roll.rotation.x = Math.PI / 2;
+    box(g, 1.6, 0.001, 0.02, '#FFFFFF', 0, 0.013, 0.25); box(g, 1.6, 0.001, 0.02, '#FFFFFF', 0, 0.013, -0.25);
+  };
+  B.f_camera = (g) => {
+    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; const l = cyl(g, 0.018, 0.014, 1.2, metal('#3A3D45'), Math.cos(a) * 0.12, 0.58, Math.sin(a) * 0.12, 8); l.rotation.set(Math.sin(a) * 0.2, 0, -Math.cos(a) * 0.2); }
+    cyl(g, 0.02, 0.02, 0.1, '#2A2B33', 0, 1.18, 0, 8);
+    rbox(g, 0.28, 0.18, 0.13, 0.02, '#1C1D22', 0, 1.3, 0); box(g, 0.08, 0.04, 0.06, '#1C1D22', -0.07, 1.41, 0); const lens = cyl(g, 0.06, 0.065, 0.13, '#2A2B33', 0, 1.29, 0.12, 16); lens.rotation.x = Math.PI / 2;
+    const gl = cyl(g, 0.05, 0.05, 0.005, mat('#3A5A8A', { rough: 0.05, metal: 0.5 }), 0, 1.29, 0.188, 16); gl.rotation.x = Math.PI / 2;
+    sph(g, 0.01, glow('#FF3B30', 2), 0.11, 1.36, 0.066, 6, 4);
+  };
+  B.f_bunny = (g) => {
+    const W = mat('#F6F2EE', { rough: 0.95 });
+    const b = sph(g, 0.13, W, 0, 0.12, 0, 18, 12); b.scale.set(1, 0.9, 1.2);
+    sph(g, 0.085, W, 0, 0.24, 0.13, 16, 12);
+    for (const sx of [-1, 1]) { const e = sph(g, 0.03, W, sx * 0.035, 0.37, 0.11, 10, 8); e.scale.set(0.7, 2.6, 0.6); e.rotation.z = -sx * 0.15; const ein = sph(g, 0.018, '#F2B8C6', sx * 0.035, 0.37, 0.125, 8, 6); ein.scale.set(0.6, 2.4, 0.3); ein.rotation.z = -sx * 0.15; sph(g, 0.012, '#1C1D22', sx * 0.04, 0.26, 0.2, 8, 6); }
+    sph(g, 0.012, '#F2A0B4', 0, 0.23, 0.215, 8, 6); sph(g, 0.04, W, 0, 0.13, -0.16, 10, 8);
+    g.userData.update = (t) => { b.scale.y = 0.9 + Math.sin(t * 2.2) * 0.02; };
+  };
+  B.f_fishbowl = (g) => {
+    cyl(g, 0.12, 0.14, 0.4, '#6B4A33', 0, 0.2, 0, 16);
+    const bowl = sph(g, 0.17, mat('#BFE6F5', { opacity: 0.3, rough: 0.05 }), 0, 0.55, 0, 24, 16); bowl.castShadow = false;
+    const water = sph(g, 0.155, mat('#59B8E0', { opacity: 0.45, rough: 0.1 }), 0, 0.53, 0, 24, 16); water.scale.y = 0.85; water.castShadow = false;
+    cyl(g, 0.12, 0.12, 0.02, '#E8D9B5', 0, 0.42, 0, 16);
+    const fish = new THREE.Group(); fish.position.set(0, 0.55, 0); g.add(fish);
+    const body = sph(fish, 0.035, '#FF8A2B', 0.07, 0, 0, 10, 8); body.scale.set(1.5, 1, 0.7); const tail = cone(fish, 0.03, 0.04, '#FFB347', 0.015, 0, 0, 4); tail.rotation.z = Math.PI / 2;
+    g.userData.update = (t) => { fish.rotation.y = t * 0.8; fish.position.y = 0.55 + Math.sin(t * 2) * 0.015; };
+  };
+  B.f_parrot = (g) => {
+    cyl(g, 0.02, 0.02, 1.1, metal('#C9A15A'), 0, 0.55, 0, 8); cyl(g, 0.2, 0.22, 0.03, metal('#C9A15A'), 0, 0.015, 0, 18);
+    const cage = new THREE.Group(); cage.position.y = 1.1; g.add(cage);
+    cyl(cage, 0.2, 0.2, 0.02, metal('#C9A15A'), 0, 0, 0, 18);
+    for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; cyl(cage, 0.004, 0.004, 0.45, metal('#C9A15A'), Math.cos(a) * 0.19, 0.22, Math.sin(a) * 0.19, 4); }
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.2, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), metal('#C9A15A')); top.position.y = 0.44; top.scale.y = 0.5; cage.add(top);
+    const perch = cyl(cage, 0.008, 0.008, 0.3, WOOD, 0, 0.15, 0, 6); perch.rotation.z = Math.PI / 2;
+    const bird = new THREE.Group(); bird.position.set(0, 0.19, 0); cage.add(bird);
+    const bd = sph(bird, 0.05, '#7FD34E', 0, 0.05, 0, 12, 10); bd.scale.set(0.9, 1.3, 0.9); sph(bird, 0.035, '#F2E14E', 0, 0.12, 0.01, 10, 8);
+    const bk = cone(bird, 0.012, 0.025, '#E8A33D', 0, 0.115, 0.045, 6); bk.rotation.x = Math.PI / 2; sph(bird, 0.007, '#1C1D22', 0.02, 0.13, 0.03, 6, 4); sph(bird, 0.007, '#1C1D22', -0.02, 0.13, 0.03, 6, 4);
+    const tl = cone(bird, 0.02, 0.1, '#3E7CB1', 0, -0.03, -0.04, 6); tl.rotation.x = -2.6;
+    g.userData.update = (t) => { bird.rotation.y = Math.sin(t * 0.7) * 0.6; bird.position.y = 0.19 + Math.abs(Math.sin(t * 3)) * 0.01; };
+  };
+  B.f_hammock = (g, d = {}) => {
+    const col = d.c || '#E9DCC8';
+    cyl(g, 0.4, 0.42, 0.04, '#2A2B33', 0.15, 0.02, 0, 24);
+    const pole = new THREE.Group(); g.add(pole);
+    cyl(pole, 0.025, 0.025, 1.9, metal('#2A2B33'), 0.45, 0.95, 0, 8);
+    const arm = cyl(pole, 0.02, 0.02, 0.6, metal('#2A2B33'), 0.2, 1.88, 0, 8); arm.rotation.z = Math.PI / 2 + 0.2;
+    cyl(pole, 0.004, 0.004, 0.5, '#6B5B4B', 0, 1.6, 0, 4);
+    const seat = new THREE.Group(); seat.position.set(0, 1.0, 0); g.add(seat);
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20, 14, 0, Math.PI * 2, Math.PI * 0.32, Math.PI * 0.68), new THREE.MeshStandardMaterial({ color: col, roughness: 0.95, side: THREE.DoubleSide })); shell.scale.set(1, 1.15, 1); shell.castShadow = true; seat.add(shell);
+    const cush = cyl(seat, 0.3, 0.3, 0.08, fabM(d, '#C7432F'), 0, -0.24, 0.02, 20);
+    tor(seat, 0.36, 0.015, '#B89B6E', 0, 0.17, 0).rotation.x = Math.PI / 2;
+    g.userData.update = (t) => { seat.rotation.z = Math.sin(t * 0.8) * 0.04; };
+    void cush;
+  };
+  B.f_pouf = (g, d = {}) => {
+    const col = d.c || '#D9C8B0';
+    const p = cyl(g, 0.25, 0.25, 0.36, mat(col, { map: knitTex(), rough: 1 }), 0, 0.18, 0, 24);
+    tor(g, 0.24, 0.025, mat(col, { rough: 1 }), 0, 0.36, 0).rotation.x = Math.PI / 2; tor(g, 0.24, 0.025, mat(col, { rough: 1 }), 0, 0.01, 0).rotation.x = Math.PI / 2;
+    void p;
+  };
+  let knitT = null;
+  function knitTex() { return knitT || (knitT = (() => { const t = PW.canvasTex(64, 64, (c, w, h) => { c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, w, h); c.strokeStyle = 'rgba(0,0,0,.22)'; c.lineWidth = 3; for (let x = 0; x < w; x += 8) { c.beginPath(); for (let y = 0; y <= h; y += 8) { c.lineTo(x + (y / 8) % 2 * 4, y); } c.stroke(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6, 3); return t; })()); }
+  function flatRug(g, w, d, draw, round = false) {
+    const t = PW.canvasTex(256, Math.round(256 * d / w), draw);
+    const m = new THREE.MeshStandardMaterial({ map: t, roughness: 1 });
+    const mesh = new THREE.Mesh(round ? new THREE.CylinderGeometry(w / 2, w / 2, 0.025, 48) : new THREE.BoxGeometry(w, 0.025, d), m);
+    mesh.position.y = 0.0125; mesh.receiveShadow = true; g.add(mesh);
+  }
+  B.f_rug_shag = (g, d = {}) => flatRug(g, 2, 1.4, (c, w, h) => { c.fillStyle = d.c || '#E8DCCB'; c.fillRect(0, 0, w, h); for (let i = 0; i < 2600; i++) { c.fillStyle = `rgba(${i % 2 ? 255 : 0},${i % 2 ? 255 : 0},${i % 2 ? 255 : 0},.08)`; c.fillRect((i * 53) % w, (i * 97) % h, 2, 5); } });
+  B.f_rug_checker = (g, d = {}) => flatRug(g, 2, 2, (c, w, h) => { const a = d.c || '#2F3542', b = '#F4F1EC', n = 8; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { c.fillStyle = (x + y) % 2 ? a : b; c.fillRect((x * w) / n, (y * h) / n, w / n + 1, h / n + 1); } });
+  B.f_rug_rainbow = (g) => flatRug(g, 2.2, 1.2, (c, w, h) => { c.fillStyle = '#F4EDE2'; c.fillRect(0, 0, w, h); const cols = ['#E8553D', '#F2A03D', '#F2C14E', '#7FB069', '#3E7CB1', '#8E6CC1']; cols.forEach((col, i) => { c.strokeStyle = col; c.lineWidth = 11; c.beginPath(); c.arc(w / 2, h * 0.95, w * 0.42 - i * 13, Math.PI, 0); c.stroke(); }); });
+  /* wall */
+  B.w_ivy = (g) => {
+    box(g, 0.5, 0.03, 0.18, WOOD, 0, 0, 0.09); vpot(g, 0.08, 0.13, '#E9E4DA', 0.015).position.z = 0.09;
+    const r = U.seeded(5);
+    for (let s2 = 0; s2 < 5; s2++) { const x0 = -0.2 + s2 * 0.1, len = 4 + Math.floor(r() * 6); for (let k = 0; k < len; k++) { const lf = sph(g, 0.035, k % 2 ? '#3E8A4A' : '#5CAA5A', x0 + Math.sin(k * 1.3 + s2) * 0.04, -0.03 - k * 0.09, 0.1 + r() * 0.05, 8, 6); lf.scale.set(1, 0.6, 0.4); } }
+  };
+  B.w_moon = (g) => {
+    const moon = sph(g, 0.22, mat('#FFF4D6', { emissive: '#FFE7A8', ei: 0.7, rough: 0.9 }), 0, 0, 0.12, 24, 16);
+    for (const [x, y, r] of [[0.06, 0.05, 0.04], [-0.07, -0.04, 0.03], [0.02, -0.1, 0.025]]) { const cr = sph(g, r, mat('#F0E1B8', { emissive: '#F0D890', ei: 0.4 }), x, y, 0.315, 10, 8); cr.scale.z = 0.3; }
+    g.userData.lightAt = [0, 0, 0.4]; g.userData.lightColor = '#FFE7A8'; g.userData.lightPower = 0.6; void moon;
+  };
+  B.w_star_lights = (g) => {
+    const r = U.seeded(3);
+    for (let i = 0; i < 9; i++) {
+      const x = -0.62 + i * 0.155, len = 0.35 + r() * 0.55;
+      cyl(g, 0.002, 0.002, len, '#C9C2B4', x, -len / 2, 0.03, 3);
+      const st = new THREE.Mesh(new THREE.ShapeGeometry(starShape(0.045)), glow('#FFE7A8', 1.8)); st.position.set(x, -len - 0.02, 0.035); g.add(st);
+    }
+    g.userData.lightAt = [0, -0.4, 0.3]; g.userData.lightColor = '#FFE7A8'; g.userData.lightPower = 0.4;
+  };
+  function starShape(r) { const s2 = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + Math.PI / 2, rr = i % 2 ? r * 0.45 : r; const x = Math.cos(a) * rr, y = Math.sin(a) * rr; if (i) s2.lineTo(x, y); else s2.moveTo(x, y); } return s2; }
+  B.w_hoop = (g) => {
+    rbox(g, 0.7, 0.45, 0.03, 0.02, '#F6F4EF', 0, 0.1, 0.015); box(g, 0.24, 0.18, 0.005, '#E8553D', 0, 0.02, 0.033);
+    box(g, 0.2, 0.14, 0.006, '#F6F4EF', 0, 0.02, 0.034);
+    const rim = tor(g, 0.15, 0.012, '#E8553D', 0, -0.12, 0.2); rim.rotation.x = Math.PI / 2;
+    box(g, 0.04, 0.03, 0.08, '#E8553D', 0, -0.12, 0.06);
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; const n = cyl(g, 0.003, 0.003, 0.2, '#FFFFFF', Math.cos(a) * 0.12, -0.22, 0.2 + Math.sin(a) * 0.12, 3); n.rotation.set(Math.sin(a) * 0.25, 0, -Math.cos(a) * 0.25); }
+  };
+  B.w_vinyl = (g) => {
+    const labels = ['#E8553D', '#F2C14E', '#3E7CB1', '#7FB069', '#E58BB0'];
+    [[-0.4, 0.12], [0, 0.18], [0.4, 0.1], [-0.2, -0.18], [0.22, -0.16]].forEach(([x, y], i) => {
+      const rec = cyl(g, 0.15, 0.15, 0.008, mat('#141218', { rough: 0.3, metal: 0.2 }), x, y, 0.01, 32); rec.rotation.x = Math.PI / 2;
+      const lb = cyl(g, 0.05, 0.05, 0.004, labels[i], x, y, 0.016, 20); lb.rotation.x = Math.PI / 2;
+    });
+  };
+  B.w_polaroid = (g) => {
+    const pts = []; for (let i = 0; i <= 12; i++) { const x = -0.6 + i * 0.1; pts.push(new THREE.Vector3(x, -0.05 * (1 - Math.pow(x / 0.6, 2)), 0.02)); }
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#6B5B4B' })));
+    for (let i = 0; i < 5; i++) {
+      const x = -0.48 + i * 0.24, y = -0.05 * (1 - Math.pow(x / 0.6, 2)) - 0.12;
+      const fr = box(g, 0.16, 0.19, 0.004, '#FBFAF6', x, y, 0.022); fr.rotation.z = (i % 2 ? 1 : -1) * 0.06;
+      const ph = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.13), new THREE.MeshStandardMaterial({ map: PW.canvasTex(64, 60, POSTERS[(i * 3) % POSTERS.length]) })); ph.position.set(x, y + 0.02, 0.025); ph.rotation.z = fr.rotation.z; g.add(ph);
+      box(g, 0.02, 0.04, 0.01, WOOD_L, x, y + 0.1, 0.026);
+    }
+  };
+  B.w_mirror = (g, d = {}) => {
+    const fr = tor(g, 0.27, 0.025, metal(d.c || '#C9A15A'), 0, 0, 0.03); void fr;
+    const m = cyl(g, 0.265, 0.265, 0.01, mat('#DCE8F0', { rough: 0.02, metal: 0.9 }), 0, 0, 0.025, 40); m.rotation.x = Math.PI / 2;
+  };
+  /* desk-top */
+  B.d_hourglass = (g) => {
+    for (const y of [0.005, 0.2]) cyl(g, 0.055, 0.055, 0.012, WOOD_D, 0, y, 0, 16);
+    for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; cyl(g, 0.005, 0.005, 0.2, WOOD_D, Math.cos(a) * 0.045, 0.1, Math.sin(a) * 0.045, 5); }
+    lathe(g, [[0, 0], [0.035, 0], [0.038, 0.04], [0.006, 0.095], [0.038, 0.15], [0.035, 0.19], [0, 0.19]], mat('#DCEFF5', { opacity: 0.35, rough: 0.05 }), 0, 0.01, 0);
+    const sand = cone(g, 0.03, 0.04, '#E8C27A', 0, 0.035, 0, 12); sand.rotation.x = Math.PI; cone(g, 0.022, 0.03, '#E8C27A', 0, 0.13, 0, 12).rotation.x = Math.PI;
+  };
+  B.d_crystal = (g) => {
+    cyl(g, 0.06, 0.07, 0.04, WOOD_D, 0, 0.02, 0, 16);
+    sph(g, 0.075, mat('#C9E4FF', { opacity: 0.45, rough: 0.02, emissive: '#8EC5FF', ei: 0.35 }), 0, 0.11, 0, 24, 16).castShadow = false;
+    sph(g, 0.03, glow('#B39DFF', 1.2), 0, 0.11, 0, 12, 8);
+  };
+  B.d_photo = (g) => {
+    const fr = rbox(g, 0.16, 0.12, 0.015, 0.006, WOOD_D, 0, 0.065, 0); fr.rotation.x = -0.18;
+    const ph = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.09), new THREE.MeshStandardMaterial({ map: PW.canvasTex(96, 72, POSTERS[2]) })); ph.position.set(0, 0.066, 0.009); ph.rotation.x = -0.18; g.add(ph);
+    const st = box(g, 0.02, 0.1, 0.01, WOOD_D, 0, 0.05, -0.04); st.rotation.x = 0.35;
+  };
+  B.d_headphones = (g, d = {}) => {
+    const col = d.c || '#2A2B33';
+    cyl(g, 0.05, 0.06, 0.01, '#1C1D22', 0, 0.005, 0, 16); cyl(g, 0.008, 0.008, 0.2, metal('#9AA0AA'), 0, 0.1, 0, 8);
+    const band = tor(g, 0.08, 0.012, col, 0, 0.2, 0, Math.PI); band.rotation.y = Math.PI / 2;
+    for (const sz of [-1, 1]) { const cup = cyl(g, 0.045, 0.045, 0.035, col, 0, 0.13, sz * 0.085, 18); cup.rotation.x = Math.PI / 2; const pad = cyl(g, 0.04, 0.04, 0.012, '#1C1D22', 0, 0.13, sz * 0.064, 18); pad.rotation.x = Math.PI / 2; }
+  };
   B.w_tv = (g) => { rbox(g, 1.4, 0.8, 0.05, 0.01, '#111', 0, 0, 0.025); const tex = PW.canvasTex(256, 144, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#1F2C55'); gr.addColorStop(1, '#6A4FA3'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#F2C14E'; c.beginPath(); c.arc(190, 50, 22, 0, 7); c.fill(); c.fillStyle = '#0F1530'; c.beginPath(); c.moveTo(0, 144); c.lineTo(60, 80); c.lineTo(110, 120); c.lineTo(170, 70); c.lineTo(256, 144); c.fill(); c.fillStyle = '#FFF'; c.font = 'bold 16px sans-serif'; c.fillText('lo-fi odak radyosu', 12, 24); }); const p = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.74), new THREE.MeshStandardMaterial({ map: tex, emissive: '#FFFFFF', emissiveMap: tex, emissiveIntensity: 0.8 })); p.position.z = 0.052; g.add(p); };
 
 
