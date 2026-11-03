@@ -10,3 +10,4 @@ export * from './quests';
 export * from './friends';
 export * from './library';
 export * from './social';
+export * from './backup';
