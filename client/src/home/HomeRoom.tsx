@@ -60,8 +60,10 @@ export function HomeRoom() {
     if (me) { me.target = null; me.av.root.position.set(w.half - 0.6, 0, w.half - 0.6); me.av.setState('stand'); }
   }, []);
   const seatMe = useCallback(() => {
-    const w = engine.world; if (!w || !w.avatars.has('me')) return; const i = w.freeSeat(true);
-    if (i != null) w.sitAvatar('me', i); w.setAct('me', 'idle');
+    const w = engine.world; if (!w || !w.avatars.has('me')) return;
+    // already in a chair: stay there (freeSeat would skip our own chair as "taken" and move us)
+    if (w.avatars.get('me').seatIdx == null) { const i = w.freeSeat(true); if (i != null) w.sitAvatar('me', i); }
+    w.setAct('me', 'idle');
   }, []);
 
   /* ---------- draw the room whenever its look changes ---------- */

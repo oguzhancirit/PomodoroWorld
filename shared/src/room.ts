@@ -20,7 +20,7 @@ export const MAX_ITEMS = 400;
 const LIM = 6; // half of the largest room (11 x 11) plus a margin, like the old loader
 const HEX = /^#[0-9a-f]{6}$/i;
 const WALLS: WallId[] = ['w0', 'w1', 'w2', 'w3'];
-const FURN = new Map<string, { wall?: number }>(ROOM_FURN.map((f) => [f.id, f as { wall?: number }]));
+const FURN = new Map<string, { wall?: number; seat?: number }>(ROOM_FURN.map((f) => [f.id, f as { wall?: number; seat?: number }]));
 const THEMES = new Set<string>(ROOM_THEMES.map((t) => t.id));
 const VIEWS = new Set<string>(ROOM_VIEWS.map((t) => t.id));
 const SIZE_ID: Record<number, string> = Object.fromEntries(ROOM_SIZES.map((s) => [s.size, s.id]));
@@ -30,7 +30,16 @@ const MOODS = new Set(MOOD_NAMES.map((m) => m[0]));
 const WOODS = new Set<string>(WOOD_TONE_IDS);
 
 const newToken = () => Math.random().toString(36).slice(2, 8).padEnd(6, '0');
-export const defaultRoom = (): Room => ({ ...structuredClone(OLD_DEFAULT_ROOM), ban: [], token: newToken() } as Room);
+// Step 4: the old default room plus a second chair across the desk, so a friend can study with you from day one.
+// Both chairs sit 0.6 from the desk centre: the engine sees them as desk seats and the new avatar's hands reach the desk.
+const FRIEND_CHAIR: FloorItem = { id: 'f_chair_wood', x: 0.2, z: -0.55, r: 2 };
+export const defaultRoom = (): Room => {
+  const r = { ...structuredClone(OLD_DEFAULT_ROOM), ban: [], token: newToken() } as Room;
+  const own = r.items.find((i): i is FloorItem => i.id === 'f_chair_wood');
+  if (own) own.z = -1.75;
+  r.items.push({ ...FRIEND_CHAIR });
+  return r;
+};
 
 const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const num = (v: unknown, lo: number, hi: number, def: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def);
@@ -85,3 +94,11 @@ export function roomAllowedFor(w: Wallet, room: unknown): Room {
   if (r.mood && L < (MOOD_LVL[r.mood] ?? 1)) delete r.mood;
   return r;
 }
+
+/* ---------- step 4: friends study in your room; small rooms on purpose ---------- */
+export const HOME_MIN = 2;
+export const HOME_MAX = 5;
+/** how many people can sit in this room (a sofa holds two, an L sofa three) */
+export const roomSeats = (room: Pick<Room, 'items'>) => room.items.reduce((n, i) => n + (FURN.get(i.id)?.seat ?? 0), 0);
+/** how many people may be in your room at once: its seats, at least you + one friend, at most HOME_MAX */
+export const homeCapacity = (room: Pick<Room, 'items'>) => Math.max(HOME_MIN, Math.min(HOME_MAX, roomSeats(room)));

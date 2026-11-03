@@ -41,7 +41,7 @@ export interface Wallet {
 }
 const LOG_MAX = 400;
 /** Like the original game: a desk, a chair, the wood theme, the city view and the small room. */
-export const STARTER: Record<string, number> = { f_desk_wood: 1, f_chair_wood: 1, ...Object.fromEntries(OLD_STARTER.map((id) => [id, 1])) };
+export const STARTER: Record<string, number> = { f_desk_wood: 1, f_chair_wood: 2, ...Object.fromEntries(OLD_STARTER.map((id) => [id, 1])) };
 const newStats = (): Stats => ({ focusMin: 0, pomos: 0, streak: 0, lastDay: null, days: {}, dayPomos: {}, hours: {}, log: [], weekXP: {}, msgs: 0 });
 export const newWallet = (): Wallet => ({ xp: 0, coins: ECON.startCoins, owned: { ...STARTER }, stats: newStats(), ach: {}, q: newQuestState(), tz: 0 });
 const clone = (w: Wallet): Wallet => ({
@@ -181,7 +181,7 @@ export function sanitizeWallet(v: unknown): Wallet {
   const owned0 = rec(o.owned); let refund = 0;
   for (const [k, c] of Object.entries(owned0)) if (k.startsWith('furn.')) refund += (KAYKIT_REFUND[k.slice(5)] ?? 0) * Math.floor(c);
   const owned = Object.fromEntries(Object.entries(owned0).filter(([k]) => BY_ID.has(k)).map(([k, c]) => [k, Math.floor(c)]));
-  for (const [k, c] of Object.entries(STARTER)) if (!owned[k]) owned[k] = c;
+  for (const [k, c] of Object.entries(STARTER)) if ((owned[k] ?? 0) < c) owned[k] = c;
   return {
     xp: n(o.xp), coins: n(o.coins, d.coins) + refund,
     owned,

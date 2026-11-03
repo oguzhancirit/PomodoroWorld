@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { defaultRoom, sanitizeRoom, placedCount, available, roomAllowedFor, ROOM_KEYS } from '../src/room';
-import { newWallet, buy, itemById, CATALOG, sanitizeWallet, owns, xpStep } from '../src/economy';
+import { defaultRoom, sanitizeRoom, placedCount, available, roomAllowedFor, ROOM_KEYS, roomSeats, homeCapacity, HOME_MAX } from '../src/room';
+import { newWallet, buy, itemById, CATALOG, sanitizeWallet, owns, xpStep, STARTER } from '../src/economy';
 import { ROOM_FURN, ROOM_THEMES, ROOM_VIEWS } from '../src/roomCatalog';
 
 const xpForLevel = (L: number) => { let x = 0; for (let i = 1; i < L; i++) x += xpStep(i); return x; };
@@ -36,9 +36,9 @@ describe('room catalog = the original catalog', () => {
 });
 
 describe('room design', () => {
-  it('the default room is the old default: a desk and its chair', () => {
+  it('the default room is the old default (a desk and its chair) plus a chair for a friend', () => {
     const r = defaultRoom();
-    expect(r.items.map((i) => i.id)).toEqual(['f_desk_wood', 'f_chair_wood']);
+    expect(r.items.map((i) => i.id)).toEqual(['f_desk_wood', 'f_chair_wood', 'f_chair_wood']);
     expect(r.theme).toBe('th_wood'); expect(r.size).toBe(7); expect(r.mood).toBe('golden');
     expect(r.token).toMatch(/^[a-z0-9]{3,10}$/);
     expect(ROOM_KEYS).toContain('wallPat');
@@ -90,5 +90,29 @@ describe('room vs wallet (what the server allows)', () => {
     const want = { ...defaultRoom(), theme: 'th_space', view: 'v_aurora', size: 11, wallPat: 'panel', floorT: 'herring', mood: 'neon', items: [{ id: 'f_sofa', x: 0, z: 1, r: 2 }] };
     const r = roomAllowedFor(w, want);
     expect(r.theme).toBe('th_space'); expect(r.size).toBe(11); expect(r.mood).toBe('neon'); expect(r.wallPat).toBe('panel'); expect(r.items).toHaveLength(1);
+  });
+});
+
+describe('step 4: study with friends in your own room', () => {
+  it('the starter room has a desk and two chairs facing each other (you + one friend)', () => {
+    const r = defaultRoom();
+    expect(r.items.filter((i) => i.id === 'f_chair_wood')).toHaveLength(2);
+    expect(STARTER.f_chair_wood).toBe(2);
+    expect(roomAllowedFor(newWallet(), r).items).toHaveLength(3);
+  });
+  it('an old wallet with one chair is topped up to the starter chairs', () => {
+    expect(sanitizeWallet({ owned: { f_chair_wood: 1 } }).owned.f_chair_wood).toBe(2);
+    expect(sanitizeWallet({ owned: { f_chair_wood: 4 } }).owned.f_chair_wood).toBe(4);
+  });
+  it('counts seats: sofas hold two, wall and desk items none', () => {
+    expect(roomSeats({ items: [{ id: 'f_sofa', x: 0, z: 0, r: 0 }, { id: 'f_chair_wood', x: 1, z: 0, r: 0 }, { id: 'f_desk_wood', x: 0, z: 1, r: 0 }, { id: 'w_clock', w: 'w0', x: 0 }] })).toBe(3);
+  });
+  it('room capacity = seats, at least 2 and at most 5 (small rooms keep their meaning)', () => {
+    const chairs = (n: number) => ({ items: Array.from({ length: n }, (_, i) => ({ id: 'f_chair_wood', x: i, z: 0, r: 0 })) });
+    expect(homeCapacity(chairs(0))).toBe(2);
+    expect(homeCapacity(chairs(2))).toBe(2);
+    expect(homeCapacity(chairs(4))).toBe(4);
+    expect(homeCapacity(chairs(9))).toBe(5);
+    expect(HOME_MAX).toBe(5);
   });
 });
