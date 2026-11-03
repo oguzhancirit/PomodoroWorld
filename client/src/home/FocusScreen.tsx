@@ -19,6 +19,27 @@ const ICO: Record<string, string> = {
 };
 const PHASE: Record<Phase, string> = { focus: 'Odak', short_break: 'Mola', long_break: 'Uzun mola', idle: 'Odak' };
 const fmt = (ms: number) => { const s = Math.ceil(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+/** 60 tick marks along a rounded square (watch-face style, user 2026-11-03), clockwise from the top middle */
+const TICKS = (() => {
+  const S = 300, m = 15, r = 58, a = m, b = S - m, straight = b - a - 2 * r, arc = (Math.PI / 2) * r, per = 4 * straight + 4 * arc;
+  const at = (d: number): [number, number, number, number] => { // point + inward normal at distance d from the top middle
+    d = ((d % per) + per) % per;
+    const segs: [number, (t: number) => [number, number, number, number]][] = [
+      [straight / 2, (t) => [S / 2 + t, a, 0, 1]],
+      [arc, (t) => { const th = -Math.PI / 2 + t / r; return [b - r + r * Math.cos(th), a + r + r * Math.sin(th), -Math.cos(th), -Math.sin(th)]; }],
+      [straight, (t) => [b, a + r + t, -1, 0]],
+      [arc, (t) => { const th = t / r; return [b - r + r * Math.cos(th), b - r + r * Math.sin(th), -Math.cos(th), -Math.sin(th)]; }],
+      [straight, (t) => [b - r - t, b, 0, -1]],
+      [arc, (t) => { const th = Math.PI / 2 + t / r; return [a + r + r * Math.cos(th), b - r + r * Math.sin(th), -Math.cos(th), -Math.sin(th)]; }],
+      [straight, (t) => [a, b - r - t, 1, 0]],
+      [arc, (t) => { const th = Math.PI + t / r; return [a + r + r * Math.cos(th), a + r + r * Math.sin(th), -Math.cos(th), -Math.sin(th)]; }],
+      [straight / 2, (t) => [a + r + t, a, 0, 1]],
+    ];
+    for (const [len, f] of segs) { if (d <= len) return f(d); d -= len; }
+    return [S / 2, a, 0, 1];
+  };
+  return Array.from({ length: 60 }, (_, i) => { const [x, y, nx, ny] = at((i / 60) * per), L = i % 5 === 0 ? 16 : 9; return { x1: x, y1: y, x2: x + nx * L, y2: y + ny * L, big: i % 5 === 0 }; });
+})();
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const Svg = ({ d }: { d: string }) => <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: d }} />;
 
@@ -84,7 +105,10 @@ export function FocusScreen({ onClose }: { onClose(): void }) {
       <div className="fx-center">
         <div className="fx-phase"><span>{paused ? 'Duraklatıldı' : PHASE[timer.phase]}{shared}</span><span className="fx-dots">{[0, 1, 2, 3].map((i) => <i key={i} className={i < dots ? 'on' : ''} />)}</span></div>
         <div className="fx-ring">
-          <svg viewBox="0 0 300 300" aria-hidden="true"><circle className="trk" cx="150" cy="150" r="136" /><circle className="bar" cx="150" cy="150" r="136" pathLength={100} strokeDasharray="100" strokeDashoffset={100 - k * 100} /></svg>
+          <svg viewBox="0 0 300 300" aria-hidden="true">
+            <rect className="fx-face" x="3" y="3" width="294" height="294" rx="70" />
+            {TICKS.map((t, i) => <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} className={`${t.big ? 'big' : ''} ${!idle && i < Math.round(k * 60) ? 'on' : ''}`} />)}
+          </svg>
           <div className="fx-in">
             <div className="fx-time" aria-live="off">{fmt(left)}</div>
             <span className="fx-catlbl" style={{ ['--c' as string]: CAT_COLOR[todo?.c ?? cat[0]] ?? '#FF8466' }}><i />{todo ? todo.t : cat[1]}</span>
