@@ -3,21 +3,20 @@
 // room or the invite token, and the ban list always wins. The timer waits until someone presses start.
 import { validate, type Client } from '@colyseus/core';
 import { z } from 'zod';
-import { parseJoin, PlayerId, PlayerSecret, homeEntry, homeCapacity, roomSeats, ROOM_KEYS, HOME_MAX, cleanName, startTimer, pauseTimer, resumeTimer, skipPhase, type Room as RoomData } from '@pw/shared';
-import { StudyRoom } from './StudyRoom';
+import { parseJoin, PlayerId, PlayerSecret, homeEntry, homeCapacity, roomSeats, ROOM_KEYS, HOME_MAX, cleanName, type Room as RoomData } from '@pw/shared';
+import { PersonalRoom } from './PersonalRoom';
 import { HomeRoomState } from './state';
 import { profiles } from '../profiles';
 
 const HomeJoin = z.object({ owner: PlayerId, pid: PlayerId, secret: PlayerSecret, token: z.string().max(12).optional() });
 const KickMsg = z.object({ id: z.string().max(40) });
-const TimerMsg = z.object({ action: z.enum(['start', 'stop', 'pause', 'resume', 'skip']), preset: z.string().max(8).optional() });
 const REFUSE: Record<string, string> = {
   closed: 'Bu oda kapalı: girmek için davet linki gerekiyor.',
   banned: 'Bu odaya giremezsin.',
   full: 'Oda dolu: bütün sandalyeler dolu.',
 };
 
-export class HomeRoom extends StudyRoom {
+export class HomeRoom extends PersonalRoom {
   /** live rooms by owner, so saving your room updates it right away (single server process) */
   static live = new Map<string, HomeRoom>();
   // Colyseus' own limit stays above the seat count; homeEntry decides (the owner always fits)
@@ -43,37 +42,6 @@ export class HomeRoom extends StudyRoom {
         // out of the room right away (a server-side close is not a "consented" leave, so do not wait for it)
         if (c) { this.onLeave(c); c.leave(); }
       }),
-      timer: validate(TimerMsg, (client: Client, { action, preset }) => {
-        if (!this.state.players.has(client.sessionId)) return;
-        if (action === 'start' && this.state.timer.phase === 'idle') {
-          this.usePreset(preset ?? this.state.preset);
-          this.setTimer(startTimer(Date.now(), this.preset));
-          this.startTracking();
-          this.broadcast('phase', { phase: 'focus', round: 0, endsAt: this.state.timer.phaseEndsAt });
-        } else if (action === 'stop' && this.state.timer.phase !== 'idle') {
-          this.track.clear();
-          this.setTimer({ phase: 'idle', phaseEndsAt: 0, round: 0 });
-          this.broadcast('phase', { phase: 'idle', round: 0, endsAt: 0 });
-        } else if (action === 'pause' || action === 'resume') {
-          const now = Date.now(), cur = this.current();
-          const next = action === 'pause' ? pauseTimer(cur, now) : resumeTimer(cur, now);
-          if (next === cur) return;
-          // paused minutes are not focus minutes: stop (or restart) everyone's clock
-          if (cur.phase === 'focus') this.track.forEach((t, id) => {
-            if (action === 'pause') { if (t.since) t.accMs += now - t.since; t.since = null; }
-            else if (this.state.players.get(id)?.connected) t.since = now;
-          });
-          this.setTimer(next);
-        } else if (action === 'skip' && this.state.timer.phase !== 'idle') {
-          const now = Date.now(), cur = this.current();
-          // skipped focus: the minutes so far count, but not as a full pomodoro
-          if (cur.phase === 'focus') this.payFocus({ ...cur, phaseEndsAt: now }, false);
-          const next = skipPhase(cur, this.preset, now);
-          if (next.phase === 'idle') this.track.clear();
-          this.setTimer(next);
-          this.broadcast('phase', { phase: next.phase, round: next.round, endsAt: next.phaseEndsAt });
-        }
-      }),
     } as any;
   }
 
@@ -84,9 +52,7 @@ export class HomeRoom extends StudyRoom {
   onCreate(options: unknown) {
     const o = HomeJoin.safeParse(options);
     this.owner = o.success ? o.data.owner : '';
-    this.scale = Number(process.env.PW_TIME_SCALE) || 1;
-    this.usePreset(parseJoin(options).preset);
-    this.setTimer({ phase: 'idle', phaseEndsAt: 0, round: 0 });
+    super.onCreate(options);
     this.state.owner = this.owner;
     const prof = this.owner ? profiles.get(this.owner) : null;
     if (prof) this.applyRoom(prof.room);
@@ -121,7 +87,7 @@ export class HomeRoom extends StudyRoom {
     this.meta();
   }
 
-  get info() { const r = this.room; return { kind: 'home', roomId: this.roomId, owner: this.owner, ownerName: this.ownerName, name: r?.name ?? 'Odam', open: !!r?.open, n: this.state.players.size, cap: this.capacity, phase: this.state.timer.phase as string }; }
+  get info() { const r = this.room; return { kind: 'home', roomId: this.roomId, owner: this.owner, ownerName: this.ownerName, name: r?.name ?? 'Odam', open: !!r?.open, n: this.state.players.size, cap: this.capacity, phase: 'idle' }; }
 
   /** what the world list shows (open rooms only appear there) */
   private meta() {

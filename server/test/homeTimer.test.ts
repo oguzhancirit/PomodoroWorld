@@ -24,13 +24,16 @@ const roomOf = async (owner: string) => {
   return colyseus.getRoomById<HomeRoom>(r.roomId);
 };
 
+// my own timer: the same controls now act on each person's timer (personal.test.ts)
+const mine = (room: HomeRoom, id: string) => room.state.players.get(id)!.timer;
+
 describe('HomeRoom timer controls', () => {
   it('a custom focus / break length is used', async () => {
     const me = await player('Deniz'); const c = await join(me); await wait(50);
     const room = await roomOf(me.pid);
     c.send('timer', { action: 'start', preset: 'c40-8' }); await wait(80);
-    expect(room.state.preset).toBe('c40-8');
-    expect(room.state.timer.phaseEndsAt - Date.now()).toBeGreaterThan(39 * 60_000);
+    expect(room.state.players.get(c.sessionId)!.preset).toBe('c40-8');
+    expect(mine(room, c.sessionId).phaseEndsAt - Date.now()).toBeGreaterThan(39 * 60_000);
   });
 
   it('pause freezes the time left (shown to everyone); resume continues; paused time is not paid', async () => {
@@ -38,16 +41,16 @@ describe('HomeRoom timer controls', () => {
     const room = await roomOf(me.pid);
     c.send('timer', { action: 'start' }); await wait(80);
     c.send('timer', { action: 'pause' }); await wait(80);
-    expect(room.state.timer.pausedLeft).toBeGreaterThan(24 * 60_000);
-    expect(c.state.timer.pausedLeft).toBe(room.state.timer.pausedLeft);
+    expect(mine(room, c.sessionId).pausedLeft).toBeGreaterThan(24 * 60_000);
+    expect(c.state.players.get(c.sessionId)!.timer.pausedLeft).toBe(mine(room, c.sessionId).pausedLeft);
     const t = (room as any).track.get(c.sessionId);
     expect(t.since).toBeNull();
     const acc = t.accMs;
     await wait(120);
     expect((room as any).track.get(c.sessionId).accMs).toBe(acc);
     c.send('timer', { action: 'resume' }); await wait(80);
-    expect(room.state.timer.pausedLeft).toBe(0);
-    expect(room.state.timer.phaseEndsAt).toBeGreaterThan(Date.now() + 24 * 60_000);
+    expect(mine(room, c.sessionId).pausedLeft).toBe(0);
+    expect(mine(room, c.sessionId).phaseEndsAt).toBeGreaterThan(Date.now() + 24 * 60_000);
     expect((room as any).track.get(c.sessionId).since).not.toBeNull();
   });
 
@@ -55,9 +58,9 @@ describe('HomeRoom timer controls', () => {
     const me = await player('Mert'); const c = await join(me); await wait(50);
     const room = await roomOf(me.pid);
     c.send('timer', { action: 'start' }); await wait(60);
-    room.endPhaseIn(150);
+    room.endPlayerPhaseIn(c.sessionId, 150);
     c.send('timer', { action: 'pause' }); await wait(300);
-    expect(room.state.timer.phase).toBe('focus');
+    expect(mine(room, c.sessionId).phase).toBe('focus');
   });
 
   it('skip focus: the break starts now and the minutes so far count, but not as a full pomodoro', async () => {
@@ -67,11 +70,11 @@ describe('HomeRoom timer controls', () => {
     c.send('timer', { action: 'start' }); await wait(60);
     (room as any).track.get(c.sessionId).accMs = 10 * 60_000;
     c.send('timer', { action: 'skip' }); await wait(120);
-    expect(room.state.timer.phase).toBe('short_break');
+    expect(mine(room, c.sessionId).phase).toBe('short_break');
     expect(reward!.completed).toBe(false);
     expect(reward!.minutes).toBe(10);
     // skipping the break stops the timer (v1)
     c.send('timer', { action: 'skip' }); await wait(80);
-    expect(room.state.timer.phase).toBe('idle');
+    expect(mine(room, c.sessionId).phase).toBe('idle');
   });
 });

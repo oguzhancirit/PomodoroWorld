@@ -30,22 +30,10 @@ describe('library', () => {
     expect(seats).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
 
-  it('the shared timer is already running (strangers study together, like the study hall)', async () => {
-    const c = await enter(await player('Nur')); await wait(60);
-    expect(c.state.timer.phase).toBe('focus');
-  });
-
-  it('nobody can stop or pause the library timer', async () => {
-    const c = await enter(await player('Oya')); await wait(60);
-    const ends = c.state.timer.phaseEndsAt;
-    c.send('timer', { action: 'stop' }); c.send('timer', { action: 'pause' }); await wait(100);
-    expect(c.state.timer.phase).toBe('focus');
-    expect(c.state.timer.phaseEndsAt).toBe(ends);
-  });
-
   it('a friend in the library shows up in the friends list with a way to join that library', async () => {
     const a = await player('Pelin'), b = await player('Rana');
     const cb = await enter(b); await wait(60);
+    cb.send('timer', { action: 'start' }); await wait(80);
     const r = (await colyseus.http.post('/api/friends', { body: { pid: a.pid, secret: a.secret, op: 'add', target: b.pid } })).data;
     expect(r.friends[0]).toMatchObject({ online: true, where: { kind: 'library', roomId: cb.roomId, open: true, n: 1, cap: 10, phase: 'focus' } });
   });

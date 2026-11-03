@@ -98,7 +98,7 @@ export function routes(app: express.Application, json: express.RequestHandler) {
       if (here && here.name !== f.n) { f.n = here.name; renamed = true; }
       const seen = profiles.get(pid)?.seen ?? 0;
       return here
-        ? { pid, code: friendCode(pid), n: f.n, online: true, seen: Date.now(), where: here.room.info }
+        ? { pid, code: friendCode(pid), n: f.n, online: true, seen: Date.now(), where: { ...here.room.info, phase: here.room.phaseOfCode(pid) } }
         : { pid, code: friendCode(pid), n: f.n, online: false, seen };
     }).sort((x, y) => Number(y.online) - Number(x.online) || y.seen - x.seen);
     if (renamed) profiles.setSocial(p, p.social);

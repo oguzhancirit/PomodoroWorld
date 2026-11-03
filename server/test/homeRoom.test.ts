@@ -64,25 +64,13 @@ describe('HomeRoom', () => {
     expect(cf.sessionId).toBeTruthy();
   });
 
-  it('anyone inside starts the shared timer; it can be stopped again', async () => {
-    const own = await player('Elif'), f = await player('Umut');
-    const co = await join(own, own.pid), cf = await join(f, own.pid); await wait(50);
-    const room = await roomOf(own.pid);
-    cf.send('timer', { action: 'start', preset: 'p50' }); await wait(80);
-    expect(room.state.timer.phase).toBe('focus');
-    expect(room.state.preset).toBe('p50');
-    expect(co.state.timer.phaseEndsAt).toBe(room.state.timer.phaseEndsAt);
-    co.send('timer', { action: 'stop' }); await wait(80);
-    expect(room.state.timer.phase).toBe('idle');
-  });
-
   it('a focus in your room pays like the study room', async () => {
     const own = await player('Sena'); const c = await join(own, own.pid); await wait(50);
     const room = await roomOf(own.pid);
     let reward: { gained: { coins: number } } | null = null; c.onMessage('reward', (m) => { reward = m; });
     c.send('timer', { action: 'start' }); await wait(50);
     (room as any).track.get(c.sessionId).accMs = 25 * 60_000; (room as any).track.get(c.sessionId).since = null;
-    room.endPhaseIn(10); await wait(150);
+    room.endPlayerPhaseIn(c.sessionId, 10); await wait(600);
     expect(reward!.gained.coins).toBeGreaterThan(0);
   });
 

@@ -39,7 +39,7 @@ export class StudyRoom extends Room {
     chat: validate(ChatMsg, (client: Client, { text }) => {
       const p = this.state.players.get(client.sessionId);
       if (!p) return;
-      if (!isChatAllowed(this.state.timer.phase as Phase)) { client.send('notice', { code: 'chat_closed' }); return; }
+      if (!this.chatOpen(client.sessionId)) { client.send('notice', { code: 'chat_closed' }); return; }
       const clean = censor(cleanText(text, CHAT_MAX));
       if (!clean) return;
       if (!this.chatLimit.allow(client.sessionId, Date.now())) { client.send('notice', { code: 'slow_down' }); return; }
@@ -97,7 +97,7 @@ export class StudyRoom extends Room {
     p.bubble = '';
     p.connected = true;
     this.state.players.set(client.sessionId, p);
-    const inFocus = this.state.timer.phase === 'focus' && !isPaused(this.current());
+    const inFocus = this.focusingNow(client.sessionId);
     this.track.set(client.sessionId, { since: inFocus ? Date.now() : null, accMs: 0, fromStart: false, intact: true });
     if (prof) client.send('wallet', { wallet: prof.wallet });
   }
@@ -115,7 +115,7 @@ export class StudyRoom extends Room {
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = true;
     const t = this.track.get(client.sessionId);
-    if (t && this.state.timer.phase === 'focus' && !isPaused(this.current())) t.since = Date.now();
+    if (t && this.focusingNow(client.sessionId)) t.since = Date.now();
   }
 
   onLeave(client: Client) {
@@ -125,6 +125,11 @@ export class StudyRoom extends Room {
   }
 
   onDispose() { this.phaseTimer?.clear(); }
+
+  /** may this player chat now? (the shared hall: the room's phase; personal rooms: their own) */
+  protected chatOpen(_id: string) { return isChatAllowed(this.state.timer.phase as Phase); }
+  /** is this player's focus time running right now? */
+  protected focusingNow(_id: string) { return this.state.timer.phase === 'focus' && !isPaused(this.current()); }
 
   /** how many chairs this room has (seat indexes 0..n-1) */
   protected seatCount() { return STUDY_ROOM.seats.length; }
@@ -194,16 +199,21 @@ export class StudyRoom extends Room {
     });
     const focusMin = durationOf('focus', this.preset) * this.scale / 60_000;
     for (const [id, ms, completed] of results) {
-      const prof = this.profileOf.get(id); if (!prof) continue;
       const others = results.filter(([o, oms]) => o !== id && oms > 30_000 / this.scale).length;
-      const minutes = (ms * this.scale) / 60_000;
-      // the player's own calendar: their day, week and the minute their counted time began
-      const k = clock(now, prof.wallet.tz), start = clock(now - minutes * 60_000, prof.wallet.tz);
-      const r = rewardFocus(prof.wallet, { minutes, completed, round: ended.round + 1, others, day: k.day, week: k.week, startMin: start.minute, cat: this.categoryOf.get(id) ?? 'Diğer', longFocus: focusMin >= 90 });
-      profiles.update(prof, r.wallet);
-      const pl = this.state.players.get(id); if (pl) pl.level = levelFromXP(r.wallet.xp).level;
-      this.clients.getById(id)?.send('reward', { gained: r.gained, lines: r.lines, levelUp: r.levelUp, wallet: r.wallet, completed, minutes: Math.floor(minutes) });
+      this.payPlayer(id, ms, completed, ended.round + 1, others, focusMin, now);
     }
+  }
+
+  /** one person's reward for `ms` of focus (the server decides; minutes go to their daily statistics) */
+  protected payPlayer(id: string, ms: number, completed: boolean, round: number, others: number, focusMin: number, now: number) {
+    const prof = this.profileOf.get(id); if (!prof) return;
+    const minutes = (ms * this.scale) / 60_000;
+    // the player's own calendar: their day, week and the minute their counted time began
+    const k = clock(now, prof.wallet.tz), start = clock(now - minutes * 60_000, prof.wallet.tz);
+    const r = rewardFocus(prof.wallet, { minutes, completed, round, others, day: k.day, week: k.week, startMin: start.minute, cat: this.categoryOf.get(id) ?? 'Diğer', longFocus: focusMin >= 90 });
+    profiles.update(prof, r.wallet);
+    const pl = this.state.players.get(id); if (pl) pl.level = levelFromXP(r.wallet.xp).level;
+    this.clients.getById(id)?.send('reward', { gained: r.gained, lines: r.lines, levelUp: r.levelUp, wallet: r.wallet, completed, minutes: Math.floor(minutes) });
   }
 
   protected takenSeats(exceptId?: string): number[] {

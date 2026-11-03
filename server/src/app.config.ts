@@ -13,8 +13,8 @@ export const server = defineServer({
     study_room: defineRoom(StudyRoom).filterBy(['preset']),
     // step 4: one live room per owner ("Odam"), friends join it
     home: defineRoom(HomeRoom).filterBy(['owner']),
-    // step 4f: the 10-seat public library (same pomodoro length together, like the study hall)
-    library: defineRoom(LibraryRoom).filterBy(['preset']),
+    // step 4f: the 10-seat public library (everyone keeps their own timer, so any length fits)
+    library: defineRoom(LibraryRoom),
   },
   greet: false,
   express: (app) => routes(app, express.json({ limit: '48kb' })),
