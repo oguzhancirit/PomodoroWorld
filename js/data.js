@@ -352,7 +352,7 @@
   PW.PLEDGE_DAYS = [[3, 2, 60], [5, 4, 110], [7, 6, 175], [30, 30, 800]];
   PW.STARTER_OWNED = ['h_short', 'h_side', 'h_buzz', 'h_bald', 'h_long', 'h_pony', 'h_bob', 'fh_none', 'fh_stubble', 't_tee', 't_blouse', 't_hoodie', 'b_jeans', 'b_jogger', 'b_skirt', 's_sneaker', 'th_wood', 'v_city_day', 'sz_s'];
   // premium surfaces (level gates); everything else is free to recolor
-  PW.SURFACE_LVL = { brick: 3, wainscot: 4, shoji: 5, logs: 5, cini: 6, panel: 8, floral: 2, wave: 2, tatami: 5, checker: 3, concrete: 4, carpet: 2, herring: 2 };
+  PW.SURFACE_LVL = { brick: 3, wainscot: 4, shoji: 5, logs: 5, cini: 6, panel: 8, floral: 2, wave: 2, tatami: 5, checker: 3, concrete: 4, carpet: 2, herring: 2, stars: 3, clouds: 2, plaid: 3, geo: 4, terrazzo: 3, hex: 4, marble: 6 };
   PW.MOOD_LVL = { day: 1, golden: 1, night: 1, candle: 3, neon: 5 };
 
   PW.NPC_NAMES = ['Ece', 'Mert', 'Zeynep', 'Kerem', 'Elif', 'Can', 'Defne', 'Arda', 'Selin', 'Emir', 'Nehir', 'Baran', 'Ada', 'Deniz', 'Lara', 'Yiğit', 'İpek', 'Kaan', 'Asya', 'Efe'];

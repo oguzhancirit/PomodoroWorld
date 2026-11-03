@@ -609,6 +609,21 @@
         for (let i = 0; i < 4000; i++) { c.fillStyle = `rgba(${r() < 0.5 ? '0,0,0' : '255,255,255'},${r() * 0.07})`; c.fillRect(r() * w, r() * h, 2, 2); }
       } else if (th.pat === 'checker') {
         for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { c.fillStyle = (i + j) % 2 ? th.floor : th.floor2; c.fillRect(i * 64, j * 64, 64, 64); }
+      } else if (th.pat === 'terrazzo') {
+        const chips = ['#E8553D', '#F2C14E', '#3E7CB1', '#F4F1EC', '#2F3542', th.floor2];
+        for (let i = 0; i < 520; i++) { c.fillStyle = chips[Math.floor(r() * chips.length)]; c.globalAlpha = 0.55 + r() * 0.4; c.beginPath(); const x = r() * w, y = r() * h, s2 = 3 + r() * 9; c.moveTo(x, y); c.lineTo(x + s2, y + r() * s2); c.lineTo(x + r() * s2, y + s2); c.fill(); }
+        c.globalAlpha = 1;
+      } else if (th.pat === 'hex') {
+        const R6 = 36, hh = Math.sqrt(3) * R6;
+        c.fillStyle = 'rgba(40,30,20,.35)'; c.fillRect(0, 0, w, h);
+        for (let row = -1; row < h / hh + 1; row++) for (let col = -1; col < w / (R6 * 1.5) + 1; col++) {
+          const cx = col * R6 * 1.5, cy = row * hh + (col % 2 ? hh / 2 : 0);
+          c.fillStyle = r() < 0.18 ? th.floor2 : th.floor; c.beginPath(); for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; c.lineTo(cx + Math.cos(a) * (R6 - 3), cy + Math.sin(a) * (R6 - 3)); } c.fill();
+        }
+      } else if (th.pat === 'marble') {
+        for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = 2; c.strokeRect(i * 128, j * 128, 128, 128); }
+        c.lineCap = 'round';
+        for (let v = 0; v < 22; v++) { c.strokeStyle = r() < 0.5 ? 'rgba(90,90,100,.22)' : 'rgba(190,160,110,.25)'; c.lineWidth = 1 + r() * 2.5; c.beginPath(); let x = r() * w, y = r() * h; c.moveTo(x, y); for (let k = 0; k < 8; k++) { x += (r() - 0.3) * 70; y += (r() - 0.5) * 60; c.lineTo(x, y); } c.stroke(); }
       } else if (th.pat === 'panel') {
         c.fillStyle = th.floor2; c.fillRect(0, 0, w, h);
         for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { c.fillStyle = th.floor; c.fillRect(i * 256 + 6, j * 256 + 6, 244, 244); c.fillStyle = 'rgba(43,179,201,.5)'; c.fillRect(i * 256 + 20, j * 256 + 124, 216, 6); }
@@ -632,6 +647,10 @@
       else if (p === 'stripe') { for (let x = 0; x < w; x += 64) { c.fillStyle = th.wall2; c.fillRect(x, 0, 28, h); } }
       else if (p === 'dots') { c.fillStyle = th.wall2; for (let y = 16; y < h; y += 48) for (let x = (y / 48) % 2 ? 40 : 16; x < w; x += 48) { c.beginPath(); c.arc(x, y, 7, 0, 7); c.fill(); } }
       else if (p === 'floral') { for (let y = 32; y < h; y += 96) for (let x = (y / 96) % 2 ? 80 : 32; x < w; x += 96) { c.fillStyle = th.wall2; for (let k = 0; k < 5; k++) { const a = k * 1.256; c.beginPath(); c.ellipse(x + Math.cos(a) * 10, y + Math.sin(a) * 10, 8, 5, a, 0, 7); c.fill(); } c.fillStyle = th.trim || '#F2C14E'; c.beginPath(); c.arc(x, y, 5, 0, 7); c.fill(); } }
+      else if (p === 'stars') { c.fillStyle = th.wall2; for (let i = 0; i < 46; i++) { const x = r() * w, y = r() * h, s2 = 5 + r() * 9; c.beginPath(); for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2 - Math.PI / 2, rr = k % 2 ? s2 * 0.45 : s2; c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } c.fill(); } }
+      else if (p === 'clouds') { c.fillStyle = th.wall2; for (let y = 50; y < h; y += 128) for (let x = (y / 128) % 2 ? 90 : 20; x < w + 60; x += 180) { for (let k = 0; k < 4; k++) { c.beginPath(); c.arc(x + k * 18, y + (k % 2 ? -8 : 0), 16 + (k % 3) * 4, 0, 7); c.fill(); } } }
+      else if (p === 'plaid') { c.globalAlpha = 0.35; c.fillStyle = th.wall2; for (let x = 0; x < w; x += 128) c.fillRect(x, 0, 48, h); for (let y = 0; y < h; y += 128) c.fillRect(0, y, w, 48); c.globalAlpha = 0.5; c.fillStyle = th.trim || '#C7432F'; for (let x = 60; x < w; x += 128) c.fillRect(x, 0, 4, h); for (let y = 60; y < h; y += 128) c.fillRect(0, y, w, 4); c.globalAlpha = 1; }
+      else if (p === 'geo') { c.strokeStyle = th.wall2; c.lineWidth = 5; for (let y = 0; y < h + 64; y += 64) for (let x = 0; x < w + 64; x += 64) { c.beginPath(); c.moveTo(x, y + 32); c.lineTo(x + 32, y); c.lineTo(x + 64, y + 32); c.lineTo(x + 32, y + 64); c.closePath(); c.stroke(); } }
       else if (p === 'wave') { c.strokeStyle = th.wall2; c.lineWidth = 6; for (let y = 0; y < h; y += 40) { c.beginPath(); for (let x = 0; x <= w; x += 8) c.lineTo(x, y + Math.sin(x / 26) * 8); c.stroke(); } }
       else { c.globalAlpha = 0.05; for (let i = 0; i < 1500; i++) { c.fillStyle = r() < 0.5 ? '#000' : '#fff'; c.fillRect(r() * w, r() * h, 2, 2); } }
     });

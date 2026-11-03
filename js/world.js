@@ -12,8 +12,8 @@
     neon: { env: 0.3, name: 'Neon', sun: '#7A4CFF', sunI: 0.35, hemi: 0.22, hemiC: '#B48AFF', hemiG: '#201640', amb: 0.1, exp: 1.12, lamp: 1.3, bloom: 1.05, bg: '#120D24', shafts: 0.08, dust: 0.3, neon: ['#FF3FA4', '#26D8FF'] },
     candle: { env: 0.2, name: 'Mum ışığı', sun: '#FF8A3A', sunI: 0.2, hemi: 0.16, hemiC: '#FFB070', hemiG: '#2A1610', amb: 0.06, exp: 1.18, lamp: 2.0, bloom: 0.75, bg: '#180F0C', shafts: 0, dust: 0.5, flicker: true },
   };
-  PW.FLOOR_TYPES = [['plank', 'Parke'], ['herring', 'Balıksırtı'], ['tile', 'Karo'], ['checker', 'Dama'], ['tatami', 'Tatami'], ['carpet', 'Halıfleks'], ['concrete', 'Beton'], ['panel', 'Panel']];
-  PW.WALL_PATTERNS = [['plain', 'Düz'], ['stripe', 'Çizgili'], ['dots', 'Puantiye'], ['floral', 'Çiçekli'], ['wave', 'Dalga'], ['brick', 'Tuğla'], ['wainscot', 'Lambri'], ['cini', 'Çini'], ['shoji', 'Shoji'], ['logs', 'Kütük'], ['panel', 'Panel']];
+  PW.FLOOR_TYPES = [['plank', 'Parke'], ['herring', 'Balıksırtı'], ['tile', 'Karo'], ['checker', 'Dama'], ['tatami', 'Tatami'], ['carpet', 'Halıfleks'], ['concrete', 'Beton'], ['panel', 'Panel'], ['terrazzo', 'Terrazzo'], ['hex', 'Altıgen Karo'], ['marble', 'Mermer']];
+  PW.WALL_PATTERNS = [['plain', 'Düz'], ['stripe', 'Çizgili'], ['dots', 'Puantiye'], ['floral', 'Çiçekli'], ['wave', 'Dalga'], ['brick', 'Tuğla'], ['wainscot', 'Lambri'], ['cini', 'Çini'], ['shoji', 'Shoji'], ['logs', 'Kütük'], ['panel', 'Panel'], ['stars', 'Yıldızlı'], ['clouds', 'Bulutlu'], ['plaid', 'Ekose'], ['geo', 'Geometrik']];
   PW.WALL_COLORS = ['#F2EDE4', '#E9DCC8', '#F4D9E2', '#D8E7D0', '#B9C9AE', '#CFE0EE', '#A9C2DE', '#2D3E63', '#33513F', '#A8553E', '#E8C99A', '#C9B3E0', '#F5E6B8', '#3A3A44', '#E7B9A0', '#8FB7B0'];
   PW.FLOOR_COLORS = ['#B07D52', '#8F6140', '#D9B98E', '#6E4F3A', '#5A3A26', '#D9D2C7', '#B65B3E', '#C8C08A', '#5D5550', '#9AA3AD', '#E8DCCB', '#7A8F6E'];
   const DARK = { night: 1, neon: 1, candle: 1 };
