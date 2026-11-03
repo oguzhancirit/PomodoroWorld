@@ -61,3 +61,35 @@ PW.World.prototype.sitAvatar = function (this: any, id: string, idx: number) {
   const a = this.avatars.get(id); if (ok && a && this.seats[idx]) a.av.seatH = this.seats[idx].h;
   return ok;
 };
+
+// Real footprints: the build mode checks overlaps with the catalog's `fp`, but several drawn models are bigger
+// (sofa 1.94 m vs 1.8, double bed 2.92 vs 1.7…), so a sofa could be put into a fridge (user, 2026-11-03).
+// Measure each model once, from its parts near the floor (plant leaves high up do not count), and widen `fp`
+// to a box around it; the overlap check, the wall clamp and the green/red ghost all use `fp`.
+const LOW = 0.6, measured = new Set<string>();
+function measureFp(id: string) {
+  if (measured.has(id)) return;
+  const d = PW.ITEM[id]; if (!d || d.wall || d.rug || d.top || !d.fp) { measured.add(id); return; }
+  const g = PW.buildItem(id, { seed: 1 }); g.updateMatrixWorld(true);
+  const low = d.cat === 'Bitki' || d.sub === 'Bitki' ? 0.3 : LOW; // a plant: only the pot stands on the floor
+  const v = new T.Vector3(); let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, n = 0;
+  g.traverse((o: any) => {
+    const pos = o.isMesh && o.geometry?.attributes?.position; if (!pos) return;
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); if (v.y > low) continue;
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); z0 = Math.min(z0, v.z); z1 = Math.max(z1, v.z); n++;
+    }
+  });
+  if (!n) return; // model not loaded yet: try again next time
+  measured.add(id);
+  // a box centred on the item that holds the real footprint
+  const w = 2 * Math.max(Math.abs(x0), Math.abs(x1)), dd = 2 * Math.max(Math.abs(z0), Math.abs(z1));
+  d.fp = [Math.max(d.fp[0], Math.round(w * 20) / 20), Math.max(d.fp[1], Math.round(dd * 20) / 20)];
+}
+const oldMoveGhost = PW.World.prototype.moveGhost;
+PW.World.prototype.moveGhost = function (this: any) {
+  if (this.edit?.ghostDef) measureFp(this.edit.ghostDef.id);
+  for (const it of this.items ?? []) measureFp(it.id);
+  return oldMoveGhost.call(this);
+};
+(PW as any).measureFp = measureFp;

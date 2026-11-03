@@ -273,7 +273,7 @@
   PW.PUBLIC_ROOMS = [
     {
       id: 'meydan', kind: 'social', name: 'Meydan Kafe', desc: 'Moladayken uğra, sohbet et, tanış.', theme: 'th_wood', view: 'v_city_day', mood: 'golden', size: 11, npc: 6,
-      items: [['f_sofa', -3, -4.6, 0], ['f_sofa', 3, -4.6, 0], ['f_sofa_l', -3.4, 2.8, 0], ['f_armchair', 0, -2.4, 0], ['f_table_round', 2.8, 1.2, 0], ['f_chair_wood', 2.8, 0.4, 0], ['f_chair_wood', 2.8, 2.0, 2], ['f_coffee', 4.8, -4.7, 0], ['f_fridge', 4.0, -4.75, 0], ['f_record', -5, -1, 1], ['f_piano', 5, 3.4, 3], ['f_monstera', -5, -4.8, 0], ['f_olive', 5, 5, 0], ['f_rug_round', 0, 0, 0], ['f_cat', 0.6, 0.8, 1], ['w_neon', 'w1', 0, 0], ['w_fairy', 'w0', 0, 0], ['w_painting', 'w3', 0, 0]],
+      items: [['f_sofa', -3, -4.6, 0], ['f_sofa', 2.6, -4.6, 0], ['f_sofa_l', -3.4, 2.8, 0], ['f_armchair', 0, -2.4, 0], ['f_table_round', 2.8, 1.2, 0], ['f_chair_wood', 2.8, 0.4, 0], ['f_chair_wood', 2.8, 2.0, 2], ['f_coffee', 4.8, -4.7, 0], ['f_fridge', 4.0, -4.75, 0], ['f_record', -5, -1, 1], ['f_piano', 5, 3.4, 3], ['f_monstera', -5, -4.8, 0], ['f_olive', 5, 5, 0], ['f_rug_round', 0, 0, 0], ['f_cat', 0.6, 0.8, 1], ['w_neon', 'w1', 0, 0], ['w_fairy', 'w0', 0, 0], ['w_painting', 'w3', 0, 0]],
     },
     {
       id: 'teras', kind: 'social', name: 'Çatı Terası', desc: 'Gün batımında sohbet köşesi.', theme: 'th_sage', view: 'v_beach', size: 11, npc: 5,
