@@ -32,6 +32,7 @@ export function HomeRoom() {
   const [editing, setEditing] = useState(false);
   // v1 focus screen: alone → "Odaklan", a friend in the room → "Birlikte odaklan"
   const [focusOpen, setFocus] = useState(false);
+  const [hintOff, setHintOff] = useState(() => { try { return localStorage.getItem('pw2.hintOff') === '1'; } catch { return false; } });
   // someone here is focusing on their own timer: "Birlikte odaklan" lets me join it
   const together = useCompanions().some(isRunning);
   const mode = useStore((s) => s.mode);
@@ -240,12 +241,12 @@ export function HomeRoom() {
         {place && <button className="people-pill people-btn" title="Odadakiler: arkadaş ekle, sayacına katıl, odandan çıkar" onClick={() => usePeople.setState({ open: true })}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.5" /><path d="M15.5 13.7c2.9-.4 5.5 1.5 5.5 4.8" /></svg>{Object.keys(players).length} / {place.cap}</button>}
         <WalletChip />
         {!editing && <ToolButtons />}
-        {!editing && !visiting && <button className="acc" onClick={() => setEditing(true)}>Odayı düzenle</button>}
-        {visiting && <button className="acc" onClick={() => { leaveRoom(); }}>Odama dön</button>}
-        {!editing && !visiting && <button className="ghost" onClick={openProfile}>Karakterim</button>}
+        {!editing && !visiting && <button className="acc ico-btn" onClick={() => setEditing(true)} title="Odayı düzenle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13 7l4 4" /></svg><span className="lbl">Odayı düzenle</span></button>}
+        {visiting && <button className="acc ico-btn" onClick={() => { leaveRoom(); }} title="Odama dön"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z" /></svg><span className="lbl">Odama dön</span></button>}
+        {!editing && !visiting && <button className="ghost ico-btn" onClick={openProfile} title="Karakterim"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></svg><span className="lbl">Karakterim</span></button>}
         {!editing && <WorldButton />}
       </header>
-      {!editing && !focusOpen && !visiting && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile istediğin yere koy. “Dünya”dan arkadaşını davet et.</p>}
+      {!editing && !focusOpen && !visiting && !hintOff && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile yerleştir. “Dünya”dan arkadaşını çağır.<button aria-label="İpucunu kapat" onClick={() => { setHintOff(true); try { localStorage.setItem('pw2.hintOff', '1'); } catch { /* ignore */ } }}>×</button></p>}
       {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{!focusOpen && <TimerCard onOpen={() => setFocus(true)} together={together} />}<ChatPanel />{!focusOpen && <EmoteBar />}<NetBanner /><RewardToast /></div>}
       {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
       <WorldPanel />

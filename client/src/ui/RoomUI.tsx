@@ -50,19 +50,24 @@ function TopBar() {
 export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; together?: boolean }) {
   const timer = useStore((s) => s.timer);
   const preset = presetById(useStore((s) => s.preset));
+  const chosen = presetById(useStore((s) => s.profile.preset));
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((x) => x + 1), 250); return () => clearInterval(t); }, []);
+  const idle = timer.phase === 'idle';
   const paused = isPaused({ ...timer, pausedLeft: timer.pausedLeft ?? 0 });
-  const left = remainingMs({ ...timer, pausedLeft: timer.pausedLeft ?? 0 }, serverNow());
+  // idle: the length you are about to start; running: what is left
+  const left = idle ? chosen.focusMin * 60_000 : remainingMs({ ...timer, pausedLeft: timer.pausedLeft ?? 0 }, serverNow());
   const total = (timer.phase === 'focus' ? preset.focusMin : timer.phase === 'long_break' ? preset.longMin : preset.shortMin) * 60_000;
-  const k = total ? 1 - left / total : 0;
-  useEffect(() => { document.title = timer.phase === 'idle' ? 'Pomodoro World' : `${fmt(left)} · ${paused ? 'Duraklatıldı' : PHASE[timer.phase]} · Pomodoro World`; });
+  const k = idle || !total ? 0 : 1 - left / total;
+  useEffect(() => { document.title = idle ? 'Pomodoro World' : `${fmt(left)} · ${paused ? 'Duraklatıldı' : PHASE[timer.phase]} · Pomodoro World`; });
+  const label = idle ? PHASE.idle : paused ? 'Duraklatıldı' : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`;
   return (
-    <section className={`timer-card ${timer.phase}`}>
-      <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" className="trk" /><circle cx="50" cy="50" r="44" className="bar" pathLength={100} strokeDasharray="100" strokeDashoffset={100 - k * 100} /></svg>
-      <div className="t-in"><span className="ph">{timer.phase === 'idle' ? PHASE.idle : paused ? 'Duraklatıldı' : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`}</span><b>{fmt(left)}</b>
-        <small>{isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small><TodoChip />
-        {onOpen && <button className={timer.phase === 'idle' ? 't-go' : 't-stop'} onClick={onOpen}>{timer.phase !== 'idle' ? 'Odak ekranı' : together ? 'Birlikte odaklan' : 'Odaklan'}</button>}</div>
+    <section className={`timer-card ${timer.phase} ${paused ? 'paused' : ''}`}>
+      <div className="t-head"><span className="ph"><i />{label}</span><small>{isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small></div>
+      <b className="t-time">{fmt(left)}</b>
+      <div className="t-bar" aria-hidden="true"><i style={{ width: `${Math.round(k * 1000) / 10}%` }} /></div>
+      <TodoChip />
+      {onOpen && <button className={idle ? 't-go' : 't-stop'} onClick={onOpen}>{!idle ? 'Odak ekranı' : together ? 'Birlikte odaklan' : 'Odaklan'}</button>}
     </section>
   );
 }

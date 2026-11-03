@@ -1,7 +1,7 @@
 :root {
   --bg: #16141f; --surf: rgba(30, 27, 46, .82); --surf2: rgba(44, 40, 66, .9); --line: rgba(255, 255, 255, .09);
   --text: #f4f1ec; --muted: #a7a1ba; --acc: #ef5a3c; --acc2: #ff8466; --ok: #2fbf7f; --gold: #f2c14e;
-  --f-display: 'Outfit', system-ui, sans-serif; --f-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --f-display: 'Sora', system-ui, sans-serif; --f-body: 'Manrope', system-ui, sans-serif;
   --r: 18px; --sh: 0 18px 50px -12px rgba(0, 0, 0, .55); --hi: inset 0 1px 0 rgba(255, 255, 255, .06);
 }
 * { box-sizing: border-box; }
@@ -452,3 +452,56 @@ input:focus, select:focus { border-color: var(--acc2); }
 .chip:not(:disabled):hover { background: rgba(255, 255, 255, .12); } .chip:disabled { opacity: .45; }
 .w-note { margin: 0; color: var(--muted); font-size: 12.5px; }
 @media (max-width: 600px) { .places { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .place { border-radius: 16px; padding: 8px 4px 10px; } .place b { font-size: 13px; } .place small { font-size: 10.5px; } }
+
+/* ===== design pass (user, 2026-11-03): one height for every control, cards instead of the ring, calmer phone bar ===== */
+:root { --ctl: 38px; --r: 18px; --r-sm: 12px; }
+html, body, #root { font: 500 14px/1.5 var(--f-body); letter-spacing: -.003em; }
+.brand { font: 700 16px var(--f-display); letter-spacing: -.01em; }
+.sheet h2 { font: 700 22px var(--f-display); letter-spacing: -.015em; }
+/* top bar: every control the same height, centred */
+.topbar { top: 14px; left: 14px; right: 14px; padding: 8px 8px 8px 16px; gap: 8px; min-height: 56px; border-radius: var(--r); }
+.topbar .people-pill, .topbar .wallet, .topbar .tool, .topbar .ghost, .topbar .acc { height: var(--ctl); display: inline-flex; align-items: center; }
+.topbar .people-pill { padding: 0 12px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .06); border: 1px solid var(--line); font-size: 13px; }
+.topbar .wallet { padding: 0 4px 0 4px; border-radius: var(--r-sm); }
+.topbar .tool { width: var(--ctl); border-radius: var(--r-sm); }
+.topbar .ghost, .topbar .acc { padding: 0 14px; border-radius: var(--r-sm); gap: 7px; font-size: 13.5px; white-space: nowrap; }
+.ico-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+/* the timer is a card: label, big time, a thin progress line, the job, one button */
+.room-ui .timer-card { top: 84px; left: 14px; width: 232px; aspect-ratio: auto; border-radius: var(--r); padding: 14px 16px 16px; display: grid; gap: 8px; place-items: stretch; background: var(--surf); border: 1px solid var(--line); backdrop-filter: blur(14px); box-shadow: var(--hi), var(--sh); }
+.timer-card .t-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.timer-card .ph { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.timer-card .ph i { width: 7px; height: 7px; border-radius: 50%; background: #6b6680; }
+.timer-card.focus .ph i { background: var(--acc2); box-shadow: 0 0 8px var(--acc2); } .timer-card.short_break .ph i, .timer-card.long_break .ph i { background: var(--ok); }
+.timer-card.paused .ph i { background: var(--gold); box-shadow: none; }
+.timer-card .t-head small { font-size: 11px; color: var(--muted); }
+.timer-card .t-time { font: 700 44px/1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.timer-card .t-bar { height: 5px; border-radius: 5px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.timer-card .t-bar i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--acc), var(--acc2)); transition: width .25s linear; }
+.timer-card.short_break .t-bar i, .timer-card.long_break .t-bar i { background: linear-gradient(90deg, #27a36b, #4cc38a); }
+.timer-card .todo-chip { justify-self: start; }
+.timer-card .t-go, .timer-card .t-stop { margin: 2px 0 0; height: var(--ctl); padding: 0 14px; border-radius: var(--r-sm); font-weight: 800; font-size: 14px; }
+.timer-card .t-go { background: var(--acc); color: #fff; box-shadow: 0 6px 16px -6px rgba(239, 90, 60, .7); }
+.timer-card .t-stop { background: rgba(255, 255, 255, .08); color: var(--text); border: 1px solid var(--line); }
+/* the hint sits low and can be closed */
+.home-room .home-hint { top: auto; bottom: 84px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 9px 8px 9px 16px; border-radius: 999px; font-size: 13px; white-space: nowrap; max-width: calc(100% - 32px); }
+.home-hint button { flex: none; width: 26px; height: 26px; border-radius: 50%; background: rgba(255, 255, 255, .08); color: var(--muted); font-size: 16px; line-height: 1; }
+.chat { border-radius: var(--r); }
+.emotes { border-radius: var(--r); }
+@media (max-width: 860px) {
+  .topbar { flex-wrap: wrap; top: 8px; left: 8px; right: 8px; padding: 8px; gap: 6px; }
+  .topbar .brand { flex: 1 1 auto; flex-basis: auto; order: 0; padding-left: 6px; }
+  .topbar .people-pill { order: 1; } .topbar .wallet { order: 2; }
+  .topbar .tools, .topbar .ico-btn, .topbar .world-btn { order: 3; }
+  .topbar .tools { display: flex; gap: 6px; }
+  .ico-btn .lbl { display: none; }
+  .topbar .ico-btn { width: var(--ctl); padding: 0; justify-content: center; }
+  .room-ui .timer-card { top: auto; bottom: 70px; left: 8px; width: 168px; padding: 10px 12px 12px; gap: 6px; }
+  .timer-card .t-time { font-size: 32px; }
+  .timer-card .t-head small { display: none; }
+  .home-room .home-hint { white-space: normal; bottom: auto; top: 118px; border-radius: 14px; width: calc(100% - 16px); max-width: none; }
+  .home-ui .chat { left: 184px; }
+}
+@media (max-width: 600px) {
+  .topbar .world-btn { width: var(--ctl); padding: 0; justify-content: center; font-size: 0; gap: 0; }
+  .topbar .world-btn svg { width: 18px; height: 18px; }
+}
