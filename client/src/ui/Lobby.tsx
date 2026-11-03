@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, PRESETS, CATEGORIES, encodeAvatar, defaultAvatar, cleanName, itemById, owns, avatarAllowed, levelFromXP, partName, type Slot, type Avatar } from '@pw/shared';
-import { WalletChip, ShopModal } from './Wallet';
+import { WalletChip, ShopModal, PartPic } from './Wallet';
 import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
 import { useStore } from '../store';
@@ -44,8 +44,9 @@ export function Lobby() {
 
       <section className="lobby-panel">
         <div className="lobby-top"><h1>{back ? 'Karakterin ve ayarların' : 'Birlikte çalış, odaklan, sohbet et.'}</h1><div className="row"><ToolButtons /><WalletChip /></div></div>
-        <p className="sub">Odadaki herkes aynı sayacı görür. Odakta sohbet kapanır, molada açılır.</p>
+        <p className="sub">{back ? <>Merhaba <b>{name}</b>! Gardırobundan istediğin parçayı seç, hemen üstüne giyilsin.</> : 'Odadaki herkes aynı sayacı görür. Odakta sohbet kapanır, molada açılır.'}</p>
 
+        {back ? <Wardrobe /> : <>
         <label className="field">Adın
           <input value={profile.name} maxLength={20} placeholder="ör. Oğuzhan" onChange={(e) => setProfile({ name: e.target.value })} />
         </label>
@@ -85,6 +86,7 @@ export function Lobby() {
             </button>
           ))}</div>
         </div>
+        </>}
 
         {DEMO_ONLY && (
           <div className="demo-note">
@@ -105,6 +107,32 @@ export function Lobby() {
         <Panels />
       </section>
     </main>
+  );
+}
+
+/** Returning player (user, 2026-11-03): name, body type and colours stay as created; only the outfit and the hair
+ *  style change, and only with parts the player owns (free ones + bought ones), shown as pictures like in the shop. */
+function Wardrobe() {
+  const a = useStore((s) => s.profile.avatar), wallet = useStore((s) => s.wallet);
+  const setProfile = useStore((s) => s.setProfile);
+  const code = encodeAvatar(a);
+  return (
+    <div className="field wardrobe">Gardırobun
+      {(Object.keys(SLOT_LABEL) as Slot[]).map((slot) => {
+        const mine = PARTS[a.g][slot].map((p) => itemById(`av.${a.g}.${p}`)!).filter((it) => it && (!wallet || owns(wallet, it.id)));
+        return (
+          <section key={slot}><h4>{SLOT_LABEL[slot]}</h4>
+            <div className="wr-grid">{mine.map((it) => (
+              <button key={it.id} type="button" className={`wr-card ${a[slot] === it.part ? 'on' : ''}`} aria-pressed={a[slot] === it.part}
+                onClick={() => setProfile({ avatar: { ...a, [slot]: it.part } })}>
+                <PartPic it={it} base={code} /><span>{it.name}</span>
+              </button>
+            ))}</div>
+          </section>
+        );
+      })}
+      <button type="button" className="ghost wr-shop" onClick={() => useStore.getState().set({ shop: true, shopTab: 'avatar' })}>Mağazada yeni parçalara bak</button>
+    </div>
   );
 }
 

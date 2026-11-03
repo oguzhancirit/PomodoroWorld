@@ -651,3 +651,14 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
   .chat.closed header { height: 46px; padding-top: 0; padding-bottom: 0; }
   .room-ui .day-sum { left: auto; right: calc(14px + 330px + 10px); transform: none; }
 }
+
+/* wardrobe in "Karakterim": owned parts as picture cards */
+.wardrobe section { display: grid; gap: 6px; margin-top: 8px; }
+.wardrobe h4 { margin: 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.wr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.wr-card { display: grid; gap: 4px; padding: 6px 6px 8px; border-radius: 14px; background: rgba(255, 255, 255, .04); border: 1.5px solid var(--line); color: var(--text); font: 700 12.5px var(--f-body); text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+.wr-card:hover { background: rgba(255, 255, 255, .07); }
+.wr-card.on { border-color: var(--acc2); background: rgba(255, 132, 102, .1); }
+.wr-card img, .wr-card .pic-wait { width: 100%; height: 72px; object-fit: contain; border-radius: 10px; display: block; }
+.wr-card .pic-wait { background: linear-gradient(100deg, rgba(255,255,255,.03) 30%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.03) 70%) 0 0 / 200% 100%; animation: pic-wait 1.2s linear infinite; }
+.wr-shop { justify-self: start; margin-top: 10px; }
