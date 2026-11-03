@@ -15,7 +15,7 @@ const close = () => useWorld.setState({ open: false });
 export function WorldButton() {
   return (
     <button className="ghost world-btn" onClick={() => useWorld.setState({ open: true })}>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18" /></svg>Dünya
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18" /></svg><span className="lbl">Dünya</span>
     </button>
   );
 }

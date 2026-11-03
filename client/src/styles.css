@@ -625,3 +625,9 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
   .focus-screen.idle .fx-cat { padding: 6px 4px 5px; gap: 3px; } .focus-screen.idle .fx-dur { padding: 6px; }
   .focus-screen.idle .fx-setup { padding: 10px 12px; gap: 9px; } .focus-screen.idle .fx-go { padding-top: 9px; padding-bottom: 9px; }
 }
+/* the shop button sits inside the wallet pill: smaller than the bar's own controls so it never sticks out */
+.topbar .wallet .ghost { height: 28px; padding: 0 11px; border-radius: 9px; font-size: 12.5px; }
+@media (max-width: 1000px) and (min-width: 861px) {
+  .topbar .world-btn .lbl { display: none; }
+  .topbar .world-btn { width: var(--ctl); padding: 0; justify-content: center; }
+}

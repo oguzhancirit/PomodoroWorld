@@ -39,7 +39,6 @@ export function HomeRoom() {
   const [editing, setEditing] = useState(false);
   // v1 focus screen: alone → "Odaklan", a friend in the room → "Birlikte odaklan"
   const [focusOpen, setFocus] = useState(false);
-  const [hintOff, setHintOff] = useState(() => { try { return localStorage.getItem('pw2.hintOff') === '1'; } catch { return false; } });
   // someone here is focusing on their own timer: "Birlikte odaklan" lets me join it
   const together = useCompanions().some(isRunning);
   const mode = useStore((s) => s.mode);
@@ -270,7 +269,7 @@ export function HomeRoom() {
         {!editing && !visiting && <button className="ghost ico-btn" onClick={openProfile} title="Karakterim"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></svg><span className="lbl">Karakterim</span></button>}
         {!editing && <WorldButton />}
       </header>
-      {!editing && !focusOpen && !visiting && !hintOff && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile yerleştir. “Dünya”dan arkadaşını çağır.<button aria-label="İpucunu kapat" onClick={() => { setHintOff(true); try { localStorage.setItem('pw2.hintOff', '1'); } catch { /* ignore */ } }}>×</button></p>}
+      {/* no written hint in the room any more: the guided tour shows the buttons once (user, 2026-11-03) */}
       {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{/* focus screen open: nothing around it to distract (user, 2026-11-03) */}{!focusOpen && <><TimerCard onOpen={() => setFocus(true)} together={together} /><ChatPanel /><EmoteBar /><DaySummary /></>}<NetBanner /><RewardToast /></div>}<LevelUp />
       <Tour run={live && !editing && !focusOpen && !visiting && !!place?.mine && profile.introSeen} />
       {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}

@@ -112,8 +112,6 @@ export function FocusScreen({ onClose }: { onClose(): void }) {
           <div className="fx-in">
             <div className="fx-time" aria-live="off">{fmt(left)}</div>
             <span className="fx-catlbl" style={{ ['--c' as string]: CAT_COLOR[todo?.c ?? cat[0]] ?? '#FF8466' }}><i />{todo ? todo.t : cat[1]}</span>
-            <input value={profile.task} maxLength={60} placeholder="Ne çalışıyorsun?" list="fx-recent" aria-label="Görev" autoComplete="off" onChange={(e) => setProfile({ task: e.target.value })} />
-            <datalist id="fx-recent">{profile.recent.map((t) => <option key={t} value={t} />)}</datalist>
           </div>
         </div>
         {idle && (

@@ -169,9 +169,11 @@ const localDay = (ms: number) => { const d = new Date(ms); return `${d.getFullYe
 export function TodoChip() {
   const { list, sel } = useTodos();
   const td = list.find((t) => t.id === sel);
+  // only when a to-do is chosen: no written prompts on the card (user, 2026-11-03)
+  if (!td) return null;
   return (
     <button className="todo-chip" onClick={() => usePanel.getState().set('todo')}>
-      {td ? <><i style={{ background: CAT_COLOR[td.c] ?? CAT_COLOR.Diğer }} />{td.t} <small>{td.done}/{td.est}</small></> : <span>+ Bir iş seç</span>}
+      <i style={{ background: CAT_COLOR[td.c] ?? CAT_COLOR.Diğer }} />{td.t} <small>{td.done}/{td.est}</small>
     </button>
   );
 }
