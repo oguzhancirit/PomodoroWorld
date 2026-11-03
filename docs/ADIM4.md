@@ -19,6 +19,9 @@ A "Dünya" (world) button opens the rest: friends, open rooms, invite code, libr
 - **4f ✔** Library: `LibraryRoom` (server, 10 seats, filterBy preset, timer always runs), `shared/src/library.ts` (v1 "Gece Kütüphanesi" look), entered from Dünya; friends list shows "Kütüphanede · Yanına git" (joinById). Old study hall + its bot fallback removed from Lobby/Dünya; the R3F `screen === 'room'` code is now unreachable (delete later).
 - **4g ← next** Social spaces + social-space chat counts for the "social" quest; room settings panel (old `roomset`).
 
+## Personal timers (user, 2026-11-03)
+- Nobody has to focus at the same time: home rooms and the library use `server/src/rooms/PersonalRoom.ts` (one timer per player in `Player.timer`/`Player.preset`, rewards per player, chat closed only for whoever focuses). "Birlikte" = `follow` a running timer (v1 followPeer). A running timer is carried to the next room (join option `timer`, length-checked; the full-pomodoro bonus needs the whole focus in one room). The old `study_room` (StudyRoom) still has the shared timer but is unreachable.
+
 ## Notes
 - Old `PW.Avatar` stays as `PW.OldAvatar` (item thumbnails); the world uses the adapter.
 - Seat data: `ROOM_FURN[].seat` (count per item) is enough for capacity on the server.

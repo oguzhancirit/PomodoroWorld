@@ -19,6 +19,8 @@ export function libraryLayout() { const r = libraryRoom() as unknown as Record<s
 
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
 const BREAK_LINES = ['Mola! Su içmeyi unutmayın.', 'Bu turda 3 soru çözdüm.', 'Gözlerimi biraz dinlendireyim.', 'Kim kahve alıyor?', 'Bir tur daha, hadi!', 'Okuduğum bölüm çok iyiydi.', 'Biraz esneyelim mi?', 'Odaklanmak bugün kolay geldi.'];
+/** demo bots get a friend code, so the person card shows every button */
+const botCode = (name: string) => ('demo' + name.toLocaleLowerCase('en').replace(/[^a-z]/g, '')).padEnd(16, '0').slice(0, 16);
 const REPLIES = ['Selam {n}!', 'Aynen, mola iyi geldi.', 'Hadi bir tur daha birlikte.', 'Sen ne çalışıyorsun {n}?', 'Kolay gelsin {n}!'];
 const pick = <T,>(a: readonly T[]) => a[Math.floor(Math.random() * a.length)];
 
@@ -64,8 +66,9 @@ export class LocalRoom {
       this.loop = window.setInterval(() => this.tick(), 250);
       if (bots && DEMO_ONLY) this.later(5000, () => {
         const [n, g] = BOTS[0];
-        st.upsertPlayer('bot0', { id: 'bot0', level: 4, name: n, avatar: randomAvatar(g), seatIndex: 1, pose: 'sit', activity: 'write', bubble: '', connected: true });
-        this.later(1500, () => this.botSay('bot0', `Selam ${me.name}! Birlikte çalışalım mı? “Başlat”a bas, sayaç ikimiz için aynı.`, true));
+        st.upsertPlayer('bot0', { id: 'bot0', code: botCode(n), level: 4, name: n, avatar: randomAvatar(g), seatIndex: 1, pose: 'sit', activity: 'write', bubble: '', connected: true });
+        this.botStart('bot0', 0);
+        this.later(1500, () => this.botSay('bot0', `Selam ${me.name}! Herkes kendi sayacını kurar. İstersen benim sayacıma katıl: bana tıkla, “Sayacına katıl” de.`, true));
       });
       return;
     }
@@ -75,9 +78,10 @@ export class LocalRoom {
         const taken = [2];
         BOTS.slice(0, 4).forEach(([n, g], i) => {
           const seat = firstFreeSeat(taken, LIBRARY_SEATS); taken.push(seat);
-          players['bot' + i] = { id: 'bot' + i, level: 2 + i * 3, name: n, avatar: randomAvatar(g), seatIndex: seat, pose: 'sit', activity: pick(ACTIVITIES), bubble: '', connected: true };
+          players['bot' + i] = { id: 'bot' + i, code: botCode(n), level: 2 + i * 3, name: n, avatar: randomAvatar(g), seatIndex: seat, pose: 'sit', activity: pick(ACTIVITIES), bubble: '', connected: true };
         });
       }
+      this.later(50, () => Object.keys(players).filter((id) => id !== 'me').forEach((id) => this.botStart(id, Math.random() * 0.8)));
       st.set({ wallet, net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'home', timer: { ...this.timer },
         place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
       this.loop = window.setInterval(() => this.tick(), 250);
@@ -96,12 +100,13 @@ export class LocalRoom {
   private later(ms: number, fn: () => void) { this.timeouts.push(window.setTimeout(fn, ms)); }
 
   private tick() {
+    this.tickBots();
     const before = this.timer;
     const next = settle(before, this.preset, Date.now());
     if (next === before) return;
     this.timer = next;
     const st = useStore.getState();
-    st.set({ timer: { ...next } });
+    this.syncMe();
     if (before.phase === 'focus') this.pay(before.round + 1);
     if (next.phase === 'focus') {
       for (const id of Object.keys(st.players)) st.upsertPlayer(id, { bubble: '' });
@@ -179,12 +184,12 @@ export class LocalRoom {
     const st = useStore.getState();
     if (action === 'pause' || action === 'resume') {
       this.timer = action === 'pause' ? pauseTimer(this.timer, Date.now()) : resumeTimer(this.timer, Date.now());
-      st.set({ timer: { ...this.timer } });
+      this.syncMe();
       return;
     }
     if (action === 'skip' && this.timer.phase !== 'idle') {
       this.timer = skipPhase(this.timer, this.preset, Date.now());
-      st.set({ timer: { ...this.timer } });
+      this.syncMe();
       st.addChat({ id: 'sys', name: '', text: this.timer.phase === 'idle' ? 'Mola atlandı, sayaç durdu.' : 'Odak atlandı, mola başladı.', at: Date.now(), system: true });
       return;
     }
@@ -195,14 +200,54 @@ export class LocalRoom {
       this.preset = k === 1 ? base : { ...base, focusMin: base.focusMin / k, shortMin: base.shortMin / k, longMin: base.longMin / k };
       st.set({ preset: base.id });
       this.timer = startTimer(Date.now(), this.preset);
-      st.set({ timer: { ...this.timer } });
+      this.syncMe();
       for (const id of Object.keys(st.players)) st.upsertPlayer(id, { bubble: '' });
       st.addChat({ id: 'sys', name: '', text: 'Odak başladı. Sohbet kapandı.', at: Date.now(), system: true });
     } else if (action === 'stop' && this.timer.phase !== 'idle') {
       this.timer = { phase: 'idle', phaseEndsAt: 0, round: 0 };
-      st.set({ timer: { ...this.timer } });
+      this.syncMe();
       st.addChat({ id: 'sys', name: '', text: 'Sayaç durdu.', at: Date.now(), system: true });
     }
   }
   leave() { clearInterval(this.loop); this.timeouts.forEach(clearTimeout); }
+
+  /* ---------- personal timers (user rule: everyone keeps their own time) ---------- */
+  private bots = new Map<string, TimerState>();
+  private botPreset = new Map<string, Preset>();
+  /** my timer → the store (timer card, focus screen) and my avatar's status */
+  private syncMe() {
+    const st = useStore.getState(), t = this.timer;
+    st.set({ timer: { ...t } });
+    st.upsertPlayer('me', { phase: t.phase, phaseEndsAt: t.phaseEndsAt, pausedLeft: t.pausedLeft ?? 0, round: t.round, preset: st.preset });
+  }
+  /** a bot starts its own pomodoro, `done` (0..1) of it already behind it */
+  private botStart(id: string, done: number) {
+    const base = presetById(pick(['p25', 'p25', 'p50'])), k = this.speed;
+    const p = k === 1 ? base : { ...base, focusMin: base.focusMin / k, shortMin: base.shortMin / k, longMin: base.longMin / k };
+    const t = startTimer(Date.now() - done * p.focusMin * 60_000, p);
+    this.bots.set(id, t); this.botPreset.set(id, p);
+    useStore.getState().upsertPlayer(id, { phase: t.phase, phaseEndsAt: t.phaseEndsAt, pausedLeft: 0, round: 0, preset: base.id });
+  }
+  private tickBots() {
+    const now = Date.now(), st = useStore.getState();
+    for (const [id, t] of this.bots) {
+      if (!st.players[id]) { this.bots.delete(id); continue; }
+      const next = settle(t, this.botPreset.get(id)!, now);
+      if (next === t) continue;
+      this.bots.set(id, next);
+      st.upsertPlayer(id, { phase: next.phase, phaseEndsAt: next.phaseEndsAt, round: next.round });
+    }
+  }
+  /** "Birlikte": take over someone's running timer (v1 followPeer) */
+  follow(id: string) {
+    const t = this.bots.get(id), p = this.botPreset.get(id), st = useStore.getState();
+    if (!t || !p || t.phase === 'idle') return;
+    this.preset = p; this.baseFocusMin = p.focusMin * this.speed;
+    st.set({ preset: st.players[id]?.preset ?? st.preset });
+    this.timer = { ...t };
+    this.syncMe();
+    st.addChat({ id: 'sys', name: '', text: `${st.players[id]?.name ?? 'Arkadaşın'} ile aynı sayaçtasınız.`, at: Date.now(), system: true });
+  }
+  /** "Odamdan çıkar" in demo mode: the bot just leaves */
+  kick(id: string) { useStore.getState().removePlayer(id); this.bots.delete(id); }
 }

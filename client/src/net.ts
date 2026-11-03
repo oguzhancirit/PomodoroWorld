@@ -12,6 +12,11 @@ import { sanitizeWallet } from '@pw/shared';
 export { DEMO_ONLY };
 let room: Room | null = null;
 let local: LocalRoom | null = null;
+/** my running timer goes with me to the next room (the server checks it) */
+function carried() {
+  const st = useStore.getState(), t = st.timer;
+  return t.phase === 'idle' ? undefined : { phase: t.phase, phaseEndsAt: t.phaseEndsAt, round: t.round, pausedLeft: t.pausedLeft ?? 0, preset: st.preset };
+}
 /** the latest join wins: an older, slower join is dropped */
 let homeJob = 0;
 
@@ -29,7 +34,7 @@ export async function joinLibrary(roomId?: string): Promise<boolean> {
   let r: Room;
   try {
     const client = new Client(SERVER);
-    const opts = { ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category), category: profile.category };
+    const opts = { ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
     r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate('library', opts);
   } catch (e) {
     if (job !== homeJob) return false;
@@ -66,7 +71,7 @@ async function joinHome(owner: string, token: string): Promise<boolean> {
   let r: Room;
   try {
     const client = new Client(SERVER);
-    const opts = { ...identity(), owner, token: token || undefined, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category), category: profile.category };
+    const opts = { ...identity(), owner, token: token || undefined, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
     r = mine ? await client.joinOrCreate('home', opts) : await client.join('home', opts);
   } catch (e) {
     if (job !== homeJob) return false;
@@ -98,10 +103,24 @@ function wire(r: Room, screen: 'room' | 'home') {
   const st = useStore.getState();
   st.set({ net: 'online', mode: 'online', me: r.sessionId, screen });
   const cb = Callbacks.get(r);
-  cb.listen('preset', (v) => useStore.getState().set({ preset: v as string }));
-  // the state arrives a moment after joining: subscribe to the timer object when it shows up
-  const syncTimer = (t: any) => useStore.getState().set({ timer: { phase: t.phase as Phase, phaseEndsAt: t.phaseEndsAt, round: t.round, pausedLeft: t.pausedLeft || 0 } });
-  cb.listen('timer', (t: any) => { if (!t) return; syncTimer(t); cb.onChange(t, () => syncTimer(t)); });
+  if (screen === 'room') {
+    // the old shared hall: one timer for the room
+    cb.listen('preset', (v) => useStore.getState().set({ preset: v as string }));
+    const syncTimer = (t: any) => useStore.getState().set({ timer: { phase: t.phase as Phase, phaseEndsAt: t.phaseEndsAt, round: t.round, pausedLeft: t.pausedLeft || 0 } });
+    cb.listen('timer', (t: any) => { if (!t) return; syncTimer(t); cb.onChange(t, () => syncTimer(t)); });
+  } else {
+    // personal timers: each player carries their own; mine drives my timer card and focus screen
+    r.onStateChange((state: any) => {
+      state.players?.forEach((p: any, id: string) => {
+        const t = p.timer; if (!t) return;
+        const v = { phase: t.phase as Phase, phaseEndsAt: t.phaseEndsAt, pausedLeft: t.pausedLeft || 0, round: t.round, preset: p.preset as string };
+        const st = useStore.getState(), cur = st.players[id];
+        if (cur && cur.phase === v.phase && cur.phaseEndsAt === v.phaseEndsAt && cur.pausedLeft === v.pausedLeft && cur.round === v.round && cur.preset === v.preset) return;
+        st.upsertPlayer(id, v);
+        if (id === r.sessionId) st.set({ timer: { phase: v.phase, phaseEndsAt: v.phaseEndsAt, round: v.round, pausedLeft: v.pausedLeft }, preset: v.preset });
+      });
+    });
+  }
   cb.onAdd('players', (p: any, id: string) => {
     const put = () => useStore.getState().upsertPlayer(id, { code: p.code || '', level: p.level, name: p.name, avatar: p.avatar, seatIndex: p.seatIndex, pose: p.pose, activity: p.activity as Activity, bubble: p.bubble, connected: p.connected });
     put(); cb.onChange(p, put);
@@ -179,7 +198,9 @@ function chime(freq: number) {
   } catch { /* audio is optional */ }
 }
 /** person card "Odamdan çıkar": only the room owner; the server checks */
-export const sendKick = (id: string) => { room?.send('kick', { id }); };
+export const sendKick = (id: string) => { if (local) local.kick(id); else room?.send('kick', { id }); };
 
 /** the live room's id (to tell which library a friend is in) */
 export const currentRoomId = () => room?.roomId ?? '';
+/** "Birlikte": join someone's running timer (v1 followPeer) */
+export const sendFollow = (id: string) => (local ? local.follow(id) : room?.send('follow', { id }));

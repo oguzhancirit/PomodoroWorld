@@ -5,7 +5,9 @@ import { defaultAvatar, type Avatar, type Activity, type Phase, type Wallet, typ
 
 export interface PlayerView {
   /** code: friend code (player id), '' for bots and guests */
-  id: string; name: string; level?: number; avatar: string; code?: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
+  id: string; name: string; level?: number; avatar: string; code?: string;
+  /** this person's own timer (home rooms and the library: everyone keeps their own time) */
+  phase?: Phase; phaseEndsAt?: number; pausedLeft?: number; round?: number; preset?: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
 }
 export interface ChatLine { id: string; name: string; text: string; at: number; system?: boolean }
 /** task: what I work on (v1 focus screen field) · recent: last tasks · custom: v1 "Özel" focus / break minutes */

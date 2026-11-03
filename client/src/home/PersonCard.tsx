@@ -2,7 +2,8 @@
 import { create } from 'zustand';
 import { titleFor } from '@pw/shared';
 import { useStore } from '../store';
-import { sendEmote, sendKick } from '../net';
+import { sendEmote, sendKick, sendFollow } from '../net';
+import { isRunning } from './FocusScreen';
 import { useFriends, friendsCall } from '../friends';
 
 export const usePerson = create<{ id: string }>(() => ({ id: '' }));
@@ -13,7 +14,8 @@ const tag = (code: string) => '#' + code.slice(0, 4).toUpperCase();
 export function PersonCard({ canKick }: { canKick: boolean }) {
   const id = usePerson((s) => s.id);
   const p = useStore((s) => (id ? s.players[id] : undefined));
-  const phase = useStore((s) => s.timer.phase);
+  const myPhase = useStore((s) => s.timer.phase);
+  const phase = p?.phase ?? 'idle';
   const friends = useFriends((s) => s.friends);
   if (!id || !p) return null;
   const code = p.code ?? '';
@@ -29,6 +31,7 @@ export function PersonCard({ canKick }: { canKick: boolean }) {
         <header><div><h2>{p.name}{code && <small className="tagid"> {tag(code)}</small>}</h2><p>Seviye {lv} · {titleFor(lv)}</p></div><button className="x" aria-label="Kapat" onClick={close} autoFocus>×</button></header>
         <p className="ps-status"><i className={phase === 'focus' ? 'focus' : phase === 'idle' ? '' : 'break'} />{status}{friend && <span className="fr">Arkadaşın</span>}</p>
         <div className="ps-acts">
+          {isRunning(p) && myPhase === 'idle' && <button className="primary" onClick={() => act(() => sendFollow(id), `${p.name} ile aynı sayaçtasınız.`)}>⏱ Sayacına katıl</button>}
           <button onClick={() => act(() => sendEmote('wave'), `${p.name} için el salladın.`)}>👋 El salla</button>
           {code && <button onClick={() => act(() => friendsCall(friend ? 'remove' : 'add', code, p.name), friend ? 'Arkadaşlıktan çıkardın.' : `${p.name} artık arkadaşın. Dünya'da nerede olduğunu görürsün.`)}>{friend ? 'Arkadaşlıktan çıkar' : '＋ Arkadaş ekle'}</button>}
           {canKick && <button className="warn" onClick={() => act(() => sendKick(id), `${p.name} odandan çıkarıldı. Bir daha giremez.`)}>Odamdan çıkar</button>}

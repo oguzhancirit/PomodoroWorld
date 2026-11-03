@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PRESETS, CATEGORIES, presetById, customPresetId, remainingMs, activityFor, isPaused, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
-import { sendTimer, sendActivity } from '../net';
+import { sendTimer, sendActivity, sendFollow } from '../net';
 import { usePanel, CAT_COLOR } from '../ui/Panels';
 import { useTodos } from '../todos';
 
@@ -22,14 +22,16 @@ const fmt = (ms: number) => { const s = Math.ceil(ms / 1000); return `${String(M
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const Svg = ({ d }: { d: string }) => <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{ __html: d }} />;
 
-/** names of the other people in this room (a friend came in → "Birlikte") */
+/** the other people in this room */
 export function useCompanions() {
   const players = useStore((s) => s.players), me = useStore((s) => s.me);
-  return Object.values(players).filter((p) => p.id !== me && p.connected).map((p) => p.name);
+  return Object.values(players).filter((p) => p.id !== me && p.connected);
 }
+/** someone in the room whose own timer runs: you can join it ("Birlikte", v1 followPeer) */
+export const isRunning = (p: { phase?: string; pausedLeft?: number }) => !!p.phase && p.phase !== 'idle' && !(p.pausedLeft ?? 0);
 
-/** `fixed`: the library timer, which always runs and nobody can pause, skip or stop */
-export function FocusScreen({ onClose, fixed = false }: { onClose(): void; fixed?: boolean }) {
+/** everyone keeps their own timer; "Birlikte" joins a friend's running one */
+export function FocusScreen({ onClose }: { onClose(): void }) {
   const timer = useStore((s) => s.timer), roomPreset = useStore((s) => s.preset);
   const profile = useStore((s) => s.profile), setProfile = useStore((s) => s.setProfile);
   const others = useCompanions();
@@ -51,7 +53,6 @@ export function FocusScreen({ onClose, fixed = false }: { onClose(): void; fixed
   const custom = profile.preset.startsWith('c');
 
   const main = () => {
-    if (fixed) return;
     if (idle) {
       const t = profile.task.trim();
       if (t) setProfile({ recent: [t, ...profile.recent.filter((x) => x !== t)].slice(0, 6) });
@@ -71,8 +72,11 @@ export function FocusScreen({ onClose, fixed = false }: { onClose(): void; fixed
   });
   const pickCat = (id: string) => { setProfile({ category: id }); sendActivity(activityFor(id), id); };
   const setCustom = (f: number, b: number) => { const c = { f: clamp(f, 5, 180), b: clamp(b, 1, 60) }; setProfile({ custom: c, preset: customPresetId(c.f, c.b) }); };
-  const label = idle ? (others.length ? 'Birlikte başlat' : 'Başlat') : paused ? 'Devam et' : 'Duraklat';
-  const shared = others.length ? ` · ${others.slice(0, 2).join(', ')}${others.length > 2 ? ` +${others.length - 2}` : ''} ile` : '';
+  const label = idle ? 'Başlat' : paused ? 'Devam et' : 'Duraklat';
+  // people on the very same timer as me (I joined theirs, or they joined mine)
+  const withMe = idle ? [] : others.filter((p) => p.phase === timer.phase && p.phaseEndsAt === timer.phaseEndsAt).map((p) => p.name);
+  const shared = withMe.length ? ` · ${withMe.slice(0, 2).join(', ')}${withMe.length > 2 ? ` +${withMe.length - 2}` : ''} ile` : '';
+  const joinable = idle ? others.filter(isRunning).slice(0, 3) : [];
 
   return (
     <div className={`focus-screen ${timer.phase}`} role="dialog" aria-modal="true" aria-label="Odak ekranı">
@@ -107,19 +111,25 @@ export function FocusScreen({ onClose, fixed = false }: { onClose(): void; fixed
                 </div>
               )}
             </div>
-            {others.length > 0 && <p className="fx-note">Sayaç odadaki herkes için aynı: başlatınca arkadaşın da seninle odaklanır.</p>}
+            {joinable.length > 0 && (
+              <div className="fx-sec"><span className="fx-h">Birlikte odaklan</span>
+                <div className="fx-join">{joinable.map((p) => (
+                  <button key={p.id} type="button" onClick={() => sendFollow(p.id)}>
+                    <b>{p.name}</b><span>{p.phase === 'focus' ? 'odakta' : 'molada'} · {fmt(remainingMs({ phase: p.phase as never, phaseEndsAt: p.phaseEndsAt ?? 0, round: 0 }, serverNow()))} kaldı</span><em>Sayacına katıl</em>
+                  </button>))}</div>
+              </div>
+            )}
           </div>
         )}
-        {fixed && <p className="fx-note">Kütüphanenin sayacı herkes için aynı ve hiç durmaz. Molada sohbet açılır.</p>}
-        {!fixed && <button ref={go} className={`fx-go ${!idle && !paused ? 'run' : ''}`} onClick={main} data-min={idle ? `${preset.focusMin} dk` : ''}>
+        {<button ref={go} className={`fx-go ${!idle && !paused ? 'run' : ''}`} onClick={main} data-min={idle ? `${preset.focusMin} dk` : ''}>
           <span className="pl">{!idle && !paused ? <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> : <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M8 5v14l11-7z" /></svg>}</span>
           <span>{label}</span>
         </button>}
         <div className="fx-tools">
           <button className="fx-icon" title="Yapılacaklar" aria-label="Yapılacaklar" onClick={() => usePanel.getState().set('todo')}><Svg d='<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>' /></button>
           <button className="fx-icon" title="Ortam sesleri" aria-label="Ortam sesleri" onClick={() => usePanel.getState().set('sound')}><Svg d='<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>' /></button>
-          {!idle && !fixed && <button className="fx-icon" title={others.length ? 'Sıfırla (herkes için)' : 'Sıfırla'} aria-label="Sıfırla" onClick={() => sendTimer('stop')}><Svg d='<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/>' /></button>}
-          {!idle && !fixed && <button className="fx-icon" title="Bu aşamayı atla" aria-label="Atla" onClick={() => sendTimer('skip')}><Svg d='<path d="M5 5l9 7-9 7zM17 5v14"/>' /></button>}
+          {!idle && <button className="fx-icon" title="Sıfırla" aria-label="Sıfırla" onClick={() => sendTimer('stop')}><Svg d='<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/>' /></button>}
+          {!idle && <button className="fx-icon" title="Bu aşamayı atla" aria-label="Atla" onClick={() => sendTimer('skip')}><Svg d='<path d="M5 5l9 7-9 7zM17 5v14"/>' /></button>}
           <button className="fx-icon" title="Odayı göster" aria-label="Odayı göster" onClick={onClose}><Svg d='<path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z"/>' /></button>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { ToolButtons, Panels } from '../ui/Panels';
 import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
 import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
-import { FocusScreen, useCompanions } from './FocusScreen';
+import { FocusScreen, useCompanions, isRunning } from './FocusScreen';
 import { PersonCard, openPerson } from './PersonCard';
 import { useFriends, friendsCall, isBlocked } from '../friends';
 import { RewardToast } from '../ui/Wallet';
@@ -31,7 +31,8 @@ export function HomeRoom() {
   const [editing, setEditing] = useState(false);
   // v1 focus screen: alone → "Odaklan", a friend in the room → "Birlikte odaklan"
   const [focusOpen, setFocus] = useState(false);
-  const together = useCompanions().length > 0;
+  // someone here is focusing on their own timer: "Birlikte odaklan" lets me join it
+  const together = useCompanions().some(isRunning);
   const mode = useStore((s) => s.mode);
   const [sel, setSel] = useState(-1);
   const [tick, setTick] = useState(0); // engine state that React does not own (ghost, wall mode, top view)
@@ -110,7 +111,8 @@ export function HomeRoom() {
   const seen = useRef<Record<string, string>>({});
   useEffect(() => {
     const w = engine.world; if (!ready || !w || editing) return;
-    const status = phase === 'focus' ? 'focus' : phase === 'idle' ? '' : 'break';
+    // everyone has their own timer: the tag over each head shows that person's own phase
+    const statusOf = (ph?: string) => (ph === 'focus' ? 'focus' : !ph || ph === 'idle' ? '' : 'break');
     const here = new Set<string>(['me']);
     for (const p of Object.values(players)) {
       const key = p.id === meId ? 'me' : p.id;
@@ -122,8 +124,9 @@ export function HomeRoom() {
         const a = w.avatars.get(key);
         if (p.seatIndex >= 0) { if (a.seatIdx !== p.seatIndex) w.sitAvatar(key, p.seatIndex); } else if (a.seatIdx != null) w.standAvatar(key);
       } else if (p.seatIndex >= 0 && w.avatars.get('me')?.seatIdx !== p.seatIndex) w.sitAvatar('me', p.seatIndex);
-      w.updateAvatarInfo(key, { name: key === 'me' ? (profile.name || 'Sen') : p.name, level: p.level ?? 1, status, ...(key === 'me' ? {} : { cfg: p.avatar }) });
-      w.setAct(key, phase === 'focus' ? p.activity : p.bubble ? 'talk' : 'idle');
+      const ph = key === 'me' ? phase : p.phase;
+      w.updateAvatarInfo(key, { name: key === 'me' ? (profile.name || 'Sen') : p.name, level: p.level ?? 1, status: statusOf(ph), ...(key === 'me' ? {} : { cfg: p.avatar }) });
+      w.setAct(key, ph === 'focus' ? p.activity : p.bubble ? 'talk' : 'idle');
       // a new chat line becomes a speech bubble over the head
       if (p.bubble && seen.current[key] !== p.bubble) w.bubble(key, p.bubble);
       seen.current[key] = p.bubble;
@@ -243,7 +246,7 @@ export function HomeRoom() {
       </header>
       {!editing && !focusOpen && !visiting && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile istediğin yere koy. “Dünya”dan arkadaşını davet et.</p>}
       {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{!focusOpen && <TimerCard onOpen={() => setFocus(true)} together={together} />}<ChatPanel />{!focusOpen && <EmoteBar />}<NetBanner /><RewardToast /></div>}
-      {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} fixed={library} />}
+      {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
       <WorldPanel />
       {editing && room && wallet && (
         <EditBar
@@ -254,7 +257,7 @@ export function HomeRoom() {
       )}
       <ShopModal />
       <Panels />
-      {!editing && <PersonCard canKick={!visiting && mode === 'online'} />}
+      {!editing && <PersonCard canKick={!visiting} />}
       <HomeNotice />
     </div>
   );
