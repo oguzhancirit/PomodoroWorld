@@ -2,6 +2,24 @@ import { describe, it, expect } from 'vitest';
 import { unlocksAt, ECON, levelFromXP, xpStep, newWallet, rewardFocus, buy, CATALOG, itemById, isFree, avatarAllowed, titleFor, ACHIEVEMENTS } from '../src/economy';
 import { defaultAvatar, PARTS } from '../src/avatar';
 
+describe('level pace (user, 2026-11-03: XP should take some effort, not too much)', () => {
+  // a 25-minute pomodoro pays 25 + 10 XP; a 4-pomodoro day with the set bonus pays 165 XP
+  const pomo = 25 + ECON.pomoXP, day = 4 * pomo + ECON.setBonusXP;
+  const toLevel = (L: number) => { let x = 0; for (let i = 1; i < L; i++) x += xpStep(i); return x; };
+  it('level 2 takes about a day (3 pomodoros, not 2)', () => {
+    expect(levelFromXP(2 * pomo).level).toBe(1);
+    expect(levelFromXP(day).level).toBe(2);
+  });
+  it('level 5 takes one to three weeks of 4-pomodoro days', () => {
+    const days = toLevel(5) / day;
+    expect(days).toBeGreaterThan(7); expect(days).toBeLessThan(21);
+  });
+  it('level 10 takes one to three months', () => {
+    const days = toLevel(10) / day;
+    expect(days).toBeGreaterThan(30); expect(days).toBeLessThan(90);
+  });
+});
+
 describe('levels', () => {
   it('level 1 at 0 xp, steps grow', () => {
     expect(levelFromXP(0)).toEqual({ level: 1, into: 0, need: xpStep(1) });

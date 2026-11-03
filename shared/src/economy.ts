@@ -14,7 +14,8 @@ export const ECON = {
   maxMinutes: 180,                           // one session can never pay more than this
 } as const;
 
-export const xpStep = (L: number) => Math.round(60 * Math.pow(L, 1.35));
+// pace (user, 2026-11-03: some effort, not a grind): level 2 ≈ 1 day of 4 pomodoros, level 5 ≈ 9 days, level 10 ≈ 8 weeks
+export const xpStep = (L: number) => Math.round(100 * Math.pow(L, 1.4));
 export function levelFromXP(xp: number) {
   let level = 1, need = xpStep(1), rest = Math.max(0, Math.floor(xp || 0));
   while (rest >= need && level < 99) { rest -= need; level++; need = xpStep(level); }
