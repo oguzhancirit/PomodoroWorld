@@ -1,7 +1,7 @@
 // The room editor bar, the same tabs and tools as the original game (js/ui.js renderEditBar).
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  CATALOG, available, owns, itemById, FLOOR_TYPES, WALL_PATTERNS, MOOD_NAMES, SURFACE_LVL, MOOD_LVL,
+  CATALOG, ROOM_FX, available, owns, itemById, FLOOR_TYPES, WALL_PATTERNS, MOOD_NAMES, SURFACE_LVL, MOOD_LVL,
   type Room, type Wallet, type PlacedItem, type Item,
 } from '@pw/shared';
 import { useStore } from '../store';
@@ -10,6 +10,7 @@ import { PW, ROOM_STYLES, TRIM_COLORS, CURTAIN_COLORS, MOOD_INFO, thumb, swatch 
 
 type Tab = 'style' | 'furn' | 'wall' | 'floor' | 'mood' | 'view' | 'theme' | 'size';
 const TABS: [Tab, string][] = [['style', 'Stiller'], ['furn', 'Eşyalar'], ['wall', 'Duvar'], ['floor', 'Zemin'], ['mood', 'Atmosfer'], ['view', 'Manzara'], ['theme', 'Hazır tema'], ['size', 'Boyut']];
+const FX_ICON: Record<string, string> = { snow: '❄️', sakura: '🌸', fireflies: '✨', leaves: '🍂', stardust: '⭐', bubbles: '🫧' };
 const SIZE_OF: Record<string, number> = { sz_s: 7, sz_m: 9, sz_l: 11 };
 const COIN = <svg className="coin" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.5" /><path d="M10 5.5v9M7.5 8h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4" /></svg>;
 const I = {
@@ -113,7 +114,11 @@ export function EditBar(p: Props) {
       </button>); });
   } else if (tab === 'mood') {
     const cur = R.mood || PW.defaultMoodFor(R.view);
-    sub = <div className="swatches"><span className="lbl">Perde</span>{CURTAIN_COLORS.map((c) => <button key={c} className={`sw ${R.curtain === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Perde rengi" onClick={() => set({ curtain: c })} />)}<input type="color" className="sw-pick" value={R.curtain || '#2F7D5B'} aria-label="Özel perde rengi" onChange={(e) => set({ curtain: e.target.value.toUpperCase() })} /></div>;
+    sub = <><div className="swatches"><span className="lbl">Perde</span>{CURTAIN_COLORS.map((c) => <button key={c} className={`sw ${R.curtain === c ? 'on' : ''}`} style={{ '--c': c } as CSSProperties} aria-label="Perde rengi" onClick={() => set({ curtain: c })} />)}<input type="color" className="sw-pick" value={R.curtain || '#2F7D5B'} aria-label="Özel perde rengi" onChange={(e) => set({ curtain: e.target.value.toUpperCase() })} /></div>
+      <div className="swatches fx-row"><span className="lbl">Havada</span>
+        <button className={`fxb ${!R.fx ? 'on' : ''}`} onClick={() => set({ fx: undefined })}>Yok</button>
+        {ROOM_FX.map((f) => { const lock = L < f.lvl; return <button key={f.id} className={`fxb ${R.fx === f.id ? 'on' : ''}`} disabled={lock} title={lock ? `Seviye ${f.lvl}` : f.name} onClick={() => set({ fx: f.id })}>{FX_ICON[f.id]} {f.name}{lock ? ` · Sv ${f.lvl}` : ''}</button>; })}
+      </div></>;
     list = MOOD_NAMES.map(([k, name]) => { const lv = MOOD_LVL[k] || 1; const lock = L < lv; return (
       <button key={k} className={`mood ${cur === k ? 'on' : ''}`} disabled={lock} onClick={() => set({ mood: k })}>
         <i style={{ background: MOOD_INFO[k]?.grad }} /><b>{name}</b><span>{lock ? `Seviye ${lv}` : MOOD_INFO[k]?.desc}</span>

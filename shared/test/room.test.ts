@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultRoom, sanitizeRoom, placedCount, available, roomAllowedFor, ROOM_KEYS, roomSeats, homeCapacity, HOME_MAX, homeEntry, inviteCode, parseInvite } from '../src/room';
+import { defaultRoom, sanitizeRoom, placedCount, available, roomAllowedFor, ROOM_KEYS, ROOM_FX, roomSeats, homeCapacity, HOME_MAX, homeEntry, inviteCode, parseInvite } from '../src/room';
 import { newWallet, buy, itemById, CATALOG, sanitizeWallet, owns, xpStep, STARTER } from '../src/economy';
 import { ROOM_FURN, ROOM_THEMES, ROOM_VIEWS } from '../src/roomCatalog';
 
@@ -166,5 +166,20 @@ describe('personal touches on items (user 2026-11-03: everyone shows their own s
   it('ignores a bad design number or colour', () => {
     const [a] = room([{ id: 'w_poster_art', w: 'w1', x: 1, v: 99, c: 'red' }]).items as { v?: number; c?: string }[];
     expect(a.v).toBeUndefined(); expect(a.c).toBeUndefined();
+  });
+});
+
+describe('room effects (floating snow, petals, fireflies… user 2026-11-03)', () => {
+  it('keeps a known effect and drops an unknown one', () => {
+    expect(sanitizeRoom({ ...defaultRoom(), fx: 'snow' }).fx).toBe('snow');
+    expect(sanitizeRoom({ ...defaultRoom(), fx: 'lava-rain' }).fx).toBeUndefined();
+    expect(ROOM_KEYS).toContain('fx');
+  });
+  it('opens with levels like the other surfaces', () => {
+    const w = newWallet();
+    const high = ROOM_FX.reduce((a, f) => (f.lvl > a.lvl ? f : a));
+    expect(roomAllowedFor(w, { ...defaultRoom(), fx: high.id }).fx).toBeUndefined();
+    const low = ROOM_FX.find((f) => f.lvl === 1)!;
+    expect(roomAllowedFor(w, { ...defaultRoom(), fx: low.id }).fx).toBe(low.id);
   });
 });

@@ -14,11 +14,23 @@ export type PlacedItem = FloorItem | WallItem;
 export interface Room {
   name: string; desc: string; cat: string; open: boolean; token: string; ban: string[];
   theme: string; view: string; size: number;
+  /** fx: a floating effect in the room (snow, petals…) */
+  fx?: string;
   mood?: string; wall?: string; wallPat?: string; floorT?: string; floorC?: string; trim?: string; curtain?: string;
   items: PlacedItem[];
 }
 /** The look of a room (what undo/redo snapshots and what a visitor needs to draw it). */
-export const ROOM_KEYS = ['items', 'theme', 'view', 'size', 'mood', 'wall', 'wallPat', 'floorT', 'floorC', 'trim', 'curtain'] as const;
+/** floating room effects (user 2026-11-03: a room that feels like you), opened by level */
+export const ROOM_FX = [
+  { id: 'snow', name: 'Kar', lvl: 1 },
+  { id: 'sakura', name: 'Sakura yaprakları', lvl: 2 },
+  { id: 'fireflies', name: 'Ateş böcekleri', lvl: 3 },
+  { id: 'leaves', name: 'Sonbahar yaprakları', lvl: 4 },
+  { id: 'stardust', name: 'Yıldız tozu', lvl: 6 },
+  { id: 'bubbles', name: 'Baloncuklar', lvl: 8 },
+] as const;
+const FX = new Map<string, number>(ROOM_FX.map((f) => [f.id, f.lvl]));
+export const ROOM_KEYS = ['items', 'theme', 'view', 'size', 'mood', 'fx', 'wall', 'wallPat', 'floorT', 'floorC', 'trim', 'curtain'] as const;
 export const ROOM_CATS = ['Genel', 'YKS', 'LGS', 'KPSS', 'ALES/YDS', 'Üniversite', 'Yazılım', 'Dil', 'Sanat & Tasarım', 'İş'];
 export const MAX_ITEMS = 400;
 const LIM = 6; // half of the largest room (11 x 11) plus a margin, like the old loader
@@ -86,6 +98,7 @@ export function sanitizeRoom(v: unknown): Room {
     items: (Array.isArray(v.items) ? v.items : []).slice(0, MAX_ITEMS * 2).map(cleanItem).filter((x): x is PlacedItem => !!x).slice(0, MAX_ITEMS),
   };
   if (MOODS.has(v.mood as string)) r.mood = v.mood as string;
+  if (FX.has(v.fx as string)) r.fx = v.fx as string;
   for (const k of ['wall', 'floorC', 'trim', 'curtain'] as const) if (typeof v[k] === 'string' && HEX.test(v[k] as string)) r[k] = v[k] as string;
   if (PATTERNS.has(v.wallPat as string)) r.wallPat = v.wallPat as string;
   if (FLOORS.has(v.floorT as string)) r.floorT = v.floorT as string;
@@ -107,6 +120,7 @@ export function roomAllowedFor(w: Wallet, room: unknown): Room {
   if (r.wallPat && L < (SURFACE_LVL[r.wallPat] ?? 1)) delete r.wallPat;
   if (r.floorT && L < (SURFACE_LVL[r.floorT] ?? 1)) delete r.floorT;
   if (r.mood && L < (MOOD_LVL[r.mood] ?? 1)) delete r.mood;
+  if (r.fx && L < (FX.get(r.fx) ?? 99)) delete r.fx;
   return r;
 }
 

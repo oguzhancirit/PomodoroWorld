@@ -818,3 +818,9 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .shop-card { position: relative; }
 .new-badge { position: absolute; right: 8px; top: 8px; padding: 2px 7px; border-radius: 999px; background: var(--acc); color: #fff; font: 800 10px var(--f-body); letter-spacing: .04em; text-transform: uppercase; }
 .touch-badges { display: inline-flex; gap: 4px; font-size: 13px; } .touch-badges i { font-style: normal; }
+
+/* room effects row (Atmosfer tab) */
+.fx-row .fxb { height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, .05); color: var(--text); font: 700 12px var(--f-body); white-space: nowrap; }
+.fx-row .fxb.on { border-color: var(--acc2); background: rgba(239, 90, 60, .18); }
+.fx-row .fxb:disabled { opacity: .45; }
+.fx-row { flex-wrap: wrap; }

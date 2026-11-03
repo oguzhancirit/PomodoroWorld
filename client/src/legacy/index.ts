@@ -51,10 +51,50 @@ function measureSeats(w: any) {
 }
 PW.World.prototype.loadRoom = function (this: any, def: unknown) {
   const r = oldLoadRoom.call(this, def);
-  measureSeats(this);
-  if (r && typeof r.then === 'function') r.then(() => measureSeats(this));
+  measureSeats(this); setRoomFx(this, (def as { fx?: string } | null)?.fx);
+  if (r && typeof r.then === 'function') r.then(() => { measureSeats(this); setRoomFx(this, (def as { fx?: string } | null)?.fx); });
   return r;
 };
+
+/* ---------- floating room effects (user 2026-11-03: the room's own vibe): snow, petals, fireflies… ---------- */
+type FxKind = 'snow' | 'sakura' | 'fireflies' | 'leaves' | 'stardust' | 'bubbles';
+const FX_LOOK: Record<FxKind, { n: number; size: number; add: boolean; draw: (c: CanvasRenderingContext2D, s: number) => void; vy: number; sway: number; pulse?: boolean }> = {
+  snow: { n: 140, size: 0.2, add: false, vy: -0.25, sway: 0.25, draw: (c, s) => { const g = c.createRadialGradient(s / 2, s / 2, 1, s / 2, s / 2, s / 2); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, s, s); } },
+  sakura: { n: 90, size: 0.32, add: false, vy: -0.22, sway: 0.5, draw: (c, s) => { c.fillStyle = '#FF7FA8'; c.beginPath(); c.ellipse(s / 2, s / 2, s * 0.4, s * 0.24, 0.6, 0, 7); c.fill(); c.fillStyle = '#FFC2D6'; c.beginPath(); c.ellipse(s * 0.45, s * 0.45, s * 0.16, s * 0.08, 0.6, 0, 7); c.fill(); } },
+  fireflies: { n: 45, size: 0.4, add: true, vy: 0, sway: 0.35, pulse: true, draw: (c, s) => { const g = c.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2); g.addColorStop(0, 'rgba(255,250,170,1)'); g.addColorStop(0.3, 'rgba(220,255,120,.6)'); g.addColorStop(1, 'rgba(200,255,100,0)'); c.fillStyle = g; c.fillRect(0, 0, s, s); } },
+  leaves: { n: 70, size: 0.34, add: false, vy: -0.3, sway: 0.6, draw: (c, s) => { c.fillStyle = ['#E8803A', '#C7432F', '#E8B04A'][Math.floor(Math.random() * 3)]; c.beginPath(); c.moveTo(s / 2, s * 0.1); c.quadraticCurveTo(s * 0.95, s * 0.5, s / 2, s * 0.9); c.quadraticCurveTo(s * 0.05, s * 0.5, s / 2, s * 0.1); c.fill(); } },
+  stardust: { n: 110, size: 0.24, add: true, vy: 0.08, sway: 0.15, pulse: true, draw: (c, s) => { c.fillStyle = '#FFF4C2'; c.beginPath(); for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2, r = i % 2 ? s * 0.12 : s * 0.48; c.lineTo(s / 2 + Math.cos(a) * r, s / 2 + Math.sin(a) * r); } c.fill(); } },
+  bubbles: { n: 50, size: 0.36, add: false, vy: 0.22, sway: 0.3, draw: (c, s) => { c.strokeStyle = 'rgba(200,235,255,.9)'; c.lineWidth = s * 0.07; c.beginPath(); c.arc(s / 2, s / 2, s * 0.4, 0, 7); c.stroke(); c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.arc(s * 0.38, s * 0.36, s * 0.08, 0, 7); c.fill(); } },
+};
+function setRoomFx(w: any, kind?: string) {
+  if (w._roomFx) { w.scene.remove(w._roomFx); w._roomFx.traverse((o: any) => { o.geometry?.dispose?.(); o.material?.map?.dispose?.(); o.material?.dispose?.(); }); w._roomFx = null; }
+  const look = FX_LOOK[kind as FxKind]; if (!look || !w.scene) return;
+  const half = (w.half || 3.5) - 0.3, H = 2.9;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64; look.draw(cv.getContext('2d')!, 64);
+  const tex = new T.CanvasTexture(cv);
+  const pos = new Float32Array(look.n * 3), seed: number[][] = [];
+  for (let i = 0; i < look.n; i++) { const x = (Math.random() * 2 - 1) * half, y = Math.random() * H, z = (Math.random() * 2 - 1) * half; pos.set([x, y, z], i * 3); seed.push([x, y, z, Math.random() * 6.3, 0.6 + Math.random() * 0.8]); }
+  const geo = new T.BufferGeometry(); geo.setAttribute('position', new T.BufferAttribute(pos, 3));
+  const m = new T.PointsMaterial({ size: look.size, map: tex, transparent: true, depthWrite: false, blending: look.add ? T.AdditiveBlending : T.NormalBlending, opacity: 0.95 });
+  const pts = new T.Points(geo, m); pts.frustumCulled = false; pts.renderOrder = 6;
+  const holder = new T.Group(); holder.add(pts); w.scene.add(holder); w._roomFx = holder;
+  let last = 0;
+  holder.userData.update = (t: number) => {
+    const dt = Math.min(0.1, last ? t - last : 0.016); last = t;
+    for (let i = 0; i < look.n; i++) {
+      const sd = seed[i];
+      sd[1] += look.vy * sd[4] * dt;
+      if (look.vy === 0) { sd[0] += Math.sin(t * 0.5 + sd[3]) * 0.004; sd[2] += Math.cos(t * 0.4 + sd[3]) * 0.004; sd[1] += Math.sin(t * 0.8 + sd[3] * 2) * 0.003; }
+      if (sd[1] < 0) sd[1] = H; if (sd[1] > H) sd[1] = 0.1;
+      pos[i * 3] = Math.max(-half, Math.min(half, sd[0] + Math.sin(t * 0.7 + sd[3]) * look.sway * 0.3));
+      pos[i * 3 + 1] = Math.max(0.05, sd[1]);
+      pos[i * 3 + 2] = Math.max(-half, Math.min(half, sd[2] + Math.cos(t * 0.6 + sd[3]) * look.sway * 0.2));
+    }
+    geo.attributes.position.needsUpdate = true;
+    if (look.pulse) m.opacity = 0.65 + Math.sin(t * 2.2) * 0.3;
+  };
+  if (!w.animated.includes(holder)) w.animated.push(holder);
+}
 const oldSit = PW.World.prototype.sitAvatar;
 PW.World.prototype.sitAvatar = function (this: any, id: string, idx: number) {
   const ok = oldSit.apply(this, arguments as any);
