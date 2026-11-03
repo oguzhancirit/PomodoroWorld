@@ -76,7 +76,7 @@ function deskPose(TB, kind, t, deskY) {
   const H = wp(TB.Hips);
   const X = new THREE.Vector3(1, 0, 0);
   // lean in and look down at the desk
-  tilt(TB.Abdomen, X, 0.06); tilt(TB.Chest, X, 0.08); tilt(TB.Head, X, kind === 'read' ? 0.18 : 0.32);
+  tilt(TB.Abdomen, X, 0.06); tilt(TB.Chest, X, 0.08); tilt(TB.Head, X, kind === 'read' ? 0.38 : 0.32);
   const pole = (s) => new THREE.Vector3(s * 0.9, -0.6, -0.4).normalize();
   const tap = (ph) => 0.012 * Math.max(0, Math.sin(2 * Math.PI * (t * 3.2 + ph)));
   if (kind === 'type') {
@@ -89,10 +89,11 @@ function deskPose(TB, kind, t, deskY) {
     armIK(TB, 'L', new THREE.Vector3(H.x + 0.22, deskY + 0.035, H.z + 0.34), pole(1));
     curl(TB, 'R', 0.9); curl(TB, 'L', 0.15);
   } else if (kind === 'read') {
-    const turn = Math.max(0, Math.sin(2 * Math.PI * (t / 6))) ** 8; // a page turn every few seconds
-    armIK(TB, 'L', new THREE.Vector3(H.x + 0.13, deskY + 0.16, H.z + 0.4), pole(1));
-    armIK(TB, 'R', new THREE.Vector3(H.x - 0.13 + 0.12 * turn, deskY + 0.16 + 0.04 * turn, H.z + 0.4), pole(-1));
-    curl(TB, 'L', 0.55); curl(TB, 'R', 0.55);
+    // a book lying open on the desk, a hand on each side of it; the right hand turns a page every few seconds
+    const turn = Math.max(0, Math.sin(2 * Math.PI * (t / 6))) ** 8;
+    armIK(TB, 'L', new THREE.Vector3(H.x + 0.17, deskY + 0.03, H.z + 0.36), pole(1));
+    armIK(TB, 'R', new THREE.Vector3(H.x - 0.17 + 0.15 * turn, deskY + 0.03 + 0.05 * turn, H.z + 0.36 + 0.03 * turn), pole(-1));
+    curl(TB, 'L', 0.35); curl(TB, 'R', 0.35 + 0.3 * turn);
   }
 }
 

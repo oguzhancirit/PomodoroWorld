@@ -5,12 +5,17 @@
 import * as THREE from 'three';
 import { decodeAvatar } from '@pw/shared';
 import { loadRig, buildAvatar, disposeAvatar, type Rig } from '../avatar/assets';
+import { DeskProps, type DeskAct } from './deskProps';
 
 type State = 'stand' | 'walk' | 'sit';
 const SIT: Record<string, string> = { write: 'SitWrite', type: 'SitType', read: 'SitRead', talk: 'SitTalk' };
+/** desk clip → the props that go with it (book, notebook + pen, laptop) */
+const PROP: Record<string, DeskAct> = { SitRead: 'read', SitWrite: 'write', SitType: 'type' };
 const STAND: Record<string, string> = { wave: 'Wave', dance: 'Dance', clap: 'Wave', cheer: 'Wave' };
 /** hips sit this far above the seat surface */
 const HIP_OVER_SEAT = 0.08;
+/** how far a character leans in towards the desk while working (metres) */
+const SCOOT = 0.2;
 
 export class NewAvatar {
   root = new THREE.Group();
@@ -30,6 +35,8 @@ export class NewAvatar {
   private clip = '';
   private code = '';
   private gen = 0;
+  private props: DeskProps | null = null;
+  private wrists: [THREE.Object3D | null, THREE.Object3D | null] = [null, null];
 
   constructor(code: unknown) { this.build(code); }
 
@@ -45,7 +52,14 @@ export class NewAvatar {
       const built = buildAvatar(rig, c);
       this.rig = rig; this.body = built.root; this.root.add(built.root);
       this.mixer = new THREE.AnimationMixer(built.root);
-      this.head = null; built.root.traverse((o) => { if (!this.head && (o as THREE.Bone).isBone && /^head$/i.test(o.name)) this.head = o; });
+      this.head = null; this.wrists = [null, null];
+      built.root.traverse((o) => {
+        if (!(o as THREE.Bone).isBone) return;
+        if (!this.head && /^head$/i.test(o.name)) this.head = o;
+        if (o.name === 'WristL') this.wrists[0] = o;
+        if (o.name === 'WristR') this.wrists[1] = o;
+      });
+      if (!this.props) { let h = 0; for (const ch of c) h = (h * 31 + ch.charCodeAt(0)) | 0; this.props = new DeskProps(h); this.root.add(this.props.group); }
       this.clip = '';
     }).catch((e) => console.warn('avatar load failed', e));
   }
@@ -54,7 +68,7 @@ export class NewAvatar {
     this.mixer?.stopAllAction(); this.mixer = null; this.action = null;
     if (this.body) { this.root.remove(this.body); disposeAvatar(this.body); this.body = null; }
   }
-  dispose() { this.gen++; this.clear(); }
+  dispose() { this.gen++; this.clear(); if (this.props) { this.root.remove(this.props.group); this.props.dispose(); this.props = null; } }
 
   setState(state: State, act?: string) { this.state = state; if (act) this.act = act; }
   doEmote(e: string, ms = 3000) { this.emote = e; this.emoteUntil = performance.now() + ms; }
@@ -88,7 +102,11 @@ export class NewAvatar {
     }
     // the sitting clips put the hips at rig.meta.sitHipY; lift or lower the body so they rest on this seat
     body.position.y = this.state === 'sit' ? Math.max(-0.3, Math.min(0.3, this.seatH + HIP_OVER_SEAT - (rig.meta.sitHipY || 0))) : 0;
+    // working at the desk: scoot forward (like pulling the chair in) so the hands rest on the desk, not its edge
+    const scoot = this.state === 'sit' && PROP[name] ? SCOOT : 0;
+    body.position.z += (scoot - body.position.z) * Math.min(1, dt * 4);
     mixer.update(Math.min(dt, 0.1));
+    this.props?.update(this.state === 'sit' ? PROP[name] ?? null : null, this.root, this.wrists[0], this.wrists[1], Math.min(dt, 0.1));
   }
 
   headWorld(v: THREE.Vector3) {
