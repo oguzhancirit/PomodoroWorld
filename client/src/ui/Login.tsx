@@ -43,45 +43,72 @@ export function Login() {
 
   return (
     <main className="login">
+      <div className="lg-logo"><span className="dot" />Pomodoro<b>World</b></div>
+
       <section className="lg-art" aria-label="Pomodoro World'den görüntüler">
+        <div className="lg-rings" aria-hidden="true"><i /><i /><i /></div>
         <figure className="lg-card c1">
-          <video src={ASSET('film.webm')} poster={ASSET('film.webp')} autoPlay muted loop playsInline aria-label="Tanıtım filmi" />
-          <figcaption><i className="play" aria-hidden="true" />Tanıtım</figcaption>
+          <header><span>Tanıtım</span><small>01</small></header>
+          <FilmClip />
+          <figcaption>↑ Pomodoro World'ü bir dakikada tanı.</figcaption>
         </figure>
         <figure className="lg-card c2">
-          <img src={ASSET('social.webp')} alt="Meydan Kafe'de sohbet eden oyuncular" />
-          <figcaption>Arkadaşlarınla buluş</figcaption>
+          <header><span>Sosyal Alan</span><small>02</small></header>
+          <div className="lg-media"><img src={ASSET('social.webp')} alt="Meydan Kafe'de sohbet eden oyuncular" /><span className="lg-tag">Meydan Kafe · mola</span></div>
+          <div className="lg-row"><span className="av">E</span><b>Elif</b> Mola! Kahve? ☕<em>az önce</em></div>
+          <figcaption>Molada arkadaşlarınla buluş, sohbet et.</figcaption>
         </figure>
         <figure className="lg-card c3">
-          <img src={ASSET('room.webp')} alt="Eşyalarla döşenmiş bir oda" />
-          <span className="lg-chip">+ Koltuk</span>
-          <figcaption>Odanı kendin kur</figcaption>
+          <header><span>Oda Kurma</span><small>03</small></header>
+          <div className="lg-media"><img src={ASSET('room.webp')} alt="Günler içinde eşyalarla dolan bir oda" /><span className="lg-tag">31. gün</span></div>
+          <div className="lg-row ok">🛋️ <b>Koltuk</b> odana eklendi<em>−120 jeton</em></div>
+          <figcaption>Kazandığın jetonlarla odanı istediğin gibi döşe.</figcaption>
         </figure>
       </section>
 
       <section className="lg-side">
-        <div className="brand"><span className="dot" />Pomodoro World</div>
-        <p className="lg-kicker">Birlikte odaklan</p>
-        <h1>Çalış, sohbet et,<br />odanı büyüt.</h1>
-        <p className="lg-sub">25 dakika odaklan, molada arkadaşlarınla konuş. Her pomodoro jeton kazandırır; jetonlarla karakterini giydirir, odanı döşersin.</p>
+        <p className="lg-kicker">Sana ait bir oda</p>
+        <h1>Hemen gir ve<br /><em>birlikte odaklanmaya başla.</em></h1>
+        <p className="lg-sub">25 dakika odaklan, molada arkadaşlarınla konuş.<br />Her pomodoro jeton kazandırır; jetonlarla odanı ve karakterini güzelleştir.</p>
         {count !== null && count > 0 && <p className="lg-live"><i aria-hidden="true" />Şu an <b>{count}</b> kişi odaklanıyor{DEMO_ONLY ? ' (demo botları)' : ''}</p>}
 
         <div className="lg-btns">
           {ready ? <div className="lg-google" ref={gRef} aria-busy={busy} />
             : <button type="button" className="lg-btn google" onClick={fakeGoogle} disabled={busy}><GoogleG />Google ile devam et</button>}
           <button type="button" className="lg-btn apple" disabled title="Yakında"><AppleLogo />Apple ile devam et<em>Yakında</em></button>
-          <div className="lg-or"><span>ya da</span></div>
-          <button type="button" className="lg-btn guest" onClick={continueAsGuest} disabled={busy}>Misafir olarak devam et</button>
+          <button type="button" className="lg-btn guest" onClick={continueAsGuest} disabled={busy}><PersonIcon />Misafir olarak devam et</button>
         </div>
+        <p className="lg-note">Kayıt olmadan dene. İlerlemen bu tarayıcıda kalır; sonra Google'a bağlarsan hiçbiri kaybolmaz.</p>
         {msg && <p className="lg-msg" role="status">{msg}</p>}
-        <ul className="lg-notes">
-          <li>Şifre yok: Google sadece kim olduğunu söyler, e-postan kimseye görünmez.</li>
-          <li>Google ile girersen karakterin ve odan her cihazda seni bekler.</li>
-          <li>Misafir ilerlemen bu tarayıcıda kalır; sonra Google'a bağlarsan hiçbiri kaybolmaz.</li>
-        </ul>
+        <div className="lg-lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+          <span>Şifre oluşturman gerekmiyor.<br />Karakterin, odan ve ilerlemen sana ait.</span></div>
       </section>
+      <p className="lg-tagline">Odaklan. Kazan. Odanı kur.</p>
     </main>
   );
+}
+
+/** the intro film as a small looping clip with a pause button and a progress line, like a real player */
+function FilmClip() {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [paused, setPaused] = useState(false);
+  const [k, setK] = useState(0);
+  const flip = () => { const v = ref.current; if (!v) return; if (v.paused) { void v.play(); setPaused(false); } else { v.pause(); setPaused(true); } };
+  return (
+    <div className="lg-media">
+      <video ref={ref} src={ASSET('film.webm')} poster={ASSET('film.webp')} autoPlay muted loop playsInline aria-label="Tanıtım filmi"
+        onTimeUpdate={(e) => { const v = e.currentTarget; setK(v.duration ? v.currentTime / v.duration : 0); }} />
+      <span className="lg-tag">Tanıtım filmi</span>
+      <button type="button" className="lg-pause" onClick={flip} aria-label={paused ? 'Oynat' : 'Duraklat'}>
+        <svg viewBox="0 0 12 12" aria-hidden="true">{paused ? <path d="M2 1l9 5-9 5z" /> : <path d="M2 1h3v10H2zM7 1h3v10H7z" />}</svg>
+      </button>
+      <div className="lg-bar" aria-hidden="true"><i style={{ width: `${Math.round(k * 1000) / 10}%` }} /></div>
+    </div>
+  );
+}
+
+function PersonIcon() {
+  return <svg className="lg-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></svg>;
 }
 
 function GoogleG() {
