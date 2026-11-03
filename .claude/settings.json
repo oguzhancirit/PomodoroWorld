@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./node_modules/**)",
+      "Read(./**/node_modules/**)",
+      "Read(./client/dist/**)",
+      "Read(./client/dist-artifact/**)",
+      "Read(./dist/**)",
+      "Read(./tools/avatar-src/**)",
+      "Read(./tools/furniture-src/**)",
+      "Read(./client/public/avatars/clips-*.json)",
+      "Read(./**/*.glb)",
+      "Read(./**/*.glb.json)",
+      "Read(./**/*.bin)",
+      "Read(./package-lock.json)",
+      "Read(./server/data/**)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  }
+}

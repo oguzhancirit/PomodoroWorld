@@ -1,52 +1,37 @@
-# Pomodoro World — Claude Code için devir notu
+# Pomodoro World — agent notes
+<!-- Kısa tutuldu: bu dosya her oturumda baştan okunur, her kelimesi token harcar. Ayrıntılar docs/ altında. -->
 
-Bu dosyayı Claude Code her oturumda otomatik okur. Kullanıcı (Oğuzhan) Türkçe konuşur; ona **sade Türkçe**, "10 yaşında bir çocuğa anlatır gibi" yaz. Sürekli izin istemeden ilerle, ama aşağıdaki kurallara uy.
+## Talk to the user
+- User: Oğuzhan. Reply in **simple Turkish**, like explaining to a 10-year-old. Short updates, no step-by-step recaps.
+- Keep going without asking permission for routine work. Ask only for real decisions (see "Open decision").
 
-## Proje
-Odakoo benzeri, Sanalika/Sims havasında 3D, çok oyunculu pomodoro uygulaması. Repo: `oguzhancirit/PomodoroWorld`.
-- **v1 (eski sürüm):** kökteki `index.html` + `js/*.js` (three r128 tarzı, global `window.PW`). İçerik zengini burada: oda motoru, 66 parçalık karakter, görevler, sesler, istatistik, sosyal alanlar, tanıtım filmi, yedekleme.
-- **v2 (yeni sürüm):** npm workspaces → `shared/` (kurallar, saf TS), `server/` (Colyseus 0.18 + express), `client/` (Vite + React 19 + R3F + zustand).
-- **Ana ilke (kullanıcının açık isteği):** Eski emek boşa gitmeyecek. Önce eski her şeyi *tam* taşı, sonra üstüne kalite ekle. Baştan yeni bir şey icat etme.
+## Mission (user's own rule)
+Nothing from v1 is thrown away. First port every old feature **completely** into v2, then improve quality on top. Do not reinvent.
+- v1 = `index.html` + `js/*.js` (three r128 style, global `window.PW`). v2 = npm workspaces `shared/` (rules, pure TS) · `server/` (Colyseus 0.18 + express) · `client/` (Vite, React 19, R3F, zustand).
+- Port order: 1 economy+shop ✔ · 2 personal room "Odam" ✔ · **3 quests, to-dos, sounds, stats ← next** · 4 social spaces + friends · 5 intro film + **backup** (backup required; offline/PWA NOT wanted).
+- Odam leftovers: room settings (name, desc, category, open/closed, invite link, ban list — old `js/ui.js` "roomset"), phone camera too close, solo timer in Odam.
 
-## Taşıma sırası ve durum
-1. Ekonomi ve mağaza ✔ (sunucu XP/jeton verir)
-2. Kişisel oda (Odam) ve eşya yerleştirme ✔ — eski motor `client/src/legacy/` köprüsüyle çalışıyor
-3. Görevler, yapılacaklar, sesler, istatistikler ← **sıradaki**
-4. Dünya'daki sosyal alanlar ve arkadaşlar
-5. Tanıtım filmi ve **yedekleme** (yedekleme şart; internetsiz çalışma/PWA **istenmiyor**)
+## Open decision (ask before big avatar work)
+Odam shows the **old** avatar; the study room shows the **new** Quaternius avatar. Options: (a) old avatar everywhere → its 66 clothing items come back, (b) adapter so the new avatar runs in the old engine (`root, setState, setAct, update, headWorld`).
 
-Odam'da eksik kalanlar: oda ayarları (ad, açıklama, kategori, açık/kapalı, davet bağlantısı, yasaklı listesi — eski `js/ui.js` "roomset"), telefonda kamera biraz yakın, Odam'da solo sayaç/odak.
+## Commands
+- Install: `npm install --ignore-scripts --legacy-peer-deps` (flag required, npm 10.9 bug)
+- Test: `npm test 2>&1 | grep -E "Tests |FAIL|×"` (shared 68 + server 24 pass) · Build: `cd client && npx vite build 2>&1 | tail -3`
+- Dev: `npm run dev:server` + `npm run dev:client`; routes `/?home` (Odam), `?demo` (bots, no server), `?lite` (light graphics)
+- Artifact demo build: `npm run build:artifact`
 
-## Kullanıcıya sorulmuş, cevap bekleyen karar
-Odam'da şu an **eski** karakter (`PW.defaultAvatar(g)`) oturuyor; çalışma odasında **yeni** Quaternius karakterleri var. Seçenekler: (a) eski karakteri her yerde kullan → 66 kıyafet/aksesuar geri gelir, (b) yeni karakteri Odam'a taşı (eski `PW.Avatar` arayüzünü taklit eden bir adaptör: root, setState, setAct, update, headWorld). Cevabı almadan büyük karakter işi yapma.
+## Rules
+- Game logic: **TDD** (tests in `shared/test`, `server/test`). Find the root cause before fixing. Fresh evidence (test/build/screenshot) before saying "done".
+- Small commits ending with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Tell the user what will be pushed before pushing. No `reset --hard`, no force push.
+- New dependency: MIT only (else ask; TypeScript is Apache-2.0 so there is no `tsc` — Vite build + tests are the check), maintained, ≥2 weeks old, no `curl|sh`, no secrets, `.env` stays ignored. Never type passwords.
+- Never edit `shared/src/roomCatalog.ts` by hand: regenerate with `node tools/extract-room-catalog.mjs`.
 
-## Önemli dosyalar
-- `shared/src/economy.ts` — ECON, seviye, ödül, CATALOG (avatar parçaları + eski oda kataloğu), `buy`, `sanitizeWallet` (eski KayKit `furn.*` eşyaları jeton olarak iade edilir).
-- `shared/src/roomCatalog.ts` — **üretilmiş dosya**, elle düzenleme: `node tools/extract-room-catalog.mjs` eski `js/data.js`'ten üretir.
-- `shared/src/room.ts` — oda formatı, `sanitizeRoom`, `roomAllowedFor` (sahip olunan eşya + seviye kilidi).
-- `server/src/http.ts` — `/api/profile`, `/api/buy`, `/api/room`, `/health`. `server/src/profiles.ts` — JSON dosyada profil (yalnız `sha256('pw:'+secret)` saklanır).
-- `server/src/rooms/StudyRoom.ts` — ortak çalışma odası (aynı sayaç, odakta sohbet kapalı).
-- `client/src/legacy/shim.ts` — eski r128 kodunu three r186'da çalıştırır: ışıklar ×π (legacy birimler), point light decay 0 + menzil ×0.5, sahne `environmentIntensity = 0.3`, `encoding`→`colorSpace`, çok örnekli render target, `SAOPass` kapalı. `js/world.js` içinde composer'a ACES ton eşleme pass'i eklendi (yalnız `THREE.OutputPass` varsa, v1'i bozmaz).
-- `client/src/home/` — `HomeRoom.tsx` (Odam ekranı), `EditBar.tsx` (eski düzenleyici: Stiller, Eşyalar, Duvar, Zemin, Atmosfer, Manzara, Hazır tema, Boyut; geri al/yinele, duvar modu, kuşbakışı, döndür/taşı/kopyala/kaldır, renk), `engine.ts` (ROOM_STYLES, thumb, undo geçmişi).
-- `client/src/economy.ts` — cüzdan/oda yükleme ve kaydetme (demo modda localStorage `pw2.wallet`, `pw2.room`; çevrimiçi HTTP + tarayıcıda yedek kopya).
-- `client/src/config.ts` — `DEMO_ONLY`: sunucu adresi yoksa ve yerel değilse (ör. Claude artifact) botlu demo modu.
+## Context & token rules (details: docs/context-ve-token.md)
+- Read narrowly: `grep -n` first, then `Read` with offset/limit. `index.html` (124 KB) and `js/*.js` are large — never read them whole.
+- Do not open generated/binary files: `*.glb`, `*.glb.json`, `client/public/avatars/clips-*.json`, `package-lock.json`, `tools/*-src/`, `client/dist*` (blocked in `.claude/settings.json`).
+- Pipe long output through `tail`/`grep` (tests, builds, logs). Screenshots at `scale ≤ 0.6`, `?lite`.
+- Broad searches across many files → a subagent returns a short summary; keep the main context for the work.
+- `/compact` after a milestone (after exploring, after a step is committed), not mid-change. `/clear` between unrelated tasks. Write state worth keeping into this file or `docs/`, not only into chat.
 
-## Komutlar
-- Kurulum: `npm install --ignore-scripts --legacy-peer-deps` (npm 10.9 `edgesOut` hatası yüzünden `--legacy-peer-deps` şart)
-- Test: `npm test` (shared 68 + server 24 test geçiyor)
-- Geliştirme: `npm run dev:server` ve `npm run dev:client` (istemci 5173, sunucu 2567). Odam'a doğrudan: `/?home`, demo için `?demo`, hafif grafik `?lite`.
-- Artifact derlemesi: `npm run build:artifact` (modeller base64 JSON olarak paketlenir)
-- Deneme bağlantısı (Claude artifact): https://claude.ai/artifact/2tQrEgaG6KtSWz5RdVRqMz
-- Sunucu: Render ücretsiz plan (`render.yaml`), Node 22.
-
-## Çalışma kuralları
-- Oyun mantığında **TDD**: önce test, sonra kod (`shared/test`, `server/test`).
-- Hata düzeltmeden önce **kök nedeni** bul. "Bitti" demeden önce **taze kanıt** (test/derleme/ekran görüntüsü).
-- Küçük commit'ler. Commit mesajı sonuna:
-  ```
-  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-  ```
-- Push'tan önce kullanıcıya neyin gideceğini kısaca söyle.
-- Yeni bağımlılık: lisans MIT olmalı (değilse kullanıcıya sor — TypeScript Apache-2.0 olduğu için kurulmadı, yani `tsc` yok; Vite derlemesi + testler kontrol yerine geçiyor), bakımı sürüyor olmalı, `curl|sh` yok, sırlar commit edilmez, `.env` gitignore'da. Paket sürümü en az iki haftalık olsun.
-- Şifre/kimlik bilgisi girme; giriş işlerini kullanıcı yapar. Yıkıcı git komutlarından (`reset --hard`, force push) kaçın.
-- Tarayıcı testi: Playwright Chromium + swiftshader yavaş (adım başı ~40–90 sn); `?lite` kullan.
+## Where things are
+File map and engine details: `docs/MIMARI.md` — read it when you start a new area.
