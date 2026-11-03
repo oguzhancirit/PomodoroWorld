@@ -196,6 +196,34 @@
   B.w_shelf = (g, d) => { box(g, 1.0, 0.04, 0.25, WOOD, 0, 0, 0.125); for (const sx of [-1, 1]) box(g, 0.03, 0.12, 0.2, METAL, sx * 0.35, -0.07, 0.1); books(g, -0.2, 0.02, 0.12, 0.4, d.seed || 5, 0.16, 0.24); cyl(g, 0.06, 0.05, 0.1, '#E9E1D3', 0.25, 0.07, 0.12, 12); sph(g, 0.07, '#4C8C4A', 0.25, 0.16, 0.12, 10, 8); };
   B.w_fairy = (g) => { const n = 16; for (let i = 0; i < n; i++) { const u = i / (n - 1), x = -1 + u * 2, y = -Math.sin(u * Math.PI) * 0.18; sph(g, 0.025, glow(['#FFD58A', '#FFB0C8', '#BDE4FF'][i % 3], 2.2), x, y - 0.03, 0.05, 8, 6).castShadow = false; } const curve = new THREE.CatmullRomCurve3(Array.from({ length: 9 }, (_, i) => new THREE.Vector3(-1 + i * 0.25, -Math.sin((i / 8) * Math.PI) * 0.18, 0.04))); const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 30, 0.004, 4), mat('#3A3D44')); g.add(tube); g.userData.lightAt = [0, -0.2, 0.3]; g.userData.lightPower = 0.5; g.userData.lightColor = '#FFC98A'; };
   B.w_neon = (g) => { box(g, 1.2, 0.5, 0.02, mat('#1C1D22', { opacity: 0.6 }), 0, 0, 0.01); const tex = PW.canvasTex(512, 200, (c, w, h) => { c.clearRect(0, 0, w, h); c.font = 'bold 130px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.shadowColor = '#FF4FA0'; c.shadowBlur = 30; c.fillStyle = '#FFD1EA'; c.fillText('ODAK', w / 2, h / 2 + 6); }); const p = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 0.45), new THREE.MeshBasicMaterial({ map: tex, transparent: true })); p.position.z = 0.03; g.add(p); g.userData.lightAt = [0, 0, 0.4]; g.userData.lightColor = '#FF4FA0'; g.userData.lightPower = 0.8; g.userData.update = (t) => (p.material.opacity = 0.85 + Math.sin(t * 7) * 0.05 + (Math.sin(t * 23) > 0.97 ? -0.4 : 0)); };
+  // game console corner (user 2026-11-03): low TV unit, a TV showing the Pomo Canavarları game, a console and two pads
+  B.f_console = (g) => {
+    rbox(g, 1.5, 0.42, 0.5, 0.03, '#2B2838', 0, 0.21, 0); box(g, 1.42, 0.02, 0.46, '#3A3550', 0, 0.43, 0);
+    for (const sx of [-1, 1]) box(g, 0.62, 0.3, 0.02, '#35304A', sx * 0.36, 0.2, 0.251);
+    cyl(g, 0.012, 0.012, 0.02, glow('#FF8466', 2), 0.62, 0.36, 0.255, 8).rotation.x = Math.PI / 2;
+    box(g, 0.32, 0.03, 0.2, '#1C1D22', 0, 0.455, -0.08); box(g, 0.05, 0.22, 0.04, '#1C1D22', 0, 0.56, -0.12);
+    rbox(g, 1.2, 0.7, 0.05, 0.012, '#111', 0, 1.02, -0.12);
+    const tex = PW.canvasTex(256, 150, (c, w, h) => {
+      const sky = c.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#A8DCFF'); sky.addColorStop(0.5, '#D9F1FF'); sky.addColorStop(0.5, '#8FD27C'); sky.addColorStop(1, '#6FBF63');
+      c.fillStyle = sky; c.fillRect(0, 0, w, h);
+      const mon = (x, y, r, col) => { c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.fillStyle = '#1D1A2B'; c.beginPath(); c.arc(x - r * 0.3, y - r * 0.1, r * 0.13, 0, 7); c.arc(x + r * 0.3, y - r * 0.1, r * 0.13, 0, 7); c.fill(); };
+      mon(190, 58, 20, '#A39A8C'); mon(70, 108, 26, '#FF7A45');
+      c.fillStyle = '#FFFDF5'; c.fillRect(10, 10, 92, 22); c.fillRect(150, 112, 96, 22);
+      c.fillStyle = '#3FBF6A'; c.fillRect(16, 24, 70, 4); c.fillRect(156, 126, 56, 4);
+      c.fillStyle = '#1D1A2B'; c.font = 'bold 10px sans-serif'; c.fillText('Kayacık', 16, 21); c.fillText('Kıvılcık', 156, 123);
+    });
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(1.14, 0.64), new THREE.MeshStandardMaterial({ map: tex, emissive: '#FFFFFF', emissiveMap: tex, emissiveIntensity: 0.75 }));
+    scr.position.set(0, 1.02, -0.094); g.add(scr);
+    // the console: a slim box with a coral light strip, standing beside the TV
+    rbox(g, 0.1, 0.36, 0.3, 0.02, '#ECEAF2', 0.6, 0.62, -0.06); box(g, 0.004, 0.3, 0.012, glow('#FF8466', 1.6), 0.548, 0.62, 0.09);
+    // two game pads
+    for (const [x, col] of [[-0.3, '#2E2A40'], [0.18, '#6D4CC2']]) {
+      const pad = new THREE.Group(); pad.position.set(x, 0.455, 0.12); pad.rotation.y = x < 0 ? 0.3 : -0.25; g.add(pad);
+      rbox(pad, 0.16, 0.035, 0.09, 0.02, col, 0, 0.018, 0);
+      for (const sx of [-1, 1]) cyl(pad, 0.03, 0.03, 0.035, col, sx * 0.07, 0.018, 0.025, 10);
+      cyl(pad, 0.012, 0.012, 0.02, '#1C1D22', -0.035, 0.04, 0, 8); for (const [bx, bc] of [[0.04, '#FF8466'], [0.06, '#4FA8E8']]) sph(pad, 0.008, bc, bx, 0.04, 0);
+    }
+  };
   B.w_tv = (g) => { rbox(g, 1.4, 0.8, 0.05, 0.01, '#111', 0, 0, 0.025); const tex = PW.canvasTex(256, 144, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#1F2C55'); gr.addColorStop(1, '#6A4FA3'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#F2C14E'; c.beginPath(); c.arc(190, 50, 22, 0, 7); c.fill(); c.fillStyle = '#0F1530'; c.beginPath(); c.moveTo(0, 144); c.lineTo(60, 80); c.lineTo(110, 120); c.lineTo(170, 70); c.lineTo(256, 144); c.fill(); c.fillStyle = '#FFF'; c.font = 'bold 16px sans-serif'; c.fillText('lo-fi odak radyosu', 12, 24); }); const p = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.74), new THREE.MeshStandardMaterial({ map: tex, emissive: '#FFFFFF', emissiveMap: tex, emissiveIntensity: 0.8 })); p.position.z = 0.052; g.add(p); };
 
 

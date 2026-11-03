@@ -135,6 +135,7 @@
   it('f_guitar', 'Hobi', 'Gitar', 300, 4, { fp: [0.5, 0.4] });
   it('f_record', 'Hobi', 'Pikap', 280, 5, { fp: [0.6, 0.5] });
   it('f_piano', 'Hobi', 'Dijital Piyano', 650, 8, { fp: [1.4, 0.5] });
+  it('f_console', 'Hobi', 'Oyun Konsolu ve TV', 900, 6, { fp: [1.5, 0.55] });
   it('f_coffee', 'Mutfak', 'Kahve Köşesi', 200, 3, { fp: [0.8, 0.5] });
   it('f_fridge', 'Mutfak', 'Mini Buzdolabı', 260, 4, { fp: [0.6, 0.6] });
   // tabletop (top: placed on desks if possible)
@@ -281,7 +282,7 @@
     },
     {
       id: 'oyun', kind: 'social', name: 'Oyun Salonu', desc: 'Neonlar, pikap ve dans pisti.', theme: 'th_navy', view: 'v_aurora', mood: 'neon', size: 11, npc: 4,
-      items: [['f_sofa_l', 3, 3, 3], ['f_beanbag', -3, 3, 1], ['f_beanbag', -2, 4, 2], ['f_desk_gaming', -3.5, -4.4, 0], ['f_chair_gaming', -3.5, -3.6, 2], ['f_desk_gaming', 0, -4.4, 0], ['f_chair_gaming', 0, -3.6, 2], ['f_record', 4.8, -4.5, 0], ['f_lava', 5, -3, 0], ['f_lava', -5, -1, 0], ['f_rug_round', 0, 0.5, 0], ['f_aquarium', -5, 0.5, 1], ['d_monitor', -3.5, -4.45, 0], ['d_monitor', 0, -4.45, 0], ['w_neon', 'w1', 0, 0], ['w_tv', 'w3', 0, 0]],
+      items: [['f_sofa_l', 3, 3, 3], ['f_beanbag', -3, 3, 1], ['f_beanbag', -2, 4, 2], ['f_desk_gaming', -3.5, -4.4, 0], ['f_chair_gaming', -3.5, -3.6, 2], ['f_desk_gaming', 0, -4.4, 0], ['f_chair_gaming', 0, -3.6, 2], ['f_record', 4.8, -4.5, 0], ['f_lava', 5, -3, 0], ['f_lava', -5, -1, 0], ['f_rug_round', 0, 0.5, 0], ['f_aquarium', -5, 0.5, 1], ['d_monitor', -3.5, -4.45, 0], ['d_monitor', 0, -4.45, 0], ['w_neon', 'w1', 0, 0], ['w_tv', 'w3', 0, 0], ['f_console', 3.3, 0.4, 0]],
     },
   ];
 

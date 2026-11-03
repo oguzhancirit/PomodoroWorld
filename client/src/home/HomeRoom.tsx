@@ -274,7 +274,7 @@ export function HomeRoom() {
         {!editing && <WorldButton />}
       </header>
       {/* no written hint in the room any more: the guided tour shows the buttons once (user, 2026-11-03) */}
-      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{/* focus screen open: nothing around it to distract (user, 2026-11-03) */}{!focusOpen && <><TimerCard onOpen={() => setFocus(true)} together={together} /><ChatPanel /><EmoteBar /><DaySummary />{place?.owner === 'social:oyun' && <button className="mg-open" onClick={() => setGame(true)}>🎮 Konsolda oyna</button>}</>}<NetBanner /><RewardToast /></div>}<LevelUp />{game && <MonsterGame onClose={() => setGame(false)} />}
+      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{/* focus screen open: nothing around it to distract (user, 2026-11-03) */}{!focusOpen && <><TimerCard onOpen={() => setFocus(true)} together={together} /><ChatPanel /><EmoteBar /><DaySummary />{(place?.owner === 'social:oyun' || (place?.mine && myRoom?.items.some((it) => it.id === 'f_console'))) && <button className="mg-open" onClick={() => setGame(true)}>🎮 Konsolda oyna</button>}</>}<NetBanner /><RewardToast /></div>}<LevelUp />{game && <MonsterGame onClose={() => setGame(false)} />}
       <Tour run={live && !editing && !focusOpen && !visiting && !!place?.mine && profile.introSeen} />
       {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
       <WorldPanel />
