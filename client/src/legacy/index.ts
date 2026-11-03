@@ -93,3 +93,11 @@ PW.World.prototype.moveGhost = function (this: any) {
   return oldMoveGhost.call(this);
 };
 (PW as any).measureFp = measureFp;
+
+// L sofa seats (v1 numbers) did not match the drawn model: one sat on the armrest and the chaise seat put the
+// legs inside its long cushion. Seats on the two cushion middles and on the front end of the chaise, facing out.
+const oldSeatsFor = PW.seatsFor;
+PW.seatsFor = function (id: string) {
+  if (id === 'f_sofa_l') return [{ x: -0.55, z: 0.1, h: 0.48 }, { x: 0.15, z: 0.1, h: 0.48 }, { x: 0.86, z: 0.8, h: 0.48 }];
+  return oldSeatsFor(id);
+};
