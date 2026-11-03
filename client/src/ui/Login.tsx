@@ -50,8 +50,6 @@ export function Login() {
         </figure>
         <figure className="lg-card c2">
           <img src={ASSET('social.webp')} alt="Meydan Kafe'de sohbet eden oyuncular" />
-          <span className="lg-bubble b1">Mola! Kahve? ☕</span>
-          <span className="lg-bubble b2">Hadi bir tur daha 💪</span>
           <figcaption>Arkadaşlarınla buluş</figcaption>
         </figure>
         <figure className="lg-card c3">
