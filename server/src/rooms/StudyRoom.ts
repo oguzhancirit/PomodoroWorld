@@ -129,6 +129,13 @@ export class StudyRoom extends Room {
   /** how many chairs this room has (seat indexes 0..n-1) */
   protected seatCount() { return STUDY_ROOM.seats.length; }
 
+  /** who is here: player id → name (friends list "where") */
+  whoIsHere(): Map<string, string> {
+    const out = new Map<string, string>();
+    this.state.players.forEach((p) => { if (p.code && p.connected) out.set(p.code, p.name); });
+    return out;
+  }
+
   /* ---------- timer ---------- */
   protected usePreset(id: string | undefined) {
     const p = presetById(id), k = this.scale;

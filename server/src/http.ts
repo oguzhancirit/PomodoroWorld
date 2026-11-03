@@ -4,6 +4,7 @@ import type express from 'express';
 import { buy, levelFromXP, BuyRequest, ProfileRequest, RoomRequest, QuestRequest, clock, loginTick, claimQuest, claimLogin, setPledge, cancelPledge, noteDecor, FriendsRequest, socialOp, friendCode, type Room } from '@pw/shared';
 import { matchMaker } from '@colyseus/core';
 import { HomeRoom } from './rooms/HomeRoom';
+import { LibraryRoom } from './rooms/LibraryRoom';
 import { profiles } from './profiles';
 
 const QUEST_REASON: Record<string, string> = { unknown: 'Böyle bir görev yok.', not_done: 'Bu görev henüz bitmedi.', claimed: 'Bu ödülü zaten aldın.' };
@@ -56,7 +57,8 @@ export function routes(app: express.Application, json: express.RequestHandler) {
       .filter((m): m is NonNullable<typeof m> => !!m && m.open && m.n > 0 && m.n < m.cap)
       .sort((a, b) => b.n - a.n).slice(0, 60)
       .map(({ owner, ownerName, name, cat, n, cap }) => ({ owner, ownerName, name, cat, n, cap }));
-    res.json({ rooms });
+    let library = 0; for (const r of LibraryRoom.live) library += r.state.players.size;
+    res.json({ rooms, library });
   });
   app.post('/api/quest', (req, res) => {
     const b = QuestRequest.safeParse(req.body);
@@ -86,8 +88,9 @@ export function routes(app: express.Application, json: express.RequestHandler) {
       profiles.setSocial(p, r.social);
     }
     // where everyone is right now (one server process: the live rooms are in memory)
-    const at = new Map<string, { name: string; room: HomeRoom }>();
+    const at = new Map<string, { name: string; room: HomeRoom | LibraryRoom }>();
     for (const room of HomeRoom.live.values()) for (const [pid, nm] of room.whoIsHere()) if (!at.has(pid) || room.owner === pid) at.set(pid, { name: nm, room });
+    for (const room of LibraryRoom.live) for (const [pid, nm] of room.whoIsHere()) if (!at.has(pid)) at.set(pid, { name: nm, room });
     let renamed = false;
     const list = Object.entries(p.social.friends).map(([pid, f]) => {
       const here = at.get(pid);

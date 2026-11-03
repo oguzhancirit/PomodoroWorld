@@ -3,6 +3,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import express from 'express';
 import { StudyRoom } from './rooms/StudyRoom';
 import { HomeRoom } from './rooms/HomeRoom';
+import { LibraryRoom } from './rooms/LibraryRoom';
 import { routes } from './http';
 
 export const server = defineServer({
@@ -12,6 +13,8 @@ export const server = defineServer({
     study_room: defineRoom(StudyRoom).filterBy(['preset']),
     // step 4: one live room per owner ("Odam"), friends join it
     home: defineRoom(HomeRoom).filterBy(['owner']),
+    // step 4f: the 10-seat public library (same pomodoro length together, like the study hall)
+    library: defineRoom(LibraryRoom).filterBy(['preset']),
   },
   greet: false,
   express: (app) => routes(app, express.json({ limit: '48kb' })),

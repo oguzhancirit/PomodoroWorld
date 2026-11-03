@@ -121,13 +121,7 @@ export class HomeRoom extends StudyRoom {
     this.meta();
   }
 
-  /** who is here: player id → name and the room's timer phase (friends list "where") */
-  whoIsHere(): Map<string, string> {
-    const out = new Map<string, string>();
-    this.state.players.forEach((p: { code: string; name: string; connected: boolean }) => { if (p.code && p.connected) out.set(p.code, p.name); });
-    return out;
-  }
-  get info() { const r = this.room; return { owner: this.owner, ownerName: this.ownerName, name: r?.name ?? 'Odam', open: !!r?.open, n: this.state.players.size, cap: this.capacity, phase: this.state.timer.phase as string }; }
+  get info() { const r = this.room; return { kind: 'home', roomId: this.roomId, owner: this.owner, ownerName: this.ownerName, name: r?.name ?? 'Odam', open: !!r?.open, n: this.state.players.size, cap: this.capacity, phase: this.state.timer.phase as string }; }
 
   /** what the world list shows (open rooms only appear there) */
   private meta() {
