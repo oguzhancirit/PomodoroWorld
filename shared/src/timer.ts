@@ -103,9 +103,10 @@ export function resumeTimer(t: TimerState, now: number): TimerState {
   return { phase: t.phase, phaseEndsAt: now + (t.pausedLeft as number), round: t.round };
 }
 
-/** v1 "Atla": end the current phase now; the next one counts from now */
+/** v1 "Atla": skipping focus starts the break now; skipping a break stops the timer */
 export function skipPhase(t: TimerState, p: Preset, now: number): TimerState {
   if (t.phase === 'idle') return t;
+  if (t.phase !== 'focus') return { phase: 'idle', phaseEndsAt: 0, round: 0 };
   return advance({ phase: t.phase, phaseEndsAt: now, round: t.round }, p);
 }
 

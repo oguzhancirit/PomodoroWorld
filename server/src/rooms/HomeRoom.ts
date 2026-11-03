@@ -3,13 +3,13 @@
 // room or the invite token, and the ban list always wins. The timer waits until someone presses start.
 import { validate, type Client } from '@colyseus/core';
 import { z } from 'zod';
-import { parseJoin, PlayerId, PlayerSecret, homeEntry, homeCapacity, roomSeats, ROOM_KEYS, HOME_MAX, cleanName, startTimer, type Room as RoomData } from '@pw/shared';
+import { parseJoin, PlayerId, PlayerSecret, homeEntry, homeCapacity, roomSeats, ROOM_KEYS, HOME_MAX, cleanName, startTimer, pauseTimer, resumeTimer, skipPhase, type Room as RoomData } from '@pw/shared';
 import { StudyRoom } from './StudyRoom';
 import { HomeRoomState } from './state';
 import { profiles } from '../profiles';
 
 const HomeJoin = z.object({ owner: PlayerId, pid: PlayerId, secret: PlayerSecret, token: z.string().max(12).optional() });
-const TimerMsg = z.object({ action: z.enum(['start', 'stop']), preset: z.string().max(8).optional() });
+const TimerMsg = z.object({ action: z.enum(['start', 'stop', 'pause', 'resume', 'skip']), preset: z.string().max(8).optional() });
 const REFUSE: Record<string, string> = {
   closed: 'Bu oda kapalı: girmek için davet linki gerekiyor.',
   banned: 'Bu odaya giremezsin.',
@@ -41,6 +41,24 @@ export class HomeRoom extends StudyRoom {
           this.track.clear();
           this.setTimer({ phase: 'idle', phaseEndsAt: 0, round: 0 });
           this.broadcast('phase', { phase: 'idle', round: 0, endsAt: 0 });
+        } else if (action === 'pause' || action === 'resume') {
+          const now = Date.now(), cur = this.current();
+          const next = action === 'pause' ? pauseTimer(cur, now) : resumeTimer(cur, now);
+          if (next === cur) return;
+          // paused minutes are not focus minutes: stop (or restart) everyone's clock
+          if (cur.phase === 'focus') this.track.forEach((t, id) => {
+            if (action === 'pause') { if (t.since) t.accMs += now - t.since; t.since = null; }
+            else if (this.state.players.get(id)?.connected) t.since = now;
+          });
+          this.setTimer(next);
+        } else if (action === 'skip' && this.state.timer.phase !== 'idle') {
+          const now = Date.now(), cur = this.current();
+          // skipped focus: the minutes so far count, but not as a full pomodoro
+          if (cur.phase === 'focus') this.payFocus({ ...cur, phaseEndsAt: now }, false);
+          const next = skipPhase(cur, this.preset, now);
+          if (next.phase === 'idle') this.track.clear();
+          this.setTimer(next);
+          this.broadcast('phase', { phase: next.phase, round: next.round, endsAt: next.phaseEndsAt });
         }
       }),
     } as any;

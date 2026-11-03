@@ -15,6 +15,7 @@ export type Player = SchemaType<typeof Player>;
 export const Timer = schema({
   phase: t.string(),         // "focus" | "short_break" | "long_break" | "idle"
   phaseEndsAt: t.number(),   // server time in ms
+  pausedLeft: t.number().default(0), // >0 while paused: ms left (v1 "Duraklat")
   round: t.number(),
 }, 'Timer');
 

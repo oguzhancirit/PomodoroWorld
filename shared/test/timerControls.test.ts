@@ -51,10 +51,8 @@ describe('pause / resume / skip', () => {
     const s = skipPhase(startTimer(t0, p25), p25, t0 + 3 * MIN);
     expect(s).toMatchObject({ phase: 'short_break', round: 1, phaseEndsAt: t0 + 8 * MIN });
   });
-  it('skipping a break starts the next focus now, even when paused', () => {
+  it('skipping a break stops the timer, like v1 (even when paused)', () => {
     const b = skipPhase(startTimer(t0, p25), p25, t0);
-    const s = skipPhase(pauseTimer(b, t0 + MIN), p25, t0 + 2 * MIN);
-    expect(s).toMatchObject({ phase: 'focus', round: 1, phaseEndsAt: t0 + 27 * MIN });
-    expect(isPaused(s)).toBe(false);
+    expect(skipPhase(pauseTimer(b, t0 + MIN), p25, t0 + 2 * MIN)).toEqual({ phase: 'idle', phaseEndsAt: 0, round: 0 });
   });
 });

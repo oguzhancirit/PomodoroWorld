@@ -3,7 +3,7 @@
 import { Room, validate, type Client } from '@colyseus/core';
 import { z } from 'zod';
 import {
-  presetById, startTimer, settle, isChatAllowed, type Phase, type TimerState,
+  presetById, startTimer, settle, isChatAllowed, isPaused, type Phase, type TimerState,
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter,
   decodeAvatar, encodeAvatar, firstFreeSeat, isSeatFree, STUDY_ROOM,
   ChatMsg, EmoteMsg, SitMsg, ActivityMsg, parseJoin,
@@ -94,7 +94,7 @@ export class StudyRoom extends Room {
     p.bubble = '';
     p.connected = true;
     this.state.players.set(client.sessionId, p);
-    const inFocus = this.state.timer.phase === 'focus';
+    const inFocus = this.state.timer.phase === 'focus' && !isPaused(this.current());
     this.track.set(client.sessionId, { since: inFocus ? Date.now() : null, accMs: 0, fromStart: false, intact: true });
     if (prof) client.send('wallet', { wallet: prof.wallet });
   }
@@ -111,7 +111,7 @@ export class StudyRoom extends Room {
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = true;
     const t = this.track.get(client.sessionId);
-    if (t && this.state.timer.phase === 'focus') t.since = Date.now();
+    if (t && this.state.timer.phase === 'focus' && !isPaused(this.current())) t.since = Date.now();
   }
 
   onLeave(client: Client) {
@@ -135,18 +135,21 @@ export class StudyRoom extends Room {
     this.state.timer.phase = t.phase;
     this.state.timer.phaseEndsAt = t.phaseEndsAt;
     this.state.timer.round = t.round;
+    this.state.timer.pausedLeft = t.pausedLeft ?? 0;
     this.schedule();
   }
 
   protected current(): TimerState {
     const s = this.state.timer;
-    return { phase: s.phase as Phase, phaseEndsAt: s.phaseEndsAt, round: s.round };
+    return s.pausedLeft > 0
+      ? { phase: s.phase as Phase, phaseEndsAt: s.phaseEndsAt, round: s.round, pausedLeft: s.pausedLeft }
+      : { phase: s.phase as Phase, phaseEndsAt: s.phaseEndsAt, round: s.round };
   }
 
   private schedule() {
     this.phaseTimer?.clear();
     const t = this.current();
-    if (t.phase === 'idle') return;
+    if (t.phase === 'idle' || isPaused(t)) return;
     this.phaseTimer = this.clock.setTimeout(() => this.onPhaseEnd(), Math.max(0, t.phaseEndsAt - Date.now()));
   }
 
@@ -170,12 +173,12 @@ export class StudyRoom extends Room {
   }
 
   /** the server decides the reward: only time really spent in the room counts */
-  private payFocus(ended: TimerState) {
+  protected payFocus(ended: TimerState, full = true) {
     const now = Math.min(Date.now(), ended.phaseEndsAt + 5000);
     const results: [string, number, boolean][] = [];
     this.track.forEach((t, id) => {
       const ms = t.accMs + (t.since ? Math.max(0, now - t.since) : 0);
-      results.push([id, ms, t.fromStart && t.intact]);
+      results.push([id, ms, full && t.fromStart && t.intact]);
       t.accMs = 0; t.since = null;
     });
     const focusMin = durationOf('focus', this.preset) * this.scale / 60_000;
