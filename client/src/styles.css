@@ -284,7 +284,7 @@ input:focus, select:focus { border-color: var(--acc2); }
 .timer-card .t-go { background: var(--acc); color: #fff; }
 .timer-card .t-stop { background: rgba(255, 255, 255, .1); color: var(--muted); font-size: 12px; }
 .home-ui .chat { bottom: 74px; }
-.home-room .home-hint { bottom: 80px; }
+.home-room .home-hint { top: 84px; bottom: auto; }
 .home-top .owner-note { color: var(--muted); font-weight: 600; }
 .sheet.world { max-width: 640px; }
 @media (max-width: 600px) { .home-ui .chat { bottom: 70px; } }
@@ -581,3 +581,19 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .board li b { font-weight: 800; }
 .board li.me { background: rgba(242, 193, 78, .14); outline: 1px solid rgba(242, 193, 78, .4); }
 .timer-card .t-goal.done { color: var(--ok); font-weight: 800; }
+
+/* reactions: one smiley on the left, the five reactions open above it */
+.emote-pick { position: absolute; left: 14px; bottom: 14px; z-index: 12; }
+.emote-btn { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; background: var(--surf); border: 1px solid var(--line); backdrop-filter: blur(14px); color: var(--text, #f4f1ec); }
+.emote-btn svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.emote-btn.on, .emote-btn:hover { border-color: rgba(242, 193, 78, .6); color: var(--gold); }
+.emote-pop { position: absolute; left: 0; bottom: 58px; display: flex; gap: 6px; padding: 6px; border-radius: 16px; background: var(--surf); border: 1px solid var(--line); backdrop-filter: blur(14px); box-shadow: var(--sh); animation: pop .18s ease-out; transform-origin: bottom left; }
+.emote-pop button { width: 42px; height: 42px; border-radius: 12px; font-size: 20px; background: rgba(255, 255, 255, .05); }
+.emote-pop button:hover { background: rgba(255, 255, 255, .12); }
+.emote-pop button:active { transform: scale(.92); }
+/* the day at a glance, where the reaction bar used to be */
+.day-sum { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 0 16px; height: 48px; border-radius: 16px; background: var(--surf); border: 1px solid var(--line); backdrop-filter: blur(14px); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.day-sum b { font: 800 16px var(--f-display); color: var(--text, #f4f1ec); margin-right: 3px; }
+.day-sum .f b { color: var(--acc); } .day-sum .m b { color: var(--ok); }
+.day-sum i { width: 1px; height: 20px; background: var(--line); }
+@media (max-width: 600px) { .day-sum { left: 72px; right: 8px; transform: none; justify-content: space-around; gap: 6px; padding: 0 10px; font-size: 11.5px; } .day-sum b { font-size: 14px; } .emote-pick { left: 8px; bottom: 10px; } .day-sum { bottom: 10px; } }

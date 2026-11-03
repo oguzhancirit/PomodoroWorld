@@ -7,7 +7,7 @@ import { WalletChip, ShopModal } from '../ui/Wallet';
 import { ToolButtons, Panels } from '../ui/Panels';
 import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
-import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
+import { TimerCard, ChatPanel, EmoteBar, DaySummary, NetBanner } from '../ui/RoomUI';
 import { FocusScreen, useCompanions, isRunning } from './FocusScreen';
 import { TravelScreen } from '../ui/Travel';
 import { cinema } from './cinema';
@@ -184,6 +184,8 @@ export function HomeRoom() {
     else { if (w.wallMode && w.wallMode !== 'cut') w.setWallMode('cut'); if (w.topView) w.toggleTopView(); seatMe(); }
     setTick((t) => t + 1);
   }, [live, editing, parkMe, seatMe]);
+  // the focus screen hides the name tags, chat bubbles and the state gem: nothing to pull your eyes away
+  useEffect(() => { const w = engine.world; if (live && w) w.hideTags = editing || focusOpen; }, [live, editing, focusOpen]);
   useEffect(() => { engine.world?.select(sel); }, [sel, tick]);
 
   /* ---------- changes (every change can be undone) ---------- */
@@ -269,7 +271,7 @@ export function HomeRoom() {
         {!editing && <WorldButton />}
       </header>
       {!editing && !focusOpen && !visiting && !hintOff && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile yerleştir. “Dünya”dan arkadaşını çağır.<button aria-label="İpucunu kapat" onClick={() => { setHintOff(true); try { localStorage.setItem('pw2.hintOff', '1'); } catch { /* ignore */ } }}>×</button></p>}
-      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{!focusOpen && <TimerCard onOpen={() => setFocus(true)} together={together} />}<ChatPanel />{!focusOpen && <EmoteBar />}<NetBanner /><RewardToast /></div>}<LevelUp />
+      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{/* focus screen open: nothing around it to distract (user, 2026-11-03) */}{!focusOpen && <><TimerCard onOpen={() => setFocus(true)} together={together} /><ChatPanel /><EmoteBar /><DaySummary /></>}<NetBanner /><RewardToast /></div>}<LevelUp />
       <Tour run={live && !editing && !focusOpen && !visiting && !!place?.mine && profile.introSeen} />
       {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
       <WorldPanel />
