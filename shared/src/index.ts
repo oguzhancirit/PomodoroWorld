@@ -6,3 +6,4 @@ export * from './protocol';
 export * from './economy';
 export * from './roomCatalog';
 export * from './room';
+export * from './quests';

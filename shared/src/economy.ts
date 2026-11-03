@@ -2,6 +2,7 @@
 // demo room) is the only one that applies them, so a player can never write their own coins.
 import { ROOM_FURN, ROOM_THEMES, ROOM_VIEWS, ROOM_SIZES, OLD_STARTER } from './roomCatalog';
 import { PARTS, type Avatar, type Gender, type Slot } from './avatar';
+import { newQuestState, cloneQuests, progressFocus, sanitizeQuests, weekOf, clampTz, type QuestState } from './quests';
 
 export const ECON = {
   xpPerMin: 1, coinPerMin: 1,
@@ -22,18 +23,35 @@ export function levelFromXP(xp: number) {
 const TITLES: [number, string][] = [[1, 'Çaylak'], [3, 'Tomurcuk'], [5, 'Odak Çırağı'], [7, 'Masa Kurdu'], [9, 'Derin Odak'], [12, 'Zaman Bükücü'], [15, 'Pomodoro Ustası'], [18, 'Odak Bilgesi'], [22, 'Efsane']];
 export const titleFor = (L: number) => TITLES.reduce((t, [l, n]) => (L >= l ? n : t), TITLES[0][1]);
 
+/** one focus session for the statistics: day, start (minute of the day), minutes, category */
+export interface LogEntry { d: string; s: number; m: number; c: string }
+export interface Stats {
+  focusMin: number; pomos: number; streak: number; lastDay: string | null; days: Record<string, number>; dayPomos: Record<string, number>;
+  /** minutes per hour of the day (0–23) */
+  hours: Record<string, number>; log: LogEntry[]; weekXP: Record<string, number>; msgs: number;
+}
 export interface Wallet {
   xp: number; coins: number;
   owned: Record<string, number>;
-  stats: { focusMin: number; pomos: number; streak: number; lastDay: string | null; days: Record<string, number>; dayPomos: Record<string, number> };
+  stats: Stats;
   ach: Record<string, number>;
+  q: QuestState;
+  /** the player's time zone (minutes east of UTC), so days and weeks follow their own clock */
+  tz: number;
 }
+const LOG_MAX = 400;
 /** Like the original game: a desk, a chair, the wood theme, the city view and the small room. */
 export const STARTER: Record<string, number> = { f_desk_wood: 1, f_chair_wood: 1, ...Object.fromEntries(OLD_STARTER.map((id) => [id, 1])) };
-export const newWallet = (): Wallet => ({ xp: 0, coins: ECON.startCoins, owned: { ...STARTER }, stats: { focusMin: 0, pomos: 0, streak: 0, lastDay: null, days: {}, dayPomos: {} }, ach: {} });
-const clone = (w: Wallet): Wallet => ({ ...w, owned: { ...w.owned }, ach: { ...w.ach }, stats: { ...w.stats, days: { ...w.stats.days }, dayPomos: { ...w.stats.dayPomos } } });
+const newStats = (): Stats => ({ focusMin: 0, pomos: 0, streak: 0, lastDay: null, days: {}, dayPomos: {}, hours: {}, log: [], weekXP: {}, msgs: 0 });
+export const newWallet = (): Wallet => ({ xp: 0, coins: ECON.startCoins, owned: { ...STARTER }, stats: newStats(), ach: {}, q: newQuestState(), tz: 0 });
+const clone = (w: Wallet): Wallet => ({
+  ...w, owned: { ...w.owned }, ach: { ...w.ach }, q: cloneQuests(w.q),
+  stats: { ...w.stats, days: { ...w.stats.days }, dayPomos: { ...w.stats.dayPomos }, hours: { ...w.stats.hours }, log: [...w.stats.log], weekXP: { ...w.stats.weekXP } },
+});
 
-export const ACHIEVEMENTS: { id: string; name: string; desc: string; coin: number; test: (w: Wallet, ctx: { longFocus: boolean }) => boolean }[] = [
+export interface AchContext { longFocus?: boolean; endHour?: number }
+
+export const ACHIEVEMENTS: { id: string; name: string; desc: string; coin: number; test: (w: Wallet, ctx: AchContext) => boolean }[] = [
   { id: 'first', name: 'İlk Domates', desc: 'İlk pomodoronu tamamla', coin: 30, test: (w) => w.stats.pomos >= 1 },
   { id: 'p10', name: 'Onluk', desc: '10 pomodoro tamamla', coin: 60, test: (w) => w.stats.pomos >= 10 },
   { id: 'p50', name: 'Elli Domates', desc: '50 pomodoro tamamla', coin: 150, test: (w) => w.stats.pomos >= 50 },
@@ -41,13 +59,31 @@ export const ACHIEVEMENTS: { id: string; name: string; desc: string; coin: numbe
   { id: 'h10', name: '10 Saat Kulübü', desc: 'Toplam 10 saat odaklan', coin: 120, test: (w) => w.stats.focusMin >= 600 },
   { id: 's3', name: 'Isınma Turu', desc: '3 günlük seri yap', coin: 50, test: (w) => w.stats.streak >= 3 },
   { id: 's7', name: 'Haftalık Seri', desc: '7 günlük seri yap', coin: 140, test: (w) => w.stats.streak >= 7 },
-  { id: 'deep', name: 'Derin Dalış', desc: '90 dakikalık bir oturum tamamla', coin: 80, test: (_w, c) => c.longFocus },
+  { id: 'deep', name: 'Derin Dalış', desc: '90 dakikalık bir oturum tamamla', coin: 80, test: (_w, c) => !!c.longFocus },
+  { id: 'night', name: 'Gece Kuşu', desc: 'Saat 23:00 sonrası bir pomodoro bitir', coin: 40, test: (_w, c) => c.endHour != null && c.endHour >= 23 },
+  { id: 'early', name: 'Erkenci', desc: 'Saat 07:00 öncesi bir pomodoro bitir', coin: 40, test: (_w, c) => c.endHour != null && c.endHour < 7 },
+  { id: 'social', name: 'Sosyal Kelebek', desc: '20 sohbet mesajı gönder', coin: 40, test: (w) => (w.stats.msgs ?? 0) >= 20 },
   { id: 'collect', name: 'Koleksiyoncu', desc: '20 farklı eşyaya sahip ol', coin: 150, test: (w) => Object.keys(w.owned).length >= 20 },
 ];
 
+/** give every achievement that became true (changes `w`); returns the names */
+export function checkAchievements(w: Wallet, ctx: AchContext): { names: string[]; coins: number } {
+  const names: string[] = []; let coins = 0;
+  for (const a of ACHIEVEMENTS) if (!w.ach[a.id] && a.test(w, ctx)) { w.ach[a.id] = 1; w.coins += a.coin; coins += a.coin; names.push(a.name); }
+  return { names, coins };
+}
+
 const prevDay = (d: string) => { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() - 1); return t.toISOString().slice(0, 10); };
 
-export interface FocusResult { minutes: number; completed: boolean; round: number; others: number; day: string; longFocus: boolean }
+export interface FocusResult {
+  minutes: number; completed: boolean; round: number; others: number; day: string; longFocus: boolean;
+  /** ISO week of `day` (worked out from the day when missing) */
+  week?: string;
+  /** player's local minute of the day when the counted time began (for the statistics) */
+  startMin?: number;
+  /** what they worked on (Ders, Kodlama…) */
+  cat?: string;
+}
 export function rewardFocus(w0: Wallet, r: FocusResult) {
   const w = clone(w0), lines: string[] = [];
   const before = levelFromXP(w.xp).level;
@@ -67,7 +103,19 @@ export function rewardFocus(w0: Wallet, r: FocusResult) {
     if (w.stats.dayPomos[r.day] === ECON.dailyGoal) { coins += ECON.dailyGoalCoin; lines.push('Günlük hedef tamam'); }
   }
   w.xp += xp; w.coins += coins;
-  for (const a of ACHIEVEMENTS) if (!w.ach[a.id] && a.test(w, { longFocus: r.completed && r.longFocus })) { w.ach[a.id] = 1; w.coins += a.coin; coins += a.coin; lines.push(`Başarım: ${a.name}`); }
+  const week = r.week ?? weekOf(r.day);
+  if (xp) w.stats.weekXP[week] = (w.stats.weekXP[week] ?? 0) + xp;
+  let endHour: number | undefined;
+  if (minutes && r.startMin != null && Number.isFinite(r.startMin)) {
+    const s = ((Math.floor(r.startMin) % 1440) + 1440) % 1440;
+    for (let i = 0; i < minutes; i++) { const h = String(Math.floor(((s + i) % 1440) / 60)); w.stats.hours[h] = (w.stats.hours[h] ?? 0) + 1; }
+    w.stats.log = [...w.stats.log, { d: r.day, s, m: minutes, c: (r.cat || 'Diğer').slice(0, 20) }].slice(-LOG_MAX);
+    endHour = Math.floor(((s + minutes) % 1440) / 60);
+  }
+  const extra = progressFocus(w, { day: r.day, week, minutes, completed: r.completed, together: r.completed && r.others > 0 }, lines);
+  xp += extra.xp; coins += extra.coins;
+  const got = checkAchievements(w, { longFocus: r.completed && r.longFocus, endHour: r.completed ? endHour : undefined });
+  coins += got.coins; for (const n of got.names) lines.push(`Başarım: ${n}`);
   const after = levelFromXP(w.xp).level;
   return { wallet: w, gained: { xp, coins }, lines, levelUp: after > before ? after : 0 };
 }
@@ -115,7 +163,7 @@ export function buy(w0: Wallet, id: string): BuyResult {
   if (levelFromXP(w0.xp).level < item.lvl) return { ok: false, reason: 'level' };
   if (w0.coins < item.price) return { ok: false, reason: 'coins' };
   const w = clone(w0); w.coins -= item.price; w.owned[id] = (w.owned[id] ?? 0) + 1;
-  for (const a of ACHIEVEMENTS) if (!w.ach[a.id] && a.test(w, { longFocus: false })) { w.ach[a.id] = 1; w.coins += a.coin; }
+  checkAchievements(w, {});
   return { ok: true, wallet: w, item };
 }
 
@@ -138,6 +186,13 @@ export function sanitizeWallet(v: unknown): Wallet {
     xp: n(o.xp), coins: n(o.coins, d.coins) + refund,
     owned,
     ach: rec(o.ach),
-    stats: { focusMin: n(s.focusMin), pomos: n(s.pomos), streak: n(s.streak), lastDay: typeof s.lastDay === 'string' ? s.lastDay : null, days: rec(s.days), dayPomos: rec(s.dayPomos) },
+    stats: {
+      focusMin: n(s.focusMin), pomos: n(s.pomos), streak: n(s.streak), lastDay: typeof s.lastDay === 'string' ? s.lastDay : null, days: rec(s.days), dayPomos: rec(s.dayPomos),
+      hours: rec(s.hours), weekXP: rec(s.weekXP), msgs: n(s.msgs),
+      log: (Array.isArray(s.log) ? s.log : []).filter((e): e is LogEntry => !!e && typeof e === 'object' && typeof e.d === 'string' && Number.isFinite(e.s) && Number.isFinite(e.m))
+        .map((e) => ({ d: e.d.slice(0, 10), s: Math.floor(e.s), m: Math.floor(e.m), c: typeof e.c === 'string' ? e.c.slice(0, 20) : 'Diğer' })).slice(-LOG_MAX),
+    },
+    q: sanitizeQuests(o.q),
+    tz: clampTz(o.tz),
   };
 }
