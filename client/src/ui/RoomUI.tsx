@@ -1,3 +1,4 @@
+import { FlipClock } from './FlipClock';
 import { useEffect, useRef, useState } from 'react';
 import { isChatAllowed, isPaused, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, ECON, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
@@ -70,7 +71,7 @@ export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; t
   return (
     <section className={`timer-card ${timer.phase} ${paused ? 'paused' : ''}`}>
       <div className="t-head"><span className="ph"><i />{label}</span><small className={`t-goal ${today >= ECON.dailyGoal ? 'done' : ''}`} title={`Günlük hedef: ${ECON.dailyGoal} pomodoro (+${ECON.dailyGoalCoin} jeton)`}>Bugün {Math.min(today, ECON.dailyGoal)}/{ECON.dailyGoal}{today >= ECON.dailyGoal ? ' ✓' : ''}</small></div>
-      <b className="t-time">{fmt(left)}</b>
+      <FlipClock text={fmt(left)} className="t-flip" />
       <div className="t-bar" aria-hidden="true"><i style={{ width: `${Math.round(k * 1000) / 10}%` }} /></div>
       <TodoChip />
       {onOpen && <button className={idle ? 't-go' : 't-stop'} onClick={onOpen}>{!idle ? 'Odak ekranı' : together ? 'Birlikte odaklan' : 'Odaklan'}</button>}
@@ -82,8 +83,8 @@ export function ChatPanel() {
   const chat = useStore((s) => s.chat);
   const phase = useStore((s) => s.timer.phase);
   const [text, setText] = useState('');
-  // on phones the chat starts folded so the room stays visible
-  const [open, setOpen] = useState(() => typeof innerWidth === 'undefined' || innerWidth > 860);
+  // the chat starts folded; the player opens it when they want (user, 2026-11-03)
+  const [open, setOpen] = useState(false);
   const log = useRef<HTMLDivElement>(null);
   useEffect(() => { log.current?.scrollTo({ top: 1e9 }); }, [chat.length, open]);
   // social spaces are the place to talk: chat stays open there

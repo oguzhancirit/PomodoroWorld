@@ -600,29 +600,14 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .day-sum i { width: 1px; height: 20px; background: var(--line); }
 @media (max-width: 600px) { .day-sum { left: 72px; right: 8px; transform: none; justify-content: space-around; gap: 6px; padding: 0 10px; font-size: 11.5px; } .day-sum b { font-size: 14px; } .emote-pick { left: 8px; bottom: 10px; } .day-sum { bottom: 10px; } }
 
-/* focus clock: a white watch face with 60 ticks that fill as the time runs (user, 2026-11-03), and one card
-   that holds the face, the setup and the buttons so it all reads as one piece */
+/* focus screen: one card that holds the clock, the setup and the buttons so it all reads as one piece */
 .focus-screen .fx-center { background: rgba(18, 16, 30, .74); border: 1px solid rgba(255, 255, 255, .09); border-radius: 30px; padding: 18px; backdrop-filter: blur(16px); box-shadow: var(--hi, none), 0 30px 70px -20px rgba(0, 0, 0, .6); }
 .focus-screen .fx-setup { background: rgba(255, 255, 255, .035); border-color: rgba(255, 255, 255, .06); box-shadow: none; backdrop-filter: none; border-radius: 20px; }
-.fx-ring svg { transform: none; overflow: visible; filter: drop-shadow(0 14px 28px rgba(0, 0, 0, .45)); }
-.fx-ring .fx-face { fill: #FBFAF6; stroke: rgba(0, 0, 0, .06); stroke-width: 1; }
-.fx-ring line { stroke: rgba(36, 30, 52, .3); stroke-width: 2.4; stroke-linecap: round; transition: stroke .5s; }
-.fx-ring line.big { stroke: rgba(36, 30, 52, .62); stroke-width: 3.6; }
-.fx-ring line.on { stroke: var(--tomato); }
-.focus-screen.short_break .fx-ring line.on, .focus-screen.long_break .fx-ring line.on { stroke: #2fa774; }
-.fx-time { font-family: 'Oswald', var(--f-display); font-weight: 700; color: #16131f; text-shadow: none; letter-spacing: .01em; font-size: clamp(76px, 20vw, 104px); line-height: .95; }
-.focus-screen.idle .fx-time { font-size: 70px; }
-.fx-catlbl { color: #4b4462; font-weight: 700; }
-.fx-in input { color: #2a2440; border-bottom-color: rgba(42, 36, 64, .3); }
-.fx-in input::placeholder { color: rgba(42, 36, 64, .5); }
-.fx-in input:focus { border-bottom-color: #2a2440; }
 .fx-phase { background: rgba(255, 255, 255, .07); }
 @media (max-width: 899px) {
   .focus-screen .fx-center { padding: 12px; border-radius: 24px; }
-  .fx-time { font-size: 70px; } .focus-screen.idle .fx-time { font-size: 48px; }
 }
 @media (min-width: 900px) and (max-height: 860px) {
-  .focus-screen.idle .fx-ring { width: 170px; } .focus-screen.idle .fx-time { font-size: 54px; }
   .focus-screen .fx-center { gap: 10px; padding: 14px 18px; }
   .focus-screen.idle .fx-cat { padding: 6px 4px 5px; gap: 3px; } .focus-screen.idle .fx-dur { padding: 6px; }
   .focus-screen.idle .fx-setup { padding: 10px 12px; gap: 9px; } .focus-screen.idle .fx-go { padding-top: 9px; padding-bottom: 9px; }
@@ -633,3 +618,40 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
   .topbar .world-btn .lbl { display: none; }
   .topbar .world-btn { width: var(--ctl); padding: 0; justify-content: center; }
 }
+
+/* split-flap clock (user, 2026-11-03, "FlipClock" look in our palette). Size = --fs on the parent. */
+.flip { --fs: 64px; --r: calc(var(--fs) * .1); display: inline-flex; align-items: center; justify-content: center; gap: calc(var(--fs) * .07); font: 700 var(--fs)/1 'Oswald', var(--f-display); font-variant-numeric: tabular-nums; user-select: none; }
+.flap { position: relative; display: block; width: calc(var(--fs) * .74); height: calc(var(--fs) * 1.16); border-radius: var(--r); perspective: calc(var(--fs) * 4); box-shadow: 0 calc(var(--fs) * .07) calc(var(--fs) * .18) rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .05); }
+.fl-top, .fl-bot { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; backface-visibility: hidden; }
+.fl-top { top: 0; border-radius: var(--r) var(--r) 0 0; background: linear-gradient(180deg, #34304a, #2b273e); color: #fbfaf6; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07); }
+.fl-bot { bottom: 0; border-radius: 0 0 var(--r) var(--r); background: linear-gradient(180deg, #24203a, #1d1a2c); color: #d6d2e6; }
+.fl-top b, .fl-bot b { position: absolute; left: 0; right: 0; height: 200%; display: grid; place-items: center; font-weight: 700; }
+.fl-top b { top: 0; } .fl-bot b { bottom: 0; }
+/* the split line across the middle of each card */
+.flap::after { content: ''; position: absolute; z-index: 3; left: 0; right: 0; top: 50%; height: max(1px, calc(var(--fs) * .022)); transform: translateY(-50%); background: rgba(8, 6, 16, .85); box-shadow: 0 1px 0 rgba(255, 255, 255, .04); }
+.fl-fall { z-index: 2; transform-origin: 50% 100%; animation: fl-fall .26s ease-in forwards; }
+.fl-land { z-index: 2; transform-origin: 50% 0; animation: fl-land .26s .26s ease-out both; }
+@keyframes fl-fall { from { transform: rotateX(0); } to { transform: rotateX(-90deg); filter: brightness(.6); } }
+@keyframes fl-land { from { transform: rotateX(90deg); filter: brightness(1.4); } to { transform: rotateX(0); } }
+.flip-sep { display: grid; gap: calc(var(--fs) * .2); padding: 0 calc(var(--fs) * .02); }
+.flip-sep i { width: calc(var(--fs) * .1); height: calc(var(--fs) * .1); border-radius: calc(var(--fs) * .025); background: var(--acc2); box-shadow: 0 0 calc(var(--fs) * .12) rgba(255, 132, 102, .55); }
+.short_break .flip-sep i, .long_break .flip-sep i { background: #4cc38a; box-shadow: 0 0 calc(var(--fs) * .12) rgba(76, 195, 138, .5); }
+.paused .flip-sep i, .idle .flip-sep i { opacity: .55; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .fl-fall, .fl-land { animation-duration: .01s; animation-delay: 0s; } }
+
+/* in the focus screen */
+.fx-clock { display: grid; justify-items: center; gap: 12px; padding: 6px 0 2px; }
+.fx-flip { --fs: clamp(64px, 19vw, 96px); }
+.focus-screen.idle .fx-flip { --fs: 60px; }
+.fx-prog { width: 100%; max-width: 360px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.fx-prog i { display: block; height: 100%; border-radius: inherit; background: var(--acc2); transition: width .9s linear; }
+.focus-screen.short_break .fx-prog i, .focus-screen.long_break .fx-prog i { background: #4cc38a; }
+.focus-screen.idle .fx-prog { display: none; }
+.fx-clock .fx-catlbl { color: rgba(255, 255, 255, .8); }
+@media (max-width: 899px) { .fx-flip { --fs: 64px; } .focus-screen.idle .fx-flip { --fs: 44px; } }
+@media (min-width: 900px) and (max-height: 860px) { .focus-screen.idle .fx-flip { --fs: 50px; } }
+@media (max-height: 760px) and (max-width: 899px) { .focus-screen.idle .fx-clock { display: none; } }
+
+/* in the small timer card */
+.timer-card .t-flip { --fs: 44px; justify-self: center; padding: 2px 0; }
+@media (max-width: 860px) { .timer-card .t-flip { --fs: 32px; } }
