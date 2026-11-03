@@ -5,7 +5,7 @@
 - ✔ 4f Library: 10-seat public study room (Dünya → Kütüphane).
 - ✔ 4g Social spaces (NPCs demo-only). Left: Otur/Kalk buttons, walking/sitting not synced.
 - ✔ Room settings panel. Left: names of removed people (v1 banNames) — shows "Oyuncu #TAG" unless a friend.
-- ✔ 5: intro film (plays once in Odam, "Tanıtımı izle" in Karakterim) and backup (account key + name/look/to-dos/sounds; v1 files refused: no coins from files). Left: help modal, guided tour (TOUR).
+- ✔ 5: intro film (plays once in Odam, "Tanıtımı izle" in Karakterim) and backup (account key + name/look/to-dos/sounds; v1 files refused: no coins from files). ✔ Guided tour (home/Tour.tsx) once after the film (profile.toured). Help modal dropped (user, 2026-11-03).
 
 ## Last step (user, 2026-11-03): login + accounts
 - Sign up / log in; a returning user is recognised and enters their room with the same saved character.
@@ -24,7 +24,7 @@
 - Desktop notifications, wake lock, blinking title at break; one-tab guard; timer survives reload (unverified).
 - ✔ People list (Kişiler).
 - HUD: title, league chip, "Bugün n/4" goal. Leagues (PW.LEAGUES, leagueFor) + weekly leaderboard (weekXP exists).
-- Level-up modal with confetti + unlocked items; achievement toast outside rewards.
+- ✔ Level-up window with confetti + unlocked items (ui/LevelUp.tsx, shared unlocksAt). ✔ State gem moved above the name tag. Left: achievement toast outside rewards.
 - Profile page: header, last-7-days bars, leaderboard.
 - Chat: level badge, system lines, repeat-message block (isRepeat), short messages during focus (v1 allowed).
 - Emotes: dance and gs (group-study invite) missing; clap/cheer use Wave clip; desk acts drink/stretch missing; tag timer (info.timer).

@@ -544,3 +544,19 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lvl-unlocks li.none { width: auto; font-size: 14px; }
 @media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
 .lvl-ok { min-width: 160px; height: 44px; padding: 0 22px; border-radius: 999px; background: var(--acc); color: #fff; font: 800 16px var(--f-display); border: 0; }
+
+/* guided tour (v1 #tour) */
+.tour { position: fixed; inset: 0; z-index: 60; }
+.tour-spot { position: absolute; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(10, 8, 22, .62), 0 0 0 3px var(--gold), 0 0 30px 6px rgba(242, 193, 78, .45); transition: all .45s cubic-bezier(.3, 1.2, .4, 1); pointer-events: none; animation: spotpulse 1.6s ease-in-out infinite; }
+.tour-spot.none { box-shadow: 0 0 0 9999px rgba(10, 8, 22, .4); width: 0; height: 0; left: 50%; top: 40%; animation: none; }
+@keyframes spotpulse { 50% { box-shadow: 0 0 0 9999px rgba(10, 8, 22, .62), 0 0 0 5px var(--gold), 0 0 40px 10px rgba(242, 193, 78, .55); } }
+.tour-card { position: absolute; background: #FFFDF8; color: #2A2440; border-radius: 20px; padding: 16px 18px 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); display: grid; gap: 8px; transition: left .45s cubic-bezier(.3, 1.2, .4, 1), top .45s cubic-bezier(.3, 1.2, .4, 1); animation: pop .3s ease-out; }
+.tour-hd { display: flex; gap: 12px; align-items: center; }
+.tour-ico { width: 52px; height: 52px; flex: none; display: grid; place-items: center; font-size: 28px; background: #F4EEF8; border-radius: 16px; }
+.tour-card h3 { margin: 0; font: 800 20px/1.15 var(--f-display); }
+.tour-card p { margin: 0; font-size: 14px; color: #5B5472; line-height: 1.5; }
+.tour-ft { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+.tour-dots { display: flex; gap: 5px; } .tour-dots i { width: 7px; height: 7px; border-radius: 50%; background: #E2DCEB; transition: width .25s; } .tour-dots i.on { background: var(--acc); width: 18px; border-radius: 9px; }
+.tour-btns { display: flex; gap: 6px; align-items: center; }
+.tour-skip { background: none; border: 0; color: #8C84A3; font-weight: 800; padding: 8px; }
+.tour-next { background: var(--acc); color: #fff; border: 0; border-radius: 999px; height: 38px; padding: 0 18px; font: 800 14px var(--f-display); }
