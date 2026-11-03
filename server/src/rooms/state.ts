@@ -9,6 +9,7 @@ export const Player = schema({
   bubble: t.string(),        // last chat line, cleared after a few seconds
   connected: t.boolean().default(true),
   level: t.number(),
+  code: t.string(),          // friend code (player id; public like v1's uid), '' for guests without a profile
 }, 'Player');
 export type Player = SchemaType<typeof Player>;
 

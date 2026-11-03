@@ -9,6 +9,7 @@ import { HomeRoomState } from './state';
 import { profiles } from '../profiles';
 
 const HomeJoin = z.object({ owner: PlayerId, pid: PlayerId, secret: PlayerSecret, token: z.string().max(12).optional() });
+const KickMsg = z.object({ id: z.string().max(40) });
 const TimerMsg = z.object({ action: z.enum(['start', 'stop', 'pause', 'resume', 'skip']), preset: z.string().max(8).optional() });
 const REFUSE: Record<string, string> = {
   closed: 'Bu oda kapalı: girmek için davet linki gerekiyor.',
@@ -30,6 +31,18 @@ export class HomeRoom extends StudyRoom {
     super();
     this.messages = {
       ...this.messages,
+      // person card "Odamdan çıkar" (v1 kick): only the owner; the guest goes on the room's ban list
+      kick: validate(KickMsg, (client: Client, { id }) => {
+        if (this.profileOf.get(client.sessionId)?.pid !== this.owner || id === client.sessionId) return;
+        const target = this.state.players.get(id), prof = profiles.get(this.owner);
+        if (!target || !prof) return;
+        if (target.code && !prof.room.ban.includes(target.code)) this.applyRoom(profiles.setRoom(prof, { ...prof.room, ban: [...prof.room.ban, target.code] }));
+        const c = this.clients.getById(id);
+        this.gone.add(id);
+        c?.send('kicked', {});
+        // out of the room right away (a server-side close is not a "consented" leave, so do not wait for it)
+        if (c) { this.onLeave(c); c.leave(); }
+      }),
       timer: validate(TimerMsg, (client: Client, { action, preset }) => {
         if (!this.state.players.has(client.sessionId)) return;
         if (action === 'start' && this.state.timer.phase === 'idle') {
@@ -107,6 +120,14 @@ export class HomeRoom extends StudyRoom {
     this.state.players.forEach((p: { seatIndex: number }) => { if (p.seatIndex >= n) p.seatIndex = -1; });
     this.meta();
   }
+
+  /** who is here: player id → name and the room's timer phase (friends list "where") */
+  whoIsHere(): Map<string, string> {
+    const out = new Map<string, string>();
+    this.state.players.forEach((p: { code: string; name: string; connected: boolean }) => { if (p.code && p.connected) out.set(p.code, p.name); });
+    return out;
+  }
+  get info() { const r = this.room; return { owner: this.owner, ownerName: this.ownerName, name: r?.name ?? 'Odam', open: !!r?.open, n: this.state.players.size, cap: this.capacity, phase: this.state.timer.phase as string }; }
 
   /** what the world list shows (open rooms only appear there) */
   private meta() {

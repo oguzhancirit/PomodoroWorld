@@ -3,9 +3,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { newWallet, sanitizeWallet, defaultRoom, roomAllowedFor, PlayerId, PlayerSecret, type Wallet, type Room } from '@pw/shared';
+import { newWallet, sanitizeWallet, defaultRoom, roomAllowedFor, PlayerId, PlayerSecret, emptySocial, sanitizeSocial, type Wallet, type Room, type Social } from '@pw/shared';
 
-export interface Profile { pid: string; hash: string; wallet: Wallet; room: Room; created: number; seen: number }
+/** social: friends and blocks (step 4e) */
+export interface Profile { pid: string; hash: string; wallet: Wallet; room: Room; created: number; seen: number; social: Social }
 const hashOf = (secret: string) => crypto.createHash('sha256').update('pw:' + secret).digest('hex');
 
 export class ProfileStore {
@@ -14,7 +15,7 @@ export class ProfileStore {
   constructor(private file: string) {
     try {
       const raw = JSON.parse(fs.readFileSync(file, 'utf8')) as Profile[];
-      for (const p of Array.isArray(raw) ? raw : []) if (p && PlayerId.safeParse(p.pid).success && typeof p.hash === 'string') { const wallet = sanitizeWallet(p.wallet); this.map.set(p.pid, { ...p, wallet, room: roomAllowedFor(wallet, p.room ?? defaultRoom()) }); }
+      for (const p of Array.isArray(raw) ? raw : []) if (p && PlayerId.safeParse(p.pid).success && typeof p.hash === 'string') { const wallet = sanitizeWallet(p.wallet); this.map.set(p.pid, { ...p, wallet, room: roomAllowedFor(wallet, p.room ?? defaultRoom()), social: sanitizeSocial(p.social) }); }
     } catch { /* first start or broken file: begin empty */ }
   }
   /** Returns the profile, creating it on first use; null when the id or secret is invalid or wrong. */
@@ -22,12 +23,13 @@ export class ProfileStore {
     if (!PlayerId.safeParse(pid).success || !PlayerSecret.safeParse(secret).success) return null;
     const h = hashOf(secret as string);
     let p = this.map.get(pid as string);
-    if (!p) { p = { pid: pid as string, hash: h, wallet: newWallet(), room: defaultRoom(), created: Date.now(), seen: Date.now() }; this.map.set(p.pid, p); this.save(); }
+    if (!p) { p = { pid: pid as string, hash: h, wallet: newWallet(), room: defaultRoom(), created: Date.now(), seen: Date.now(), social: emptySocial() }; this.map.set(p.pid, p); this.save(); }
     if (!crypto.timingSafeEqual(Buffer.from(p.hash), Buffer.from(h))) return null;
     p.seen = Date.now();
     return p;
   }
   update(p: Profile, wallet: Wallet) { p.wallet = wallet; this.save(); }
+  setSocial(p: Profile, social: Social) { p.social = social; this.save(); }
   /** an existing profile (no secret: only for server-side reads such as showing a room) */
   get(pid: string): Profile | null { return this.map.get(pid) ?? null; }
   /** Stores the room as this player may show it (only owned things, level-gated surfaces). */

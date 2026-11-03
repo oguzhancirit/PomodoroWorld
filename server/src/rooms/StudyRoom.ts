@@ -30,6 +30,8 @@ export class StudyRoom extends Room {
   protected scale = 1;
   protected track = new Map<string, FocusTrack>();
   protected profileOf = new Map<string, Profile>();
+  /** sent away by the owner: no reconnection window */
+  protected gone = new Set<string>();
   /** what each player works on (Ders, Kodlama…), for their statistics */
   private categoryOf = new Map<string, string>();
 
@@ -87,6 +89,7 @@ export class StudyRoom extends Room {
     const look = decodeAvatar(o.avatar);
     p.avatar = encodeAvatar(prof && !avatarAllowed(prof.wallet, look) ? defaultAvatar(look.g) : look);
     p.level = prof ? levelFromXP(prof.wallet.xp).level : 1;
+    p.code = prof ? prof.pid : '';
     p.activity = o.activity ?? 'type';
     if (o.category) this.categoryOf.set(client.sessionId, cleanText(o.category, 20) || 'Diğer');
     p.seatIndex = firstFreeSeat(this.takenSeats(), this.seatCount());
@@ -100,6 +103,7 @@ export class StudyRoom extends Room {
   }
 
   onDrop(client: Client) {
+    if (this.gone.has(client.sessionId)) return;
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = false;
     const t = this.track.get(client.sessionId);

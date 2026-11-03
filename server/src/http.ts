@@ -1,7 +1,7 @@
 // Small HTTP API next to the game rooms: read your wallet and buy from the shop.
 // Prices always come from the server's own catalog; the client only says which item.
 import type express from 'express';
-import { buy, levelFromXP, BuyRequest, ProfileRequest, RoomRequest, QuestRequest, clock, loginTick, claimQuest, claimLogin, setPledge, cancelPledge, noteDecor, type Room } from '@pw/shared';
+import { buy, levelFromXP, BuyRequest, ProfileRequest, RoomRequest, QuestRequest, clock, loginTick, claimQuest, claimLogin, setPledge, cancelPledge, noteDecor, FriendsRequest, socialOp, friendCode, type Room } from '@pw/shared';
 import { matchMaker } from '@colyseus/core';
 import { HomeRoom } from './rooms/HomeRoom';
 import { profiles } from './profiles';
@@ -72,6 +72,35 @@ export function routes(app: express.Application, json: express.RequestHandler) {
     if (!r.ok) return void res.status(400).json({ ok: false, reason: r.reason, error: QUEST_REASON[r.reason], wallet: p.wallet });
     profiles.update(p, r.wallet);
     res.json({ ok: true, wallet: r.wallet, gained: r.gained, levelUp: r.levelUp, name: r.name });
+  });
+  // step 4e: friends (v1 friendsHTML): add / remove / block by code; the list says who is online and where
+  app.post('/api/friends', (req, res) => {
+    const b = FriendsRequest.safeParse(req.body);
+    const p = b.success ? profiles.open(b.data.pid, b.data.secret) : null;
+    if (!b.success || !p) return void res.status(403).json({ ok: false, error: 'Oyuncu kimliği doğrulanamadı.' });
+    const { op, target, name } = b.data;
+    if (op !== 'list') {
+      if (!target) return void res.status(400).json({ ok: false, error: 'Arkadaş kodu geçersiz.' });
+      const r = socialOp(p.social, { op, target, name }, p.pid, Date.now());
+      if (!r.ok) return void res.status(400).json({ ok: false, error: r.reason === 'self' ? 'Bu senin kendi kodun.' : 'Liste dolu.' });
+      profiles.setSocial(p, r.social);
+    }
+    // where everyone is right now (one server process: the live rooms are in memory)
+    const at = new Map<string, { name: string; room: HomeRoom }>();
+    for (const room of HomeRoom.live.values()) for (const [pid, nm] of room.whoIsHere()) if (!at.has(pid) || room.owner === pid) at.set(pid, { name: nm, room });
+    let renamed = false;
+    const list = Object.entries(p.social.friends).map(([pid, f]) => {
+      const here = at.get(pid);
+      // the name follows what the friend calls themselves now (v1 friendSeen)
+      if (here && here.name !== f.n) { f.n = here.name; renamed = true; }
+      const seen = profiles.get(pid)?.seen ?? 0;
+      return here
+        ? { pid, code: friendCode(pid), n: f.n, online: true, seen: Date.now(), where: here.room.info }
+        : { pid, code: friendCode(pid), n: f.n, online: false, seen };
+    }).sort((x, y) => Number(y.online) - Number(x.online) || y.seen - x.seen);
+    if (renamed) profiles.setSocial(p, p.social);
+    const blocked = Object.entries(p.social.blocked).map(([pid, e]) => ({ pid, n: e.n }));
+    res.json({ ok: true, code: friendCode(p.pid), friends: list, blocked });
   });
   app.get('/health', (_req, res) => void res.send('ok'));
 }
