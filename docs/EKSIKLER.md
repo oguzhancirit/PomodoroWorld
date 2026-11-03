@@ -1,7 +1,7 @@
 # v1 → v2 gap list (checked 2026-11-03, grep-verified by two scans of js/* + index.html)
 
 ## Planned already
-- 4e Friends: friend code/add, online + where, "Odasına git"/"Yanına git", "X geldi" toast (v1 features.js friendsHTML, net.js lobby presence at/atn).
+- ✔ 4e Friends done: code + add, online/where, "Odasına git"/"Yanına git", "X geldi" toast, blocks (server profile `social`, `/api/friends`).
 - 4f Library: th_library 10-seat public study room.
 - 4g Social spaces: PUBLIC_ROOMS meydan/teras/oyun + NPCs (NPC_NAMES, NPC_TOPICS, NPC_LINES_*), salon split, Otur/Kalk; social chat → d_social.
 - Room settings (ui.renderRoomSet): name, desc, ROOM_CATS, open/closed, new link, unban list. Rules exist; no UI, no HTTP fields.
@@ -15,7 +15,7 @@
 
 ## Not yet planned — found by the scan
 - ✔ Fixed: "Karakterim" button in Odam → character screen ("Kaydet ve odama dön").
-- Person card on avatar click (ui.openPerson): add friend, kick/ban from my room, block, wave, study together. Engine fires onClick avatar; HomeRoom.tsx ignores it.
+- ✔ Person card (home/PersonCard.tsx): wave, add/remove friend, "Odamdan çıkar" (server kick → room ban), block. Left: unban list UI (room settings), "Profil → Engellenenler" (now in Dünya).
 - Walking/sitting not synced: Player schema has no x/z; seat click in Odam not sent (sendSit only in R3F hall).
 - ✔ Fixed (user, 2026-11-03): v1 focus screen in Odam (home/FocusScreen.tsx): pause/resume, skip, reset, Space/Esc, focus camera, task text + recent, round dots, category picker, presets + "Özel". Alone the card says "Odaklan"; only with a friend in the room "Birlikte odaklan" / "Birlikte başlat". Sounds now play in Odam too.
 - Focus screen leftovers: autoNext, day timeline bar (fx-day), moodlet.

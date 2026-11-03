@@ -371,3 +371,23 @@ input:focus, select:focus { border-color: var(--acc2); }
 }
 @media (max-height: 760px) and (max-width: 899px) { .focus-screen.idle .fx-ring { display: none; } }
 .topbar[hidden] { display: none; }
+
+/* step 4e: person card and friends */
+.sheet.person { width: min(420px, 100%); }
+.sheet.person .tagid, .friend-row .tagid { color: var(--muted); font: 600 13px var(--f-body); }
+.ps-status { margin: 0; display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 700; }
+.ps-status i { width: 9px; height: 9px; border-radius: 50%; background: #6b6680; } .ps-status i.focus { background: var(--acc2); } .ps-status i.break { background: var(--ok); }
+.ps-status .fr, .friend-row .fr { padding: 2px 8px; border-radius: 99px; background: rgba(47, 191, 127, .16); color: #9be7b4; font-size: 12px; }
+.ps-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ps-acts button { padding: 11px 12px; border-radius: 12px; background: rgba(255, 255, 255, .07); border: 1px solid var(--line); font-weight: 800; }
+.ps-acts button:hover { background: rgba(255, 255, 255, .12); }
+.ps-acts button.warn { color: #ffb3a1; }
+.friend-list { display: grid; gap: 6px; }
+.friend-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); }
+.friend-row .ini { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: #3a3656; }
+.friend-row .ini.on { background: #2f9a6b; }
+.friend-row .who { flex: 1; min-width: 0; display: grid; } .friend-row .who small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-row button { padding: 7px 11px; border-radius: 10px; font-weight: 800; font-size: 12.5px; background: var(--acc); }
+.friend-row button.ghost { background: rgba(255, 255, 255, .08); color: var(--muted); }
+.sheet.world .mycode { font: 800 15px var(--f-display); letter-spacing: .06em; }
+@media (max-width: 420px) { .ps-acts { grid-template-columns: 1fr; } }

@@ -9,6 +9,8 @@ import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
 import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
 import { FocusScreen, useCompanions } from './FocusScreen';
+import { PersonCard, openPerson } from './PersonCard';
+import { useFriends, friendsCall, isBlocked } from '../friends';
 import { RewardToast } from '../ui/Wallet';
 import { WorldButton, WorldPanel } from '../ui/World';
 import { openHome, leaveRoom, openProfile } from '../net';
@@ -29,6 +31,7 @@ export function HomeRoom() {
   // v1 focus screen: alone → "Odaklan", a friend in the room → "Birlikte odaklan"
   const [focusOpen, setFocus] = useState(false);
   const together = useCompanions().length > 0;
+  const mode = useStore((s) => s.mode);
   const [sel, setSel] = useState(-1);
   const [tick, setTick] = useState(0); // engine state that React does not own (ghost, wall mode, top view)
   const pendingGhost = useRef<Ghost>(null);
@@ -41,6 +44,9 @@ export function HomeRoom() {
   useEffect(() => { if (!place) openHome(); }, [place]);
   useEffect(() => { if (visiting && editing) setEditing(false); }, [visiting, editing]);
   useEffect(() => { if (editing) setFocus(false); }, [editing]);
+  // friends and blocks: needed for the person card, "X geldi" and hiding blocked people
+  const blocked = useFriends((s) => s.blocked);
+  useEffect(() => { void friendsCall('list'); }, []);
   // v1: the camera comes close to your desk while the focus screen is open
   useEffect(() => {
     const w = engine.world; if (!ready || !w || editing) return;
@@ -56,9 +62,11 @@ export function HomeRoom() {
     let w: World;
     try { w = new PW.World(host.current, tags.current, { quality: lite ? 'low' : 'high' }); } catch (e) { console.warn('room engine failed', e); setFailed(true); return; }
     engine.world = w; (window as unknown as { __world: World }).__world = w;
-    w.onClick = (ev: { type: string; index?: number; idx?: number; x?: number; z?: number }) => {
+    w.onClick = (ev: { type: string; id?: string; index?: number; idx?: number; x?: number; z?: number }) => {
       if (ev.type === 'edit-select') { setSel(ev.index ?? -1); return; }
       if (latest.current.editing) return;
+      // v1: clicking someone opens their person card
+      if (ev.type === 'avatar' && ev.id && ev.id !== 'me') { openPerson(ev.id); return; }
       if (ev.type === 'seat' && ev.idx != null) { w.sitAvatar('me', ev.idx); w.setAct('me', 'idle'); }
       else if (ev.type === 'floor' && ev.x != null) w.walkTo('me', ev.x, ev.z);
     };
@@ -101,7 +109,10 @@ export function HomeRoom() {
     const status = phase === 'focus' ? 'focus' : phase === 'idle' ? '' : 'break';
     const here = new Set<string>(['me']);
     for (const p of Object.values(players)) {
-      const key = p.id === meId ? 'me' : p.id; here.add(key);
+      const key = p.id === meId ? 'me' : p.id;
+      // a blocked person is not drawn at all (v1 S.blocked)
+      if (key !== 'me' && isBlocked(p.code ?? '')) continue;
+      here.add(key);
       if (key !== 'me') {
         if (!w.avatars.has(key)) w.addAvatar(key, p.avatar, { name: p.name, level: p.level ?? 1 });
         const a = w.avatars.get(key);
@@ -114,7 +125,7 @@ export function HomeRoom() {
       seen.current[key] = p.bubble;
     }
     for (const id of [...w.avatars.keys()] as string[]) if (!here.has(id)) w.removeAvatar(id);
-  }, [ready, editing, players, meId, phase, look, profile.name]);
+  }, [ready, editing, players, meId, phase, look, profile.name, blocked]);
   const emoted = useRef<Record<string, number>>({});
   useEffect(() => {
     const w = engine.world; if (!ready || !w) return;
@@ -238,6 +249,7 @@ export function HomeRoom() {
       )}
       <ShopModal />
       <Panels />
+      {!editing && <PersonCard canKick={!visiting && mode === 'online'} />}
       <HomeNotice />
     </div>
   );

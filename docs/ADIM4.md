@@ -15,8 +15,8 @@ A "Dünya" (world) button opens the rest: friends, open rooms, invite code, libr
 - ✔ **4c** Server `HomeRoom` (Colyseus, one per owner): owner's saved room as layout, capacity from seats, invite token,
   ban list, open/closed, shared timer + rewards (reuse StudyRoom logic). Demo mode: bots visit.
 - ✔ **4d** Client: app starts in Odam; guests drawn with the adapter; timer in Odam; Dünya panel (open rooms, invite code).
-- **4e ← next** Friends (v1 `features.js` friendsHTML): add from people you met, online/where, join them.
-- **4f** Library (10 seats) on the old engine; retire the R3F 25-seat hall from the menu.
+- **4e ✔** Friends: `/api/friends` (shared/src/friends.ts rules), Player.code, person card, kick (HomeRoom `kick` → ban), blocks hide avatar/chat/emotes. Browser-checked with two players.
+- **4f ← next** Library (10 seats) on the old engine; retire the R3F 25-seat hall from the menu.
 - **4g** Social spaces + social-space chat counts for the "social" quest; room settings panel (old `roomset`).
 
 ## Notes

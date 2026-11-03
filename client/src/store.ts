@@ -4,7 +4,8 @@ import { create } from 'zustand';
 import { defaultAvatar, type Avatar, type Activity, type Phase, type Wallet, type Room } from '@pw/shared';
 
 export interface PlayerView {
-  id: string; name: string; level?: number; avatar: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
+  /** code: friend code (player id), '' for bots and guests */
+  id: string; name: string; level?: number; avatar: string; code?: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
 }
 export interface ChatLine { id: string; name: string; text: string; at: number; system?: boolean }
 /** task: what I work on (v1 focus screen field) · recent: last tasks · custom: v1 "Özel" focus / break minutes */

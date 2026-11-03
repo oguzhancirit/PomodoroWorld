@@ -3,6 +3,7 @@ import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
 import { encodeAvatar, activityFor, parseInvite, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
 import { LocalRoom, type TimerAction } from './localRoom';
+import { isFriend, isBlocked } from './friends';
 import { useTodos } from './todos';
 
 import { SERVER, DEMO_ONLY } from './config';
@@ -91,6 +92,7 @@ export const sendTimer = (action: TimerAction) => (local ? local.timerAction(act
 
 /** copy the server room into the store (study room and home rooms alike) */
 function wire(r: Room, screen: 'room' | 'home') {
+  const joinedAt = Date.now();
   const st = useStore.getState();
   st.set({ net: 'online', mode: 'online', me: r.sessionId, screen });
   const cb = Callbacks.get(r);
@@ -99,12 +101,18 @@ function wire(r: Room, screen: 'room' | 'home') {
   const syncTimer = (t: any) => useStore.getState().set({ timer: { phase: t.phase as Phase, phaseEndsAt: t.phaseEndsAt, round: t.round, pausedLeft: t.pausedLeft || 0 } });
   cb.listen('timer', (t: any) => { if (!t) return; syncTimer(t); cb.onChange(t, () => syncTimer(t)); });
   cb.onAdd('players', (p: any, id: string) => {
-    const put = () => useStore.getState().upsertPlayer(id, { level: p.level, name: p.name, avatar: p.avatar, seatIndex: p.seatIndex, pose: p.pose, activity: p.activity as Activity, bubble: p.bubble, connected: p.connected });
+    const put = () => useStore.getState().upsertPlayer(id, { code: p.code || '', level: p.level, name: p.name, avatar: p.avatar, seatIndex: p.seatIndex, pose: p.pose, activity: p.activity as Activity, bubble: p.bubble, connected: p.connected });
     put(); cb.onChange(p, put);
+    // v1: "Ali geldi" when a friend walks in (not for the people already there when I arrive)
+    if (Date.now() - joinedAt > 3000 && id !== r.sessionId && isFriend(p.code) && !isBlocked(p.code)) useStore.getState().flash(`${p.name} geldi · arkadaşın odaya girdi.`, 4000);
   });
   cb.onRemove('players', (_p: unknown, id: string) => useStore.getState().removePlayer(id));
-  r.onMessage('chat', (m: { id: string; name: string; text: string; at: number }) => useStore.getState().addChat(m));
+  // a blocked person's lines never show (v1 S.blocked)
+  const blockedId = (id: string) => isBlocked(useStore.getState().players[id]?.code ?? '');
+  r.onMessage('chat', (m: { id: string; name: string; text: string; at: number }) => { if (!blockedId(m.id)) useStore.getState().addChat(m); });
+  r.onMessage('kicked', () => { useStore.getState().flash('Oda sahibi seni odasından çıkardı.', 5000); leaveRoom(); });
   r.onMessage('emote', (m: { id: string; e: string }) => {
+    if (blockedId(m.id)) return;
     const until = Date.now() + 2600;
     useStore.setState((s) => ({ emotes: { ...s.emotes, [m.id]: { e: m.e, until } } }));
     setTimeout(() => useStore.setState((s) => { if (s.emotes[m.id]?.until !== until) return s; const emotes = { ...s.emotes }; delete emotes[m.id]; return { emotes }; }), 2700);
@@ -168,3 +176,5 @@ function chime(freq: number) {
     o.start(); o.stop(ctx.currentTime + 1); setTimeout(() => ctx.close(), 1200);
   } catch { /* audio is optional */ }
 }
+/** person card "Odamdan çıkar": only the room owner; the server checks */
+export const sendKick = (id: string) => { room?.send('kick', { id }); };
