@@ -88,31 +88,31 @@
   const R = [];
   const it = (id, sub, name, price, lvl, extra = {}) => R.push(Object.assign({ id, cat: 'furn', sub, name, price, lvl }, extra));
   // desks & tables (surface = top height)
-  it('f_desk_wood', 'Masa', 'Ahşap Çalışma Masası', 0, 1, { surface: 0.76, fp: [1.4, 0.7] });
-  it('f_desk_white', 'Masa', 'Beyaz Minimal Masa', 120, 1, { surface: 0.76, fp: [1.4, 0.7] });
-  it('f_table_round', 'Masa', 'Yuvarlak Kafe Masası', 200, 3, { surface: 0.76, fp: [1.1, 1.1] });
+  it('f_desk_wood', 'Masa', 'Ahşap Çalışma Masası', 0, 1, { tint: 1, surface: 0.76, fp: [1.4, 0.7] });
+  it('f_desk_white', 'Masa', 'Beyaz Minimal Masa', 120, 1, { tint: 1, surface: 0.76, fp: [1.4, 0.7] });
+  it('f_table_round', 'Masa', 'Yuvarlak Kafe Masası', 200, 3, { tint: 1, surface: 0.76, fp: [1.1, 1.1] });
   it('f_desk_standing', 'Masa', 'Ayarlı Masa', 300, 5, { surface: 0.76, fp: [1.5, 0.75] });
   it('f_desk_gaming', 'Masa', 'RGB Oyuncu Masası', 450, 6, { surface: 0.76, fp: [1.6, 0.75] });
-  it('f_table_long', 'Masa', 'Uzun Kütüphane Masası', 520, 7, { surface: 0.76, fp: [3.2, 1.2] });
+  it('f_table_long', 'Masa', 'Uzun Kütüphane Masası', 520, 7, { tint: 1, surface: 0.76, fp: [3.2, 1.2] });
   // chairs (seat)
-  it('f_chair_wood', 'Sandalye', 'Ahşap Sandalye', 0, 1, { seat: 1, fp: [0.5, 0.5] });
+  it('f_chair_wood', 'Sandalye', 'Ahşap Sandalye', 0, 1, { tint: 1, seat: 1, fp: [0.5, 0.5] });
   it('f_stool', 'Sandalye', 'Tabure', 60, 1, { seat: 1, fp: [0.4, 0.4] });
-  it('f_chair_office', 'Sandalye', 'Ofis Koltuğu', 150, 2, { seat: 1, fp: [0.6, 0.6] });
-  it('f_beanbag', 'Sandalye', 'Armut Koltuk', 180, 3, { seat: 1, low: 1, fp: [0.8, 0.8] });
+  it('f_chair_office', 'Sandalye', 'Ofis Koltuğu', 150, 2, { tint: 1, seat: 1, fp: [0.6, 0.6] });
+  it('f_beanbag', 'Sandalye', 'Armut Koltuk', 180, 3, { tint: 1, seat: 1, low: 1, fp: [0.8, 0.8] });
   it('f_chair_gaming', 'Sandalye', 'Oyuncu Koltuğu', 400, 6, { seat: 1, fp: [0.65, 0.65] });
   // seating
-  it('f_armchair', 'Oturma', 'Berjer', 220, 3, { seat: 1, fp: [0.9, 0.85] });
-  it('f_sofa', 'Oturma', 'İkili Kanepe', 350, 4, { seat: 2, fp: [1.8, 0.85] });
-  it('f_sofa_l', 'Oturma', 'L Koltuk', 600, 8, { seat: 3, fp: [2.4, 1.6] });
+  it('f_armchair', 'Oturma', 'Berjer', 220, 3, { tint: 1, seat: 1, fp: [0.9, 0.85] });
+  it('f_sofa', 'Oturma', 'İkili Kanepe', 350, 4, { tint: 1, seat: 2, fp: [1.8, 0.85] });
+  it('f_sofa_l', 'Oturma', 'L Koltuk', 600, 8, { tint: 1, seat: 3, fp: [2.4, 1.6] });
   // beds
-  it('f_bed_single', 'Yatak', 'Tek Kişilik Yatak', 250, 2, { fp: [1.1, 2.1] });
-  it('f_bed_double', 'Yatak', 'Çift Kişilik Yatak', 500, 7, { fp: [1.7, 2.2] });
+  it('f_bed_single', 'Yatak', 'Tek Kişilik Yatak', 250, 2, { tint: 1, fp: [1.1, 2.1] });
+  it('f_bed_double', 'Yatak', 'Çift Kişilik Yatak', 500, 7, { tint: 1, fp: [1.7, 2.2] });
   // storage
   it('f_bookshelf', 'Depolama', 'Kitaplık', 200, 2, { fp: [1.1, 0.4] });
   it('f_dresser', 'Depolama', 'Şifonyer', 180, 3, { fp: [1.0, 0.5] });
   it('f_shelf_tall', 'Depolama', 'Tavan Kitaplığı', 300, 4, { fp: [1.4, 0.4] });
   // lights
-  it('f_lamp_floor', 'Aydınlatma', 'Lambader', 140, 2, { fp: [0.4, 0.4], light: 1 });
+  it('f_lamp_floor', 'Aydınlatma', 'Lambader', 140, 2, { tint: 1, fp: [0.4, 0.4], light: 1 });
   it('f_lava', 'Aydınlatma', 'Lav Lambası', 220, 5, { fp: [0.3, 0.3], light: 1 });
   // plants
   it('f_cactus', 'Bitki', 'Kaktüs', 50, 1, { fp: [0.35, 0.35] });
@@ -160,7 +160,7 @@
   it('f_rug_rainbow', 'Halı', 'Gökkuşağı Halı', 220, 4, { rug: 1, fp: [2.2, 1.2] });
   it('f_doormat', 'Halı', 'Yazılı Paspas', 90, 1, { rug: 1, fp: [1, 0.6], text: 1, tint: 1 });
   it('d_laptop', 'Masaüstü', 'Dizüstü Bilgisayar', 0, 1, { top: 1, fp: [0.4, 0.3] });
-  it('d_lamp', 'Masaüstü', 'Masa Lambası', 0, 1, { top: 1, fp: [0.25, 0.25], light: 1 });
+  it('d_lamp', 'Masaüstü', 'Masa Lambası', 0, 1, { tint: 1, top: 1, fp: [0.25, 0.25], light: 1 });
   it('d_books', 'Masaüstü', 'Kitap Yığını', 40, 1, { top: 1, fp: [0.3, 0.25] });
   it('d_plant', 'Masaüstü', 'Küçük Saksı', 40, 1, { top: 1, fp: [0.2, 0.2] });
   it('d_mug', 'Masaüstü', 'Kahve Kupası', 30, 1, { top: 1, fp: [0.15, 0.15] });
@@ -171,8 +171,8 @@
   it('d_photo', 'Masaüstü', 'Çerçeveli Fotoğraf', 60, 1, { top: 1, fp: [0.2, 0.15] });
   it('d_headphones', 'Masaüstü', 'Kulaklık', 120, 2, { top: 1, fp: [0.25, 0.2], tint: 1 });
   it('f_candles', 'Aydınlatma', 'Mum Seti', 90, 2, { fp: [0.4, 0.3], light: 1 });
-  it('f_pendant', 'Aydınlatma', 'Sarkıt Lamba', 240, 4, { fp: [0.5, 0.5], light: 1, hang: 1 });
-  it('f_cushion', 'Oturma', 'Yer Minderi', 120, 2, { seat: 1, low: 1, fp: [0.6, 0.6] });
+  it('f_pendant', 'Aydınlatma', 'Sarkıt Lamba', 240, 4, { tint: 1, fp: [0.5, 0.5], light: 1, hang: 1 });
+  it('f_cushion', 'Oturma', 'Yer Minderi', 120, 2, { tint: 1, seat: 1, low: 1, fp: [0.6, 0.6] });
   it('f_teddy', 'Dekor', 'Peluş Ayı', 160, 3, { fp: [0.3, 0.3] });
   // pets
   it('f_cat', 'Evcil', 'Tekir Kedi', 800, 6, { pet: 'cat', fp: [0.5, 0.3] });
