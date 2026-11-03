@@ -137,6 +137,11 @@ function leaveQuiet() {
   const r = room; room = null; r?.leave(true).catch(() => {});
   local?.leave(); local = null;
 }
+/** leave the room and open the character screen (name, look, timer length); "Odama dön" brings you back */
+export function openProfile() {
+  leaveQuiet();
+  useStore.getState().set({ screen: 'lobby', net: 'idle', players: {}, me: '', place: null, chat: [] });
+}
 /** leave the current room and go home: your own room is where the game lives */
 export function leaveRoom() {
   leaveQuiet();

@@ -7,8 +7,14 @@
 - Room settings (ui.renderRoomSet): name, desc, ROOM_CATS, open/closed, new link, unban list. Rules exist; no UI, no HTTP fields.
 - 5: intro film (PW.cinema, 3 chapters), backup export/import (+ to-dos), help modal, guided tour (TOUR).
 
+## Last step (user, 2026-11-03): login + accounts
+- Sign up / log in; a returning user is recognised and enters their room with the same saved character.
+- First-time sign-up → intro film (step 5) → own room. Today identity is per-browser (pw2.identity pid/secret).
+- Demo bots (Elif etc.) exist only in demo mode (DEMO_ONLY: artifact link or ?demo). Real site never shows bots;
+  the old study hall still falls back to bots if the server is down — removed with 4f.
+
 ## Not yet planned — found by the scan
-- Blocking: cannot return to Lobby once named → name, character and preset cannot be changed. Needs a profile/settings entry.
+- ✔ Fixed: "Karakterim" button in Odam → character screen ("Kaydet ve odama dön").
 - Person card on avatar click (ui.openPerson): add friend, kick/ban from my room, block, wave, study together. Engine fires onClick avatar; HomeRoom.tsx ignores it.
 - Walking/sitting not synced: Player schema has no x/z; seat click in Odam not sent (sendSit only in R3F hall).
 - Focus screen (openFocus): pause/resume, skip, Space key, focus camera (setFocusCam), task text + recent, round dots, minimise/mini dock, custom preset, autoNext, category picker in Odam.

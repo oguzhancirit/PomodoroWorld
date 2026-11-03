@@ -10,7 +10,7 @@ import { EditBar } from './EditBar';
 import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
 import { RewardToast } from '../ui/Wallet';
 import { WorldButton, WorldPanel } from '../ui/World';
-import { openHome, leaveRoom } from '../net';
+import { openHome, leaveRoom, openProfile } from '../net';
 
 type Ghost = { id: string; r: number; extra: Record<string, unknown> } | null;
 
@@ -210,6 +210,7 @@ export function HomeRoom() {
         {!editing && <ToolButtons />}
         {!editing && !visiting && <button className="acc" onClick={() => setEditing(true)}>Odayı düzenle</button>}
         {visiting && <button className="acc" onClick={() => { leaveRoom(); }}>Odama dön</button>}
+        {!editing && !visiting && <button className="ghost" onClick={openProfile}>Karakterim</button>}
         {!editing && <WorldButton />}
       </header>
       {!editing && !visiting && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile istediğin yere koy. “Dünya”dan arkadaşını davet et.</p>}

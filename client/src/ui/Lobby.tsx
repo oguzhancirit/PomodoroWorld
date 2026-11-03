@@ -27,6 +27,8 @@ export function Lobby() {
   const missing = wallet ? (['head', 'body', 'legs', 'feet'] as Slot[]).map((sl) => itemById(`av.${a.g}.${a[sl]}`)!).filter((it) => it && !owns(wallet, it.id)) : [];
   const allowed = !wallet || avatarAllowed(wallet, a);
   const [buyMsg, setBuyMsg] = useState('');
+  // came back from the room ("Karakterim") rather than a first visit
+  const [back] = useState(() => !!cleanName(useStore.getState().profile.name));
 
   return (
     <main className="lobby">
@@ -39,7 +41,7 @@ export function Lobby() {
       </section>
 
       <section className="lobby-panel">
-        <div className="lobby-top"><h1>Birlikte çalış, odaklan, sohbet et.</h1><div className="row"><ToolButtons /><WalletChip /></div></div>
+        <div className="lobby-top"><h1>{back ? 'Karakterin ve ayarların' : 'Birlikte çalış, odaklan, sohbet et.'}</h1><div className="row"><ToolButtons /><WalletChip /></div></div>
         <p className="sub">Odadaki herkes aynı sayacı görür. Odakta sohbet kapanır, molada açılır.</p>
 
         <label className="field">Adın
@@ -91,7 +93,7 @@ export function Lobby() {
         {error && <p className="err">{error}</p>}
         {/* step 4: the game lives in your room; the bigger places are in "Dünya" */}
         <button className="go" disabled={!name || busy || !allowed} onClick={() => useStore.getState().set({ screen: 'home' })}>
-          {busy ? 'Bağlanıyor…' : !name ? 'Önce adını yaz' : !allowed ? 'Önce parçaları al ya da ücretsizlere dön' : 'Odama gir'}
+          {busy ? 'Bağlanıyor…' : !name ? 'Önce adını yaz' : !allowed ? 'Önce parçaları al ya da ücretsizlere dön' : back ? 'Kaydet ve odama dön' : 'Odama gir'}
         </button>
         <button className="go alt" disabled={!name || busy || !allowed} onClick={() => joinStudyRoom()}>Ortak çalışma salonu <small>— herkesle aynı sayaç</small></button>
         <ShopModal />
