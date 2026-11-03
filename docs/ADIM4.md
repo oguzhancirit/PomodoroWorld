@@ -9,16 +9,21 @@ studying happens in small rooms. Order of priority:
 A "Dünya" (world) button opens the rest: friends, open rooms, invite code, library, social spaces (v1 `ui.renderWorld`).
 
 ## Sub-steps (each: tests → build → screenshot → commit)
-- **4a** Adapter: new avatar inside the old engine (`client/src/legacy/avatarAdapter.ts`, same API as old `PW.Avatar`:
+- ✔ **4a** Adapter: new avatar inside the old engine (`client/src/legacy/avatarAdapter.ts`, same API as old `PW.Avatar`:
   `root, build(cfg), setState, act, seatH, doEmote, update, headWorld`). Odam uses the player's avatar code.
-- **4b** Rules: starter room with 2 chairs, `roomSeats(room)` / `homeCapacity` (shared, TDD).
-- **4c** Server `HomeRoom` (Colyseus, one per owner): owner's saved room as layout, capacity from seats, invite token,
+- ✔ **4b** Rules: starter room with 2 chairs, `roomSeats(room)` / `homeCapacity` (shared, TDD).
+- ✔ **4c** Server `HomeRoom` (Colyseus, one per owner): owner's saved room as layout, capacity from seats, invite token,
   ban list, open/closed, shared timer + rewards (reuse StudyRoom logic). Demo mode: bots visit.
-- **4d** Client: app starts in Odam; guests drawn with the adapter; timer in Odam; Dünya panel (open rooms, invite code).
-- **4e** Friends (v1 `features.js` friendsHTML): add from people you met, online/where, join them.
+- ✔ **4d** Client: app starts in Odam; guests drawn with the adapter; timer in Odam; Dünya panel (open rooms, invite code).
+- **4e ← next** Friends (v1 `features.js` friendsHTML): add from people you met, online/where, join them.
 - **4f** Library (10 seats) on the old engine; retire the R3F 25-seat hall from the menu.
 - **4g** Social spaces + social-space chat counts for the "social" quest; room settings panel (old `roomset`).
 
 ## Notes
 - Old `PW.Avatar` stays as `PW.OldAvatar` (item thumbnails); the world uses the adapter.
 - Seat data: `ROOM_FURN[].seat` (count per item) is enough for capacity on the server.
+
+## Status notes (after 4d)
+- Browser-checked: demo Odam (bot friend, start/stop), online two-player invite flow (owner + friend, same timer), phone 390 px.
+- Demo/offline fallback: `LocalRoom(speed, 'home')`. Study hall (R3F, 12 seats) is still reachable from Dünya until 4f.
+- Server tests run files one by one (`server/vitest.config.ts` fileParallelism false).
