@@ -52,4 +52,8 @@
 - ✔ 29 new shop things (plants, lights, hobbies, pets that move, rugs, wall pieces, desk things); shop search + "Yeni" / "Kişiselleştirilebilir" filters.
 - ✔ Floating room effects (snow, sakura, fireflies, leaves, stardust, bubbles; Room.fx, level-gated), 7 new wall/floor patterns, 7 new one-click looks.
 - ✔ Demo-only "Deneme paketi" in the shop (+3000 coins, level 10) to try everything.
+- ✔ Six ready-made corner sets (20% off, shared BUNDLES, same /api/buy).
+- ✔ Character accessories (8: glasses … crown) drawn on the Head bone (client/src/avatar/accessories.ts); optional last number in the avatar code; shop "Aksesuar" + wardrobe "Takı ve şapka".
+- ✔ Pet names (wooden sign), placed personal items auto-selected in the editor, older furniture marked as colourable.
+- ✔ Room likes (shared/src/likes.ts, /api/like): "♡ Beğen" in a friend's room, "❤ n" in your own (not in the demo).
 - Left: Google client id from the user; Apple sign-in (needs a paid Apple developer account); two-player Pomo Canavarları.
