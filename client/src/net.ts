@@ -1,8 +1,8 @@
 // Talks to the Colyseus server and copies the room state into the store.
 import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
-import { encodeAvatar, activityFor, parseInvite, LIBRARY_NAME, LIBRARY_SEATS, type Activity, type Phase } from '@pw/shared';
+import { encodeAvatar, activityFor, parseInvite, LIBRARY_NAME, LIBRARY_SEATS, SOCIAL, SOCIAL_CAP, SOCIAL_TO, socialRoom, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
-import { LocalRoom, libraryLayout, type TimerAction } from './localRoom';
+import { LocalRoom, libraryLayout, layoutOf, type TimerAction } from './localRoom';
 import { isFriend, isBlocked } from './friends';
 import { travel } from './ui/Travel';
 import { useTodos } from './todos';
@@ -50,6 +50,32 @@ async function enterLibrary(roomId?: string): Promise<boolean> {
   st.set({ players: {}, chat: [], emotes: {}, place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
   wire(r, 'home');
   st.flash('Kütüphanedesin. Sayaç herkes için aynı ve hiç durmaz; molada sohbet açılır.', 4500);
+  return true;
+}
+
+/* ---------- step 4g: social spaces (v1 Meydan Kafe, Çatı Terası, Oyun Salonu) ---------- */
+export const joinSocial = (space: string, roomId?: string) => travel(`${SOCIAL_TO[space] ?? 'Sosyal alana'} gidiliyor`, enterSocial(space, roomId));
+async function enterSocial(space: string, roomId?: string): Promise<boolean> {
+  const st = useStore.getState(), job = ++homeJob;
+  if (DEMO_ONLY) { leaveQuiet(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'social', true, space); return true; }
+  const { profile } = st;
+  let r: Room;
+  try {
+    const client = new Client(SERVER);
+    const opts = { ...identity(), space, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
+    r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate('social', opts);
+  } catch (e) {
+    if (job !== homeJob) return false;
+    console.warn('social join failed', e);
+    st.flash('Oraya şu an girilemedi. Biraz sonra tekrar dene.', 5000);
+    return false;
+  }
+  if (job !== homeJob) { r.leave(true).catch(() => {}); return false; }
+  leaveQuiet();
+  room = r;
+  const def = socialRoom(space);
+  st.set({ players: {}, chat: [], emotes: {}, place: { kind: 'social', owner: 'social:' + space, mine: false, name: SOCIAL.find((s) => s.id === space)?.name ?? '', layout: def ? layoutOf(def) : '', cap: SOCIAL_CAP } });
+  wire(r, 'home');
   return true;
 }
 

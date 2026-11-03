@@ -424,8 +424,7 @@ input:focus, select:focus { border-color: var(--acc2); }
 .place.cafe { background: linear-gradient(160deg, #b9774f, #6d3f2b); }
 .place.terrace { background: linear-gradient(160deg, #f08a5d, #5b3b7a); }
 .place.arcade { background: linear-gradient(160deg, #6b4bb5, #2a1f5c); }
-.place.soon { filter: saturate(.45) brightness(.8); }
-.place.home:disabled, .place.library:disabled { outline: 2px solid rgba(255, 255, 255, .55); outline-offset: -2px; }
+.place:disabled { outline: 2px solid rgba(255, 255, 255, .55); outline-offset: -2px; }
 .w-sec h3 { margin: 0 0 8px; font: 700 15px var(--f-display); } .w-sec h3 small { color: var(--muted); font: 600 12px var(--f-body); margin-left: 6px; }
 .faces { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
 .face { flex: none; width: 88px; display: grid; justify-items: center; gap: 2px; padding: 10px 6px; border-radius: 16px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); text-align: center; position: relative; }

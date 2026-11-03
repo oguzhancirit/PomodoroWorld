@@ -2,11 +2,11 @@
 // big place cards, friends as faces, and the invite tools tucked into one small row.
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
-import { inviteCode, homeCapacity, parseFriendCode } from '@pw/shared';
+import { inviteCode, homeCapacity, parseFriendCode, SOCIAL_AT } from '@pw/shared';
 import { useStore } from '../store';
 import { identity } from '../identity';
 import { HTTP_BASE, DEMO_ONLY } from '../config';
-import { visitHome, joinLibrary, currentRoomId, leaveRoom } from '../net';
+import { visitHome, joinLibrary, joinSocial, currentRoomId, leaveRoom } from '../net';
 import { useFriends, friendsCall, ago, type FriendView } from '../friends';
 
 const useWorld = create<{ open: boolean }>(() => ({ open: false }));
@@ -37,13 +37,14 @@ export function WorldPanel() {
   const room = useStore((s) => s.room), mode = useStore((s) => s.mode), place = useStore((s) => s.place), flash = useStore((s) => s.flash);
   const [rooms, setRooms] = useState<OpenRoom[] | null>(null);
   const [library, setLibrary] = useState(0);
+  const [social, setSocial] = useState<Record<string, number>>({});
   const [joinCode, setJoinCode] = useState('');
   const [showCode, setShowCode] = useState(false);
   const demo = DEMO_ONLY || mode === 'demo';
   useEffect(() => {
     if (!open || demo) return;
     let live = true; setRooms(null);
-    fetch(`${HTTP_BASE}/api/world`).then((r) => r.json()).then((d) => { if (live) { setRooms((d.rooms as OpenRoom[]).filter((r) => r.owner !== identity().pid)); setLibrary(Number(d.library) || 0); } }).catch(() => live && setRooms([]));
+    fetch(`${HTTP_BASE}/api/world`).then((r) => r.json()).then((d) => { if (live) { setRooms((d.rooms as OpenRoom[]).filter((r) => r.owner !== identity().pid)); setLibrary(Number(d.library) || 0); setSocial(d.social && typeof d.social === 'object' ? d.social : {}); } }).catch(() => live && setRooms([]));
     return () => { live = false; };
   }, [open, demo]);
   if (!open) return null;
@@ -64,9 +65,10 @@ export function WorldPanel() {
           <button className="place library" disabled={inLibrary} onClick={() => { close(); void joinLibrary(); }}>
             <Art id="library" /><b>Kütüphane</b><small>{inLibrary ? 'Buradasın' : demo ? '10 kişilik' : library ? `${library} kişi çalışıyor` : 'Boş, ilk sen gel'}</small>
           </button>
-          {[['cafe', 'Meydan Kafe'], ['terrace', 'Çatı Terası'], ['arcade', 'Oyun Salonu']].map(([id, n]) => (
-            <button key={id} className={`place ${id} soon`} disabled><Art id={id} /><b>{n}</b><small>Yakında</small></button>
-          ))}
+          {[['cafe', 'meydan', 'Meydan Kafe'], ['terrace', 'teras', 'Çatı Terası'], ['arcade', 'oyun', 'Oyun Salonu']].map(([art, id, n]) => {
+            const here = place?.owner === 'social:' + id, count = social[id] ?? 0;
+            return <button key={id} className={`place ${art}`} disabled={here} onClick={() => { close(); void joinSocial(id); }}><Art id={art} /><b>{n}</b><small>{here ? 'Buradasın' : demo ? 'Sohbet et' : count ? `${count} kişi` : 'Sohbet et'}</small></button>;
+          })}
         </div>
 
         <Friends go={go} />
@@ -120,12 +122,13 @@ function Friends({ go }: { go(code: string): void }) {
     const w = f.where;
     if (!w) return ago(f.seen);
     const st = w.phase === 'focus' ? ' · odakta' : w.phase === 'short_break' || w.phase === 'long_break' ? ' · molada' : '';
+    if (w.kind === 'social') return (place?.owner === 'social:' + w.space && w.roomId === libraryId ? 'Yanında' : SOCIAL_AT[w.space ?? ''] ?? 'Sosyal alanda') + st;
     if (w.kind === 'library') return (place?.kind === 'library' && w.roomId === libraryId ? 'Yanında' : 'Kütüphanede') + st;
     if (place && w.owner === place.owner) return 'Yanında' + st;
     return (w.owner === f.pid ? 'Kendi odasında' : `${w.ownerName} odasında`) + st;
   };
-  const canGo = (f: FriendView) => !!f.where && f.where.open && f.where.n < f.where.cap && (f.where.kind === 'library' ? f.where.roomId !== libraryId : f.where.owner !== place?.owner);
-  const visit = (f: FriendView) => { if (!canGo(f)) return; if (f.where!.kind === 'library') { useWorld.setState({ open: false }); void joinLibrary(f.where!.roomId); } else go(f.where!.owner); };
+  const canGo = (f: FriendView) => !!f.where && f.where.open && f.where.n < f.where.cap && (f.where.kind === 'library' || f.where.kind === 'social' ? f.where.roomId !== libraryId : f.where.owner !== place?.owner);
+  const visit = (f: FriendView) => { if (!canGo(f)) return; const w = f.where!; if (w.kind === 'library' || w.kind === 'social') { useWorld.setState({ open: false }); void (w.kind === 'library' ? joinLibrary(w.roomId) : joinSocial(w.space ?? '', w.roomId)); } else go(w.owner); };
   const online = friends.filter((f) => f.online).length;
   return (
     <section className="w-sec">

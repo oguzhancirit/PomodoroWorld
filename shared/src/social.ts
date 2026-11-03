@@ -7,6 +7,9 @@ export interface SocialSpace { id: string; name: string; desc: string; theme: st
 export const SOCIAL = SOCIAL_SPACES as unknown as readonly SocialSpace[];
 /** v1 ROOM_CAP: a crowd is split into parallel salons */
 export const SOCIAL_CAP = 16;
+/** Turkish case endings: going there (dative) and being there (locative) */
+export const SOCIAL_TO: Record<string, string> = { meydan: "Meydan Kafe'ye", teras: "Çatı Terası'na", oyun: "Oyun Salonu'na" };
+export const SOCIAL_AT: Record<string, string> = { meydan: "Meydan Kafe'de", teras: "Çatı Terası'nda", oyun: "Oyun Salonu'nda" };
 export const isSocialId = (id: unknown): id is string => typeof id === 'string' && SOCIAL.some((s) => s.id === id);
 
 export function socialRoom(id: string): Room | null {

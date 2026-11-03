@@ -51,6 +51,7 @@ export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; t
   const timer = useStore((s) => s.timer);
   const preset = presetById(useStore((s) => s.preset));
   const chosen = presetById(useStore((s) => s.profile.preset));
+  const social = useStore((s) => s.place?.kind === 'social');
   const [, tick] = useState(0);
   useEffect(() => { const t = setInterval(() => tick((x) => x + 1), 250); return () => clearInterval(t); }, []);
   const idle = timer.phase === 'idle';
@@ -63,7 +64,7 @@ export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; t
   const label = idle ? PHASE.idle : paused ? 'Duraklatıldı' : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`;
   return (
     <section className={`timer-card ${timer.phase} ${paused ? 'paused' : ''}`}>
-      <div className="t-head"><span className="ph"><i />{label}</span><small>{isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small></div>
+      <div className="t-head"><span className="ph"><i />{label}</span><small>{social || isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small></div>
       <b className="t-time">{fmt(left)}</b>
       <div className="t-bar" aria-hidden="true"><i style={{ width: `${Math.round(k * 1000) / 10}%` }} /></div>
       <TodoChip />
@@ -80,7 +81,9 @@ export function ChatPanel() {
   const [open, setOpen] = useState(() => typeof innerWidth === 'undefined' || innerWidth > 860);
   const log = useRef<HTMLDivElement>(null);
   useEffect(() => { log.current?.scrollTo({ top: 1e9 }); }, [chat.length, open]);
-  const allowed = isChatAllowed(phase);
+  // social spaces are the place to talk: chat stays open there
+  const social = useStore((s) => s.place?.kind === 'social');
+  const allowed = social || isChatAllowed(phase);
   return (
     <aside className={`chat ${open ? '' : 'closed'}`}>
       <header onClick={() => setOpen(!open)}><b>Sohbet</b><span>{allowed ? 'açık' : 'odakta kapalı'}</span></header>

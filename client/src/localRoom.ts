@@ -12,10 +12,11 @@ import { loadLocalWallet, saveLocalWallet, myClock } from './economy';
 import { noteChat } from '@pw/shared';
 import { todoProgress } from './net';
 import { DEMO_ONLY } from './config';
-import { homeCapacity, libraryRoom, LIBRARY_SEATS, LIBRARY_NAME, ROOM_KEYS } from '@pw/shared';
+import { homeCapacity, libraryRoom, LIBRARY_SEATS, LIBRARY_NAME, ROOM_KEYS, SOCIAL, socialRoom, roomSeats, SOCIAL_CAP, NPC_NAMES, NPC_LINES_SOCIAL } from '@pw/shared';
 
 /** what a visitor needs to draw the library (same keys the server sends for a room) */
-export function libraryLayout() { const r = libraryRoom() as unknown as Record<string, unknown>; return JSON.stringify(Object.fromEntries(ROOM_KEYS.filter((k) => r[k] !== undefined).map((k) => [k, r[k]]))); }
+export function layoutOf(room: object) { const r = room as Record<string, unknown>; return JSON.stringify(Object.fromEntries(ROOM_KEYS.filter((k) => r[k] !== undefined).map((k) => [k, r[k]]))); }
+export const libraryLayout = () => layoutOf(libraryRoom());
 
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
 const BREAK_LINES = ['Mola! Su içmeyi unutmayın.', 'Bu turda 3 soru çözdüm.', 'Gözlerimi biraz dinlendireyim.', 'Kim kahve alıyor?', 'Bir tur daha, hadi!', 'Okuduğum bölüm çok iyiydi.', 'Biraz esneyelim mi?', 'Odaklanmak bugün kolay geldi.'];
@@ -45,14 +46,15 @@ export class LocalRoom {
   private category = useStore.getState().profile.category;
 
   /** 'home' = your own room (step 4): the timer waits for "Başlat"; in demo mode one bot friend drops by */
-  constructor(private speed: number, private kind: 'study' | 'home' | 'library' = 'study', bots = true) {
+  constructor(private speed: number, private kind: 'study' | 'home' | 'library' | 'social' = 'study', bots = true, private space = '') {
     const st = useStore.getState();
     const base = presetById(st.profile.preset);
     this.baseFocusMin = base.focusMin;
     const wallet = loadLocalWallet();
     const look = avatarAllowed(wallet, st.profile.avatar) ? st.profile.avatar : defaultAvatar(st.profile.avatar.g);
     this.preset = speed === 1 ? base : { ...base, focusMin: base.focusMin / speed, shortMin: base.shortMin / speed, longMin: base.longMin / speed };
-    this.timer = kind === 'home' ? { phase: 'idle', phaseEndsAt: 0, round: 0 } : startTimer(Date.now(), this.preset);
+    // everyone keeps their own timer: it waits for "Başlat" (only the old shared hall started by itself)
+    this.timer = kind === 'study' ? startTimer(Date.now(), this.preset) : { phase: 'idle', phaseEndsAt: 0, round: 0 };
     const players: Record<string, PlayerView> = {};
     const me: PlayerView = {
       id: 'me', name: cleanName(st.profile.name) || 'Sen', avatar: encodeAvatar(look), level: levelFromXP(wallet.xp).level, seatIndex: kind === 'home' ? 0 : kind === 'library' ? 2 : 5,
@@ -70,6 +72,26 @@ export class LocalRoom {
         this.botStart('bot0', 0);
         this.later(1500, () => this.botSay('bot0', `Selam ${me.name}! Herkes kendi sayacını kurar. İstersen benim sayacıma katıl: bana tıkla, “Sayacına katıl” de.`, true));
       });
+      return;
+    }
+    if (kind === 'social') {
+      // demo only: v1 NPCs fill the space and chat now and then (the real site shows real people only)
+      const sp = SOCIAL.find((x) => x.id === space), room = socialRoom(space);
+      const seats = room ? roomSeats(room) : 0;
+      if (bots && DEMO_ONLY && sp) {
+        const names = [...NPC_NAMES].sort(() => Math.random() - 0.5).slice(0, Math.min(sp.npc, 6));
+        const taken: number[] = [];
+        names.forEach((n, i) => {
+          const seat = Math.random() < 0.7 ? firstFreeSeat(taken, seats) : -1; if (seat >= 0) taken.push(seat);
+          players['npc' + i] = { id: 'npc' + i, code: botCode(n), level: 2 + ((i * 5) % 14), name: n, avatar: randomAvatar(i % 2 ? 'm' : 'f'), seatIndex: seat, pose: seat >= 0 ? 'sit' : 'idle', activity: 'type', bubble: '', connected: true };
+        });
+        me.seatIndex = firstFreeSeat(taken, seats);
+        const talk = () => { const ids = Object.keys(useStore.getState().players).filter((x) => x !== 'me'); if (ids.length) this.botSay(pick(ids), pick(NPC_LINES_SOCIAL as string[])); this.later(6000 + Math.random() * 7000, talk); };
+        this.later(2500, talk);
+      } else me.seatIndex = -1;
+      st.set({ wallet, net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'home', timer: { ...this.timer },
+        place: { kind: 'social', owner: 'social:' + space, mine: false, name: sp?.name ?? '', layout: room ? layoutOf(room) : '', cap: SOCIAL_CAP } });
+      this.loop = window.setInterval(() => this.tick(), 250);
       return;
     }
     if (kind === 'library') {
@@ -135,7 +157,7 @@ export class LocalRoom {
     todoProgress(this.baseFocusMin, true);
   }
 
-  private isChatOpen() { return isChatAllowed(this.timer.phase as Phase); }
+  private isChatOpen() { return this.kind === 'social' || isChatAllowed(this.timer.phase as Phase); }
 
   private botSay(id: string | undefined, text: string, force = false) {
     const st = useStore.getState(); const p = id && st.players[id];
