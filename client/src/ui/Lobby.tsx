@@ -5,6 +5,8 @@ import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
 import { useStore } from '../store';
 import { DEMO_ONLY } from '../net';
+import { BackupBox } from './Backup';
+import { Notice } from './RoomUI';
 import { AvatarPreview } from './AvatarPreview';
 import { SafeCanvas } from './SafeCanvas';
 
@@ -76,7 +78,7 @@ export function Lobby() {
         <div className="field">Ne çalışacaksın?
           <div className="chips">{CATEGORIES.map(([id, n]) => <button key={id} className={profile.category === id ? 'on' : ''} onClick={() => setProfile({ category: id })}>{n}</button>)}</div>
         </div>
-        <div className="field">Süre · odak / mola <small>Aynı süreyi seçenler aynı odada buluşur.</small>
+        <div className="field">Süre · odak / mola <small>Herkes kendi sayacını kurar; odak ekranından da değiştirebilirsin.</small>
           <div className="durs">{PRESETS.map((p) => (
             <button key={p.id} className={profile.preset === p.id ? 'on' : ''} onClick={() => setProfile({ preset: p.id })}>
               <b>{p.focusMin}<small> / {p.shortMin}</small></b><span>{p.hint}</span>
@@ -86,16 +88,18 @@ export function Lobby() {
 
         {DEMO_ONLY && (
           <div className="demo-note">
-            <p><b>Deneme modu.</b> Oyun sunucusu henüz internette değil, bu yüzden odana bir bot arkadaş uğrayacak; ortak salonda 5 bot seninle çalışır. Sayaç, sohbet kuralları ve hareketler gerçek sürümle aynı.</p>
+            <p><b>Deneme modu.</b> Oyun sunucusu henüz internette değil: odana bir bot arkadaş uğrar, kütüphanede ve kafede botlar var. Sayaç, sohbet kuralları ve hareketler gerçek sürümle aynı.</p>
             <label className="ck"><input id="fast" type="checkbox" checked={profile.fast} onChange={(e) => setProfile({ fast: e.target.checked })} /> Hızlı deneme: 1 dakika = 1 saniye (25 dk odak 25 saniye sürer)</label>
           </div>
         )}
+        {back && <BackupBox />}
         {error && <p className="err">{error}</p>}
         {/* step 4: the game lives in your room; the bigger places are in "Dünya" */}
         <button className="go" disabled={!name || busy || !allowed} onClick={() => useStore.getState().set({ screen: 'home' })}>
           {busy ? 'Bağlanıyor…' : !name ? 'Önce adını yaz' : !allowed ? 'Önce parçaları al ya da ücretsizlere dön' : back ? 'Kaydet ve odama dön' : 'Odama gir'}
         </button>
         <ShopModal />
+        <Notice />
         <Panels />
       </section>
     </main>

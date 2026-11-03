@@ -518,3 +518,7 @@ html, body, #root { font: 500 14px/1.5 var(--f-body); letter-spacing: -.003em; }
 .rs-bans { display: grid; gap: 6px; }
 .rs-bans > div { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .05); }
 .rs-bans small { color: var(--muted); } .rs-bans button { margin-left: auto; padding: 6px 12px; border-radius: 10px; background: rgba(255, 255, 255, .08); font-weight: 700; font-size: 12.5px; }
+/* step 5: backup */
+.backup-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .04); border: 1px solid var(--line); }
+.backup-box > div:first-child { display: grid; } .backup-box small { color: var(--muted); font-size: 12px; }
+.backup-box .row { display: flex; gap: 8px; }

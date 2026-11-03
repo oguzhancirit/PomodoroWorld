@@ -113,7 +113,7 @@ export function NetBanner() {
   return null;
 }
 
-function Notice() {
+export function Notice() {
   const n = useStore((s) => s.notice);
   const [, tick] = useState(0);
   useEffect(() => { if (!n) return; const t = setTimeout(() => tick((x) => x + 1), n.until - Date.now() + 50); return () => clearTimeout(t); }, [n]);
