@@ -9,3 +9,4 @@ export * from './room';
 export * from './quests';
 export * from './friends';
 export * from './library';
+export * from './social';
