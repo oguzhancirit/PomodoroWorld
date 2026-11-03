@@ -8,3 +8,4 @@ export * from './roomCatalog';
 export * from './room';
 export * from './quests';
 export * from './friends';
+export * from './library';
