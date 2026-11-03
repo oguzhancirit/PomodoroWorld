@@ -9,6 +9,7 @@ import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
 import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
 import { FocusScreen, useCompanions, isRunning } from './FocusScreen';
+import { TravelScreen } from '../ui/Travel';
 import { PersonCard, openPerson, PeopleSheet, usePeople } from './PersonCard';
 import { useFriends, friendsCall, isBlocked } from '../friends';
 import { RewardToast } from '../ui/Wallet';
@@ -260,6 +261,7 @@ export function HomeRoom() {
       {!editing && <PersonCard canKick={!visiting} />}
       {!editing && <PeopleSheet />}
       <HomeNotice />
+      <TravelScreen />
     </div>
   );
 }

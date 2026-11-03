@@ -4,6 +4,7 @@ import { encodeAvatar, activityFor, parseInvite, LIBRARY_NAME, LIBRARY_SEATS, ty
 import { useStore } from './store';
 import { LocalRoom, libraryLayout, type TimerAction } from './localRoom';
 import { isFriend, isBlocked } from './friends';
+import { travel } from './ui/Travel';
 import { useTodos } from './todos';
 
 import { SERVER, DEMO_ONLY } from './config';
@@ -27,7 +28,8 @@ const NOTICES: Record<string, string> = {
 
 /* ---------- step 4f: the 10-seat library (replaces the old study hall and its bot fallback) ---------- */
 /** enter a library (a friend's one when `roomId` is given); demo mode runs it in this browser with bot classmates */
-export async function joinLibrary(roomId?: string): Promise<boolean> {
+export const joinLibrary = (roomId?: string) => travel('Kütüphaneye gidiliyor', enterLibrary(roomId));
+async function enterLibrary(roomId?: string): Promise<boolean> {
   const st = useStore.getState(), job = ++homeJob;
   if (DEMO_ONLY) { leaveQuiet(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'library'); return true; }
   const { profile } = st;
@@ -58,7 +60,7 @@ export const openHome = () => joinHome(identity().pid, '');
 export function visitHome(code: string) {
   const c = parseInvite(code);
   if (!c) { useStore.getState().flash('Bu davet kodu geçersiz.'); return Promise.resolve(false); }
-  return joinHome(c.owner, c.token);
+  return travel('Arkadaşının odasına gidiliyor', joinHome(c.owner, c.token));
 }
 async function joinHome(owner: string, token: string): Promise<boolean> {
   const st = useStore.getState(), mine = owner === identity().pid, job = ++homeJob;
@@ -175,6 +177,11 @@ export function openProfile() {
 export function leaveRoom() {
   leaveQuiet();
   useStore.getState().set({ screen: 'home', net: 'idle', players: {}, me: '', place: null, chat: [] });
+  // the room opens again by itself (HomeRoom); show the walk home until it is there
+  void travel('Odana dönülüyor', new Promise<void>((res) => {
+    const t0 = Date.now();
+    const iv = setInterval(() => { const p = useStore.getState().place; if ((p && p.mine) || Date.now() - t0 > 8000) { clearInterval(iv); res(); } }, 100);
+  }));
 }
 export const sendChat = (text: string) => (local ? local.chat(text) : room?.send('chat', { text }));
 export const sendEmote = (e: string) => (local ? local.emoteMine(e) : room?.send('emote', { e }));
