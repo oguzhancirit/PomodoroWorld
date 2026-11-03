@@ -84,15 +84,16 @@ export function Lobby() {
 
         {DEMO_ONLY && (
           <div className="demo-note">
-            <p><b>Deneme modu.</b> Oyun sunucusu henüz internette değil, bu yüzden odada seninle 5 bot arkadaş çalışacak. Sayaç, sohbet kuralları ve hareketler gerçek sürümle aynı.</p>
+            <p><b>Deneme modu.</b> Oyun sunucusu henüz internette değil, bu yüzden odana bir bot arkadaş uğrayacak; ortak salonda 5 bot seninle çalışır. Sayaç, sohbet kuralları ve hareketler gerçek sürümle aynı.</p>
             <label className="ck"><input id="fast" type="checkbox" checked={profile.fast} onChange={(e) => setProfile({ fast: e.target.checked })} /> Hızlı deneme: 1 dakika = 1 saniye (25 dk odak 25 saniye sürer)</label>
           </div>
         )}
         {error && <p className="err">{error}</p>}
-        <button className="go" disabled={!name || busy || !allowed} onClick={() => joinStudyRoom()}>
-          {busy ? 'Bağlanıyor…' : !name ? 'Önce adını yaz' : !allowed ? 'Önce parçaları al ya da ücretsizlere dön' : 'Çalışma odasına gir'}
+        {/* step 4: the game lives in your room; the bigger places are in "Dünya" */}
+        <button className="go" disabled={!name || busy || !allowed} onClick={() => useStore.getState().set({ screen: 'home' })}>
+          {busy ? 'Bağlanıyor…' : !name ? 'Önce adını yaz' : !allowed ? 'Önce parçaları al ya da ücretsizlere dön' : 'Odama gir'}
         </button>
-        <button className="go alt" onClick={() => useStore.getState().set({ screen: 'home' })}>Odama git <small>— eşyalarını yerleştir, odanı tasarla</small></button>
+        <button className="go alt" disabled={!name || busy || !allowed} onClick={() => joinStudyRoom()}>Ortak çalışma salonu <small>— herkesle aynı sayaç</small></button>
         <ShopModal />
         <Panels />
       </section>

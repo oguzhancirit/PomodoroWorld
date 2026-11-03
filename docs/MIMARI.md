@@ -19,8 +19,11 @@ Read the section you need, not the whole file.
 - `src/config.ts` — `DEMO_ONLY` (no server URL and not local, e.g. Claude artifact → bot demo).
 - `src/economy.ts` — wallet/room load & save (demo: localStorage `pw2.wallet`, `pw2.room`; online: HTTP plus a local backup copy).
 - `src/ui/Panels.tsx` — tool buttons + panels: Görevler, Yapılacaklar, Ortam sesleri, İstatistik. `src/todos.ts` (localStorage `pw2.todos`), `src/sound.ts` (port of `js/sound.js`, settings `pw2.sound`).
-- `src/store.ts` — zustand; `screen`: lobby | room | home.
-- `src/home/` — `HomeRoom.tsx` (Odam), `EditBar.tsx` (old editor tabs and tools), `engine.ts` (ROOM_STYLES, thumbs, undo history).
+- `src/store.ts` — zustand; `screen`: lobby | room | home; `place` = the live room on the home screen (mine or a friend's: owner, layout JSON, cap).
+- `src/net.ts` — `openHome()` (owner joinOrCreate `home`), `visitHome(code)` (guest `join`), `sendTimer`, `wire()` copies any room state into the store. Server unreachable → `LocalRoom(…, 'home')` (local timer; demo: one bot friend visits).
+- `src/ui/World.tsx` — "Dünya" panel: invite link (`#oda-OWNER-TOKEN`, read in `App.tsx`), code box, open rooms (`GET /api/world`), study hall, social spaces (soon).
+- App starts in Odam when the profile has a name (Lobby = character creation).
+- `src/home/` — `HomeRoom.tsx` (Odam: draws players from the store with the old engine — sit by server seat index, bubbles, emotes; timer/chat/emotes from `ui/RoomUI.tsx`), `EditBar.tsx` (old editor tabs and tools), `engine.ts` (ROOM_STYLES, thumbs, undo history).
 - `src/legacy/shim.ts` — runs old r128 code on three r186: lights ×π, point light decay 0 + range ×0.5, scene `environmentIntensity = 0.3`, `encoding`→`colorSpace`, multisample target, SAO off. `js/world.js` adds an ACES tone-map pass only when `THREE.OutputPass` exists (v1 unaffected).
 - `src/legacy/avatarAdapter.ts` — the new avatar with the old `PW.Avatar` API (installed in `legacy/index.ts`).
 - `src/scene/`, `src/avatar/` — R3F study room and Quaternius avatars (CC0).

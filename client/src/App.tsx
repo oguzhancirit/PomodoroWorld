@@ -7,13 +7,24 @@ import { TagLayer } from './ui/Tags';
 import { SafeCanvas } from './ui/SafeCanvas';
 import { refreshWallet } from './economy';
 import { HomeRoom } from './home/HomeRoom';
+import { visitHome } from './net';
+
+// an invite link (#oda-CODE) opens the friend's room once you are in the game
+let pendingInvite = '';
+const takeInvite = () => { if (location.hash.startsWith('#oda-')) { pendingInvite = location.hash.slice(5); history.replaceState(null, '', location.pathname + location.search); } };
 
 export function App() {
   useEffect(() => {
-    if (new URLSearchParams(location.search).has('home')) useStore.getState().set({ screen: 'home' });
+    // like the original game: you start in your own room (first visit: make your character first)
+    const st = useStore.getState();
+    if (new URLSearchParams(location.search).has('home') || st.profile.name) st.set({ screen: 'home' });
     refreshWallet();
+    takeInvite();
+    const onHash = () => { takeInvite(); if (pendingInvite && useStore.getState().screen === 'home') { visitHome(pendingInvite); pendingInvite = ''; } };
+    addEventListener('hashchange', onHash); return () => removeEventListener('hashchange', onHash);
   }, []);
   const screen = useStore((s) => s.screen);
+  useEffect(() => { if (screen === 'home' && pendingInvite) { const c = pendingInvite; pendingInvite = ''; setTimeout(() => visitHome(c), 300); } }, [screen]);
   if (screen === 'home') return <SafeCanvas label="Odan bu cihazda açılamadı (3D desteklenmiyor)."><HomeRoom /></SafeCanvas>;
   return screen === 'room' ? (
     <div className="room-screen">

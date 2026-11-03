@@ -72,7 +72,7 @@ export class HomeRoom extends StudyRoom {
     const verdict = homeEntry(this.room, { pid, owner: this.owner, count, token });
     if (verdict !== 'ok') throw new Error(REFUSE[verdict]);
     super.onJoin(client, options);
-    if (pid === this.owner) this.ownerName = cleanName(parseJoin(options).name) || 'Oyuncu';
+    if (pid === this.owner) this.state.ownerName = this.ownerName = cleanName(parseJoin(options).name) || 'Oyuncu';
     this.meta();
   }
 

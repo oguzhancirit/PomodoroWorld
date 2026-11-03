@@ -11,6 +11,8 @@ import { rewardFocus, avatarAllowed, levelFromXP, defaultAvatar } from '@pw/shar
 import { loadLocalWallet, saveLocalWallet, myClock } from './economy';
 import { noteChat } from '@pw/shared';
 import { todoProgress } from './net';
+import { DEMO_ONLY } from './config';
+import { homeCapacity } from '@pw/shared';
 
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
 const BREAK_LINES = ['Mola! Su içmeyi unutmayın.', 'Bu turda 3 soru çözdüm.', 'Gözlerimi biraz dinlendireyim.', 'Kim kahve alıyor?', 'Bir tur daha, hadi!', 'Okuduğum bölüm çok iyiydi.', 'Biraz esneyelim mi?', 'Odaklanmak bugün kolay geldi.'];
@@ -35,20 +37,33 @@ export class LocalRoom {
   private chatLimit = new RateLimiter(1, 3000);
   private category = useStore.getState().profile.category;
 
-  constructor(speed: number) {
+  /** 'home' = your own room (step 4): the timer waits for "Başlat"; in demo mode one bot friend drops by */
+  constructor(speed: number, private kind: 'study' | 'home' = 'study', bots = true) {
     const st = useStore.getState();
     const base = presetById(st.profile.preset);
     this.baseFocusMin = base.focusMin;
     const wallet = loadLocalWallet();
     const look = avatarAllowed(wallet, st.profile.avatar) ? st.profile.avatar : defaultAvatar(st.profile.avatar.g);
     this.preset = speed === 1 ? base : { ...base, focusMin: base.focusMin / speed, shortMin: base.shortMin / speed, longMin: base.longMin / speed };
-    this.timer = startTimer(Date.now(), this.preset);
+    this.timer = kind === 'home' ? { phase: 'idle', phaseEndsAt: 0, round: 0 } : startTimer(Date.now(), this.preset);
     const players: Record<string, PlayerView> = {};
     const me: PlayerView = {
-      id: 'me', name: cleanName(st.profile.name) || 'Sen', avatar: encodeAvatar(look), level: levelFromXP(wallet.xp).level, seatIndex: 5,
+      id: 'me', name: cleanName(st.profile.name) || 'Sen', avatar: encodeAvatar(look), level: levelFromXP(wallet.xp).level, seatIndex: kind === 'home' ? 0 : 5,
       pose: 'sit', activity: activityFor(st.profile.category), bubble: '', connected: true,
     };
     players.me = me;
+    if (kind === 'home') {
+      const room = st.room;
+      st.set({ wallet, net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'home', timer: { ...this.timer },
+        place: { owner: 'me', mine: true, name: room?.name ?? 'Odam', layout: '', cap: room ? homeCapacity(room) : 2 } });
+      this.loop = window.setInterval(() => this.tick(), 250);
+      if (bots && DEMO_ONLY) this.later(5000, () => {
+        const [n, g] = BOTS[0];
+        st.upsertPlayer('bot0', { id: 'bot0', level: 4, name: n, avatar: randomAvatar(g), seatIndex: 1, pose: 'sit', activity: 'write', bubble: '', connected: true });
+        this.later(1500, () => this.botSay('bot0', `Selam ${me.name}! Birlikte çalışalım mı? “Başlat”a bas, sayaç ikimiz için aynı.`, true));
+      });
+      return;
+    }
     const taken = [5];
     BOTS.forEach(([n, g], i) => {
       const seat = firstFreeSeat(taken, STUDY_ROOM.seats.length); taken.push(seat);
@@ -140,6 +155,19 @@ export class LocalRoom {
     const st = useStore.getState();
     const taken = Object.values(st.players).filter((p) => p.id !== 'me').map((p) => p.seatIndex);
     if (isSeatFree(seat, taken, STUDY_ROOM.seats.length)) st.upsertPlayer('me', { seatIndex: seat });
+  }
+  timerAction(action: 'start' | 'stop') {
+    const st = useStore.getState();
+    if (action === 'start' && this.timer.phase === 'idle') {
+      this.timer = startTimer(Date.now(), this.preset);
+      st.set({ timer: { ...this.timer } });
+      for (const id of Object.keys(st.players)) st.upsertPlayer(id, { bubble: '' });
+      st.addChat({ id: 'sys', name: '', text: 'Odak başladı. Sohbet kapandı.', at: Date.now(), system: true });
+    } else if (action === 'stop' && this.timer.phase !== 'idle') {
+      this.timer = { phase: 'idle', phaseEndsAt: 0, round: 0 };
+      st.set({ timer: { ...this.timer } });
+      st.addChat({ id: 'sys', name: '', text: 'Sayaç durdu.', at: Date.now(), system: true });
+    }
   }
   leave() { clearInterval(this.loop); this.timeouts.forEach(clearTimeout); }
 }

@@ -21,6 +21,7 @@ export class NewAvatar {
   cfg = { ht: 1 };
   private emote: string | null = null;
   private emoteUntil = 0;
+  private talkUntil = 0;
   private body: THREE.Object3D | null = null;
   private head: THREE.Object3D | null = null;
   private rig: Rig | null = null;
@@ -57,12 +58,14 @@ export class NewAvatar {
 
   setState(state: State, act?: string) { this.state = state; if (act) this.act = act; }
   doEmote(e: string, ms = 3000) { this.emote = e; this.emoteUntil = performance.now() + ms; }
+  /** a chat bubble appeared: talk for a while (old engine calls this from World.bubble) */
+  say(ms = 3500) { this.talkUntil = performance.now() + ms; }
 
   /** which clip fits what the old engine asks for */
   private want(): string {
     const act = this.emote ?? this.act;
     if (this.state === 'walk') return 'Walk';
-    if (this.state === 'sit') return SIT[act] ?? 'Sit';
+    if (this.state === 'sit') return SIT[act] ?? (performance.now() < this.talkUntil ? 'SitTalk' : 'Sit');
     return STAND[act] ?? 'Idle';
   }
 

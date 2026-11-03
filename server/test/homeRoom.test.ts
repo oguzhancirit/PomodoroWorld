@@ -32,6 +32,7 @@ describe('HomeRoom', () => {
     const room = await roomOf(own.pid);
     expect(JSON.parse(room.state.layout).items).toEqual(own.room.items);
     expect(room.state.owner).toBe(own.pid);
+    expect(room.state.ownerName).toBe('Oguz');
     expect(room.capacity).toBe(2);
     expect(room.state.timer.phase).toBe('idle');
     expect(room.metadata).toMatchObject({ owner: own.pid, name: 'Odam', open: true, n: 1, cap: 2 });
@@ -96,5 +97,15 @@ describe('HomeRoom', () => {
     expect(JSON.parse(room.state.layout).items).toHaveLength(4);
     expect(room.capacity).toBe(3);
     expect(room.metadata).toMatchObject({ name: 'Kütüphanem', cap: 3 });
+  });
+
+  it('the world list shows open rooms with free seats, never closed ones', async () => {
+    const a = await player('Acik'), b = await player('Kapali');
+    await colyseus.http.post('/api/room', { body: { pid: b.pid, secret: b.secret, room: { ...b.room, open: false } } });
+    await join(a, a.pid); await join(b, b.pid); await wait(50);
+    const w = await colyseus.http.get('/api/world');
+    const owners = w.data.rooms.map((r: { owner: string }) => r.owner);
+    expect(owners).toContain(a.pid); expect(owners).not.toContain(b.pid);
+    expect(w.data.rooms.find((r: { owner: string }) => r.owner === a.pid)).toMatchObject({ ownerName: 'Acik', n: 1, cap: 2 });
   });
 });

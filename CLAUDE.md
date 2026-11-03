@@ -16,7 +16,7 @@ New Quaternius avatar everywhere. The old engine draws it through `client/src/le
 
 ## Commands
 - Install: `npm install --ignore-scripts --legacy-peer-deps` (flag required, npm 10.9 bug)
-- Test: `npm test 2>&1 | grep -E "Tests |FAIL|×"` (shared 96 + server 34 pass) · Build: `cd client && npx vite build 2>&1 | tail -3`
+- Test: `npm test 2>&1 | grep -E "Tests |FAIL|×"` (shared 96 + server 35 pass) · Build: `cd client && npx vite build 2>&1 | tail -3`
 - Dev: `npm run dev:server` + `npm run dev:client`; routes `/?home` (Odam), `?demo` (bots, no server), `?lite` (light graphics)
 - Artifact demo build: `npm run build:artifact`
 

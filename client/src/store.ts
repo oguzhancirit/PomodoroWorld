@@ -17,6 +17,8 @@ function loadProfile(): Profile {
 }
 
 export type Screen = 'lobby' | 'room' | 'home';
+/** the live room you are in on the "home" screen: yours, or a friend's (step 4) */
+export interface Place { owner: string; mine: boolean; name: string; ownerName?: string; layout: string; cap: number }
 export type NetStatus = 'idle' | 'connecting' | 'online' | 'reconnecting' | 'offline';
 
 interface State {
@@ -41,6 +43,7 @@ interface State {
   shopTab: string;
   /** my personal room (old game format) */
   room: Room | null;
+  place: Place | null;
   setProfile(p: Partial<Profile>): void;
   set(partial: Partial<State>): void;
   upsertPlayer(id: string, p: Partial<PlayerView>): void;
@@ -68,6 +71,7 @@ export const useStore = create<State>((set, get) => ({
   shop: false,
   shopTab: 'avatar',
   room: null,
+  place: null,
   setProfile(p) {
     const profile = { ...get().profile, ...p };
     try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch { /* ignore */ }

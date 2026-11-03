@@ -32,6 +32,7 @@ export const HomeRoomState = schema({
   preset: t.string(),
   owner: t.string(),         // owner's player id
   name: t.string(),          // room name
+  ownerName: t.string(),     // shown to guests: "Oğuzhan'ın odası"
   layout: t.string(),        // JSON of the room's look (ROOM_KEYS only: never the invite token or ban list)
 }, 'HomeRoomState');
 export type HomeRoomState = SchemaType<typeof HomeRoomState>;

@@ -2,6 +2,7 @@
 // Prices always come from the server's own catalog; the client only says which item.
 import type express from 'express';
 import { buy, levelFromXP, BuyRequest, ProfileRequest, RoomRequest, QuestRequest, clock, loginTick, claimQuest, claimLogin, setPledge, cancelPledge, noteDecor, type Room } from '@pw/shared';
+import { matchMaker } from '@colyseus/core';
 import { HomeRoom } from './rooms/HomeRoom';
 import { profiles } from './profiles';
 
@@ -47,6 +48,15 @@ export function routes(app: express.Application, json: express.RequestHandler) {
     if (added) profiles.update(p, noteDecor(p.wallet, added, clock(Date.now(), p.wallet.tz)));
     HomeRoom.live.get(p.pid)?.applyRoom(room);
     res.json({ ok: true, room, wallet: p.wallet });
+  });
+  // the "Dünya" panel: open rooms that have someone inside and a free chair (no ids beyond the owner's)
+  app.get('/api/world', async (_req, res) => {
+    const list = await matchMaker.query({ name: 'home' });
+    const rooms = list.map((r) => r.metadata as { owner: string; ownerName: string; name: string; cat: string; open: boolean; n: number; cap: number } | undefined)
+      .filter((m): m is NonNullable<typeof m> => !!m && m.open && m.n > 0 && m.n < m.cap)
+      .sort((a, b) => b.n - a.n).slice(0, 60)
+      .map(({ owner, ownerName, name, cat, n, cap }) => ({ owner, ownerName, name, cat, n, cap }));
+    res.json({ rooms });
   });
   app.post('/api/quest', (req, res) => {
     const b = QuestRequest.safeParse(req.body);

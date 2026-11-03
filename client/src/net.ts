@@ -1,6 +1,6 @@
 // Talks to the Colyseus server and copies the room state into the store.
 import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
-import { encodeAvatar, activityFor, type Activity, type Phase } from '@pw/shared';
+import { encodeAvatar, activityFor, parseInvite, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
 import { LocalRoom } from './localRoom';
 import { useTodos } from './todos';
@@ -13,7 +13,7 @@ let room: Room | null = null;
 let local: LocalRoom | null = null;
 
 export function startDemo() {
-  local?.leave();
+  leaveQuiet();
   local = new LocalRoom(useStore.getState().profile.fast ? 60 : 1);
 }
 
@@ -26,7 +26,8 @@ export async function joinStudyRoom() {
   const st = useStore.getState();
   if (DEMO_ONLY) { startDemo(); return true; }
   const { profile } = st;
-  st.set({ net: 'connecting', error: '', players: {}, chat: [], emotes: {} });
+  leaveQuiet();
+  st.set({ net: 'connecting', error: '', players: {}, chat: [], emotes: {}, place: null });
   try {
     const client = new Client(SERVER);
     room = await client.joinOrCreate('study_room', {
@@ -37,8 +38,61 @@ export async function joinStudyRoom() {
     startDemo(); useStore.getState().flash('Sunucuya ulaşılamadı: bot arkadaşlarla deneme modundasın.', 5000);
     return true;
   }
-  const r = room;
-  st.set({ net: 'online', mode: 'online', me: r.sessionId, screen: 'room' });
+  wire(room, 'room');
+  return true;
+}
+
+/* ---------- step 4: your own room is live; friends join it ---------- */
+let homeJob = 0;
+/** open my room (only I can) */
+export const openHome = () => joinHome(identity().pid, '');
+/** go to a friend's room from an invite code or link */
+export function visitHome(code: string) {
+  const c = parseInvite(code);
+  if (!c) { useStore.getState().flash('Bu davet kodu geçersiz.'); return Promise.resolve(false); }
+  return joinHome(c.owner, c.token);
+}
+async function joinHome(owner: string, token: string): Promise<boolean> {
+  const st = useStore.getState(), mine = owner === identity().pid, job = ++homeJob;
+  if (DEMO_ONLY) {
+    if (!mine) { st.flash('Deneme modunda başkasının odasına gidilemez.'); return false; }
+    local?.leave(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'home'); return true;
+  }
+  const { profile } = st;
+  st.set({ net: 'connecting', error: '' });
+  let r: Room;
+  try {
+    const client = new Client(SERVER);
+    const opts = { ...identity(), owner, token: token || undefined, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category), category: profile.category };
+    r = mine ? await client.joinOrCreate('home', opts) : await client.join('home', opts);
+  } catch (e) {
+    if (job !== homeJob) return false;
+    const msg = (e as Error)?.message || '';
+    if (mine) {
+      // no server: my room still works in this browser with a local timer
+      console.warn('home join failed, local room', e); local?.leave(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'home', false); return true;
+    }
+    st.set({ net: room || local ? 'online' : 'idle' });
+    st.flash(/[ğüşıöçĞÜŞİÖÇ]/.test(msg) ? msg : 'Bu oda şu an açık değil.', 5000);
+    return false;
+  }
+  if (job !== homeJob) { r.leave(true).catch(() => {}); return false; }
+  leaveQuiet();
+  room = r;
+  st.set({ players: {}, chat: [], emotes: {}, place: { owner, mine, name: '', layout: '', cap: 2 } });
+  wire(r, 'home');
+  const cb = Callbacks.get(r);
+  const put = (k: 'name' | 'layout' | 'ownerName') => (v: unknown) => { const p = useStore.getState().place; if (p) useStore.getState().set({ place: { ...p, [k]: String(v ?? '') } }); };
+  cb.listen('name', put('name')); cb.listen('layout', put('layout')); cb.listen('ownerName', put('ownerName'));
+  if (!mine) st.flash('Arkadaşının odasına girdin. Sayaç herkes için aynı.', 4000);
+  return true;
+}
+export const sendTimer = (action: 'start' | 'stop') => (local ? local.timerAction(action) : room?.send('timer', { action, preset: useStore.getState().profile.preset }));
+
+/** copy the server room into the store (study room and home rooms alike) */
+function wire(r: Room, screen: 'room' | 'home') {
+  const st = useStore.getState();
+  st.set({ net: 'online', mode: 'online', me: r.sessionId, screen });
   const cb = Callbacks.get(r);
   cb.listen('preset', (v) => useStore.getState().set({ preset: v as string }));
   // the state arrives a moment after joining: subscribe to the timer object when it shows up
@@ -74,15 +128,19 @@ export async function joinStudyRoom() {
   r.onReconnect(() => { useStore.getState().set({ net: 'online' }); r.send('time', { t0: Date.now() }); });
   r.onLeave((code: number) => {
     if (code === CloseCode.CONSENTED) return;
+    if (room !== r) return;
     useStore.getState().set({ net: 'offline', error: code === CloseCode.FAILED_TO_RECONNECT ? 'Bağlantı koptu.' : 'Odadan çıkıldı.' });
   });
-  return true;
 }
 
-export function leaveRoom() {
-  room?.leave(true).catch(() => {}); room = null;
+function leaveQuiet() {
+  const r = room; room = null; r?.leave(true).catch(() => {});
   local?.leave(); local = null;
-  useStore.getState().set({ screen: 'lobby', net: 'idle', players: {}, me: '' });
+}
+/** leave the current room and go home: your own room is where the game lives */
+export function leaveRoom() {
+  leaveQuiet();
+  useStore.getState().set({ screen: 'home', net: 'idle', players: {}, me: '', place: null, chat: [] });
 }
 export const sendChat = (text: string) => (local ? local.chat(text) : room?.send('chat', { text }));
 export const sendEmote = (e: string) => (local ? local.emoteMine(e) : room?.send('emote', { e }));

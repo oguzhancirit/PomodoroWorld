@@ -278,3 +278,30 @@ input:focus, select:focus { border-color: var(--acc2); }
   .todo-add { grid-template-columns: 1fr auto; } .todo-add input, .todo-add button.acc { grid-column: 1 / -1; }
   .topbar .people-pill.demo { display: none; }
 }
+
+/* step 4: Odam is live — start/stop in the timer, the "Dünya" panel */
+.timer-card .t-go, .timer-card .t-stop { margin-top: 6px; padding: 5px 14px; border-radius: 999px; font-weight: 800; font-size: 13px; }
+.timer-card .t-go { background: var(--acc); color: #fff; }
+.timer-card .t-stop { background: rgba(255, 255, 255, .1); color: var(--muted); font-size: 12px; }
+.home-ui .chat { bottom: 74px; }
+.home-room .home-hint { bottom: 80px; }
+.home-top .owner-note { color: var(--muted); font-weight: 600; }
+.sheet.world { max-width: 640px; }
+.sheet.world section { padding: 10px 18px 14px; border-top: 1px solid var(--line); }
+.sheet.world h3 { margin: 4px 0 8px; font-size: 15px; } .sheet.world h3 small { color: var(--muted); font-weight: 600; margin-left: 6px; }
+.sheet.world .row { display: flex; gap: 8px; } .sheet.world .row input { flex: 1; min-width: 0; }
+.sheet.world .row button { padding: 0 14px; border-radius: 11px; background: var(--acc); font-weight: 800; }
+.sheet.world .row button:disabled { opacity: .5; }
+.sheet.world .muted { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+.world-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.world-card { display: grid; gap: 2px; text-align: left; padding: 12px; border-radius: 14px; background: rgba(255, 255, 255, .05); border: 1px solid var(--line); position: relative; }
+.world-card small { color: var(--muted); font-size: 12px; }
+.world-card span { position: absolute; top: 10px; right: 12px; font-size: 12px; font-weight: 800; color: var(--acc2); }
+.world-card.soon { opacity: .55; cursor: default; }
+@media (max-width: 600px) { .home-ui .chat { bottom: 70px; } .world-list { grid-template-columns: 1fr; } }
+/* the ring is decoration: clicks go to the buttons inside the card */
+.timer-card svg { pointer-events: none; }
+.timer-card .t-in { position: relative; z-index: 1; }
+.home-ui .timer-card .t-in small:first-of-type { display: none; }
+.home-room .home-hint { top: 84px; bottom: auto; }
+@media (max-width: 600px) { .home-room .home-hint { top: 196px; font-size: 13px; width: calc(100% - 32px); } }

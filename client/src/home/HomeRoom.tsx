@@ -1,17 +1,26 @@
 // "Odam" — the player's own room, drawn by the original room engine with the original editor rules.
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { available, itemById, levelFromXP, ROOM_KEYS, avatarAllowed, defaultAvatar, encodeAvatar, type Room, type PlacedItem } from '@pw/shared';
+import { available, itemById, levelFromXP, ROOM_KEYS, avatarAllowed, defaultAvatar, encodeAvatar, defaultRoom, type Room, type PlacedItem } from '@pw/shared';
 import { useStore } from '../store';
 import { saveRoom, refreshWallet } from '../economy';
 import { WalletChip, ShopModal } from '../ui/Wallet';
 import { ToolButtons, Panels } from '../ui/Panels';
 import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
+import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
+import { RewardToast } from '../ui/Wallet';
+import { WorldButton, WorldPanel } from '../ui/World';
+import { openHome, leaveRoom } from '../net';
 
 type Ghost = { id: string; r: number; extra: Record<string, unknown> } | null;
 
 export function HomeRoom() {
-  const room = useStore((s) => s.room), wallet = useStore((s) => s.wallet), profile = useStore((s) => s.profile);
+  const myRoom = useStore((s) => s.room), wallet = useStore((s) => s.wallet), profile = useStore((s) => s.profile);
+  const place = useStore((s) => s.place);
+  // a friend's room: draw the look the server sends; my room: my saved room (editing stays mine only)
+  const visiting = !!place && !place.mine;
+  const room: Room | null = visiting ? (place.layout ? { ...defaultRoom(), ...JSON.parse(place.layout), name: place.name } : null) : myRoom;
+  const look = room ? lookOf(room) : '';
   const host = useRef<HTMLDivElement>(null), tags = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -23,7 +32,10 @@ export function HomeRoom() {
   latest.current = { room, wallet, editing };
   const flash = useStore((s) => s.flash);
 
-  useEffect(() => { if (!room) refreshWallet(); }, [room]);
+  useEffect(() => { if (!myRoom) refreshWallet(); }, [myRoom]);
+  // the game lives in your room: open it live so friends can come in (once per visit to this screen)
+  useEffect(() => { if (!place) openHome(); }, [place]);
+  useEffect(() => { if (visiting && editing) setEditing(false); }, [visiting, editing]);
 
   /* ---------- engine lifetime ---------- */
   useEffect(() => {
@@ -61,13 +73,43 @@ export function HomeRoom() {
   }, []);
   const seatMe = useCallback(() => {
     const w = engine.world; if (!w || !w.avatars.has('me')) return;
+    // in a live room the server gives out the chairs; alone, take the first free desk chair
+    const st = useStore.getState(), seat = st.players[st.me]?.seatIndex;
+    if (seat != null && seat >= 0) { if (w.avatars.get('me').seatIdx !== seat) w.sitAvatar('me', seat); }
     // already in a chair: stay there (freeSeat would skip our own chair as "taken" and move us)
-    if (w.avatars.get('me').seatIdx == null) { const i = w.freeSeat(true); if (i != null) w.sitAvatar('me', i); }
+    else if (w.avatars.get('me').seatIdx == null) { const i = w.freeSeat(true); if (i != null) w.sitAvatar('me', i); }
     w.setAct('me', 'idle');
   }, []);
 
+  /* ---------- the people in this room (friends, and me as the server sees me) ---------- */
+  const players = useStore((s) => s.players), meId = useStore((s) => s.me), phase = useStore((s) => s.timer.phase), emotes = useStore((s) => s.emotes);
+  const seen = useRef<Record<string, string>>({});
+  useEffect(() => {
+    const w = engine.world; if (!ready || !w || editing) return;
+    const status = phase === 'focus' ? 'focus' : phase === 'idle' ? '' : 'break';
+    const here = new Set<string>(['me']);
+    for (const p of Object.values(players)) {
+      const key = p.id === meId ? 'me' : p.id; here.add(key);
+      if (key !== 'me') {
+        if (!w.avatars.has(key)) w.addAvatar(key, p.avatar, { name: p.name, level: p.level ?? 1 });
+        const a = w.avatars.get(key);
+        if (p.seatIndex >= 0) { if (a.seatIdx !== p.seatIndex) w.sitAvatar(key, p.seatIndex); } else if (a.seatIdx != null) w.standAvatar(key);
+      } else if (p.seatIndex >= 0 && w.avatars.get('me')?.seatIdx !== p.seatIndex) w.sitAvatar('me', p.seatIndex);
+      w.updateAvatarInfo(key, { name: key === 'me' ? (profile.name || 'Sen') : p.name, level: p.level ?? 1, status, ...(key === 'me' ? {} : { cfg: p.avatar }) });
+      w.setAct(key, phase === 'focus' ? p.activity : p.bubble ? 'talk' : 'idle');
+      // a new chat line becomes a speech bubble over the head
+      if (p.bubble && seen.current[key] !== p.bubble) w.bubble(key, p.bubble);
+      seen.current[key] = p.bubble;
+    }
+    for (const id of [...w.avatars.keys()] as string[]) if (!here.has(id)) w.removeAvatar(id);
+  }, [ready, editing, players, meId, phase, look, profile.name]);
+  const emoted = useRef<Record<string, number>>({});
+  useEffect(() => {
+    const w = engine.world; if (!ready || !w) return;
+    for (const [id, v] of Object.entries(emotes)) if (emoted.current[id] !== v.until) { emoted.current[id] = v.until; w.emote(id === meId ? 'me' : id, v.e); }
+  }, [ready, emotes, meId]);
+
   /* ---------- draw the room whenever its look changes ---------- */
-  const look = room ? lookOf(room) : '';
   useEffect(() => {
     const w = engine.world; if (!ready || !w || !room) return;
     w.loadRoom(defOf(room));
@@ -162,13 +204,17 @@ export function HomeRoom() {
       <div ref={host} className="home-canvas" />
       <div ref={tags} className="home-tags" />
       <header className="topbar home-top">
-        <div className="brand"><span className="dot" />{room?.name || 'Odam'}</div>
+        <div className="brand"><span className="dot" />{visiting ? (place.ownerName ? `${possessive(place.ownerName)} odası` : 'Arkadaşının odası') : room?.name || 'Odam'}{visiting && room?.name && <small className="owner-note"> · {room.name}</small>}</div>
+        {place && <div className="people-pill" title="Odadakiler / sandalye sayısı">{Object.keys(players).length} / {place.cap} kişi</div>}
         <WalletChip />
         {!editing && <ToolButtons />}
-        {!editing && <button className="acc" onClick={() => setEditing(true)}>Odayı düzenle</button>}
-        <button className="ghost" onClick={() => useStore.getState().set({ screen: 'lobby' })}>Çalışma odası</button>
+        {!editing && !visiting && <button className="acc" onClick={() => setEditing(true)}>Odayı düzenle</button>}
+        {visiting && <button className="acc" onClick={() => { leaveRoom(); }}>Odama dön</button>}
+        {!editing && <WorldButton />}
       </header>
-      {!editing && room && room.items.length <= 2 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile istediğin yere koy.</p>}
+      {!editing && !visiting && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile istediğin yere koy. “Dünya”dan arkadaşını davet et.</p>}
+      {!editing && <div className="room-ui home-ui"><TimerCard home /><ChatPanel /><EmoteBar /><NetBanner /><RewardToast /></div>}
+      <WorldPanel />
       {editing && room && wallet && (
         <EditBar
           room={room} wallet={wallet} level={level} sel={sel} selItem={selItem} placing={placing} tick={tick}
@@ -191,4 +237,10 @@ function HomeNotice() {
   return <div className="notice" role="status">{n.text}</div>;
 }
 
+/** Turkish genitive with vowel harmony: Oğuzhan'ın, Ayşe'nin, Umut'un, Gönül'ün */
+export function possessive(name: string) {
+  const v = [...name.toLocaleLowerCase('tr')].reverse().find((c) => 'aeıioöuü'.includes(c)) ?? 'e';
+  const suf = { a: 'ın', ı: 'ın', e: 'in', i: 'in', o: 'un', u: 'un', ö: 'ün', ü: 'ün' }[v]!;
+  return `${name}'${'aeıioöuü'.includes(name.slice(-1).toLocaleLowerCase('tr')) ? 'n' : ''}${suf}`;
+}
 export const itemName = (id: string) => itemById(id)?.name ?? PW.ITEM?.[id]?.name ?? id;

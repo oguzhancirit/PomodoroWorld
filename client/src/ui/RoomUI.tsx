@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { isChatAllowed, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
-import { leaveRoom, sendChat, sendEmote, sendActivity } from '../net';
+import { leaveRoom, sendChat, sendEmote, sendActivity, sendTimer } from '../net';
 import { WalletChip, ShopModal, RewardToast } from './Wallet';
 import { ToolButtons, Panels, TodoChip } from './Panels';
 
@@ -46,7 +46,8 @@ function TopBar() {
   );
 }
 
-function TimerCard() {
+/** `home`: your own room, where the timer waits for someone to press start */
+export function TimerCard({ home = false }: { home?: boolean }) {
   const timer = useStore((s) => s.timer);
   const preset = presetById(useStore((s) => s.preset));
   const [, tick] = useState(0);
@@ -58,13 +59,16 @@ function TimerCard() {
   return (
     <section className={`timer-card ${timer.phase}`}>
       <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" className="trk" /><circle cx="50" cy="50" r="44" className="bar" pathLength={100} strokeDasharray="100" strokeDashoffset={100 - k * 100} /></svg>
-      <div className="t-in"><span className="ph">{PHASE[timer.phase]} · {timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur</span><b>{fmt(left)}</b>
-        <small>{isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small><TodoChip /></div>
+      <div className="t-in"><span className="ph">{timer.phase === 'idle' ? PHASE.idle : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`}</span><b>{fmt(left)}</b>
+        <small>{isChatAllowed(timer.phase) ? 'Sohbet açık' : 'Sohbet kapalı'}</small><TodoChip />
+        {home && (timer.phase === 'idle'
+          ? <button className="t-go" onClick={() => sendTimer('start')}>Başlat</button>
+          : <button className="t-stop" onClick={() => sendTimer('stop')} title="Sayacı herkes için durdurur">Durdur</button>)}</div>
     </section>
   );
 }
 
-function ChatPanel() {
+export function ChatPanel() {
   const chat = useStore((s) => s.chat);
   const phase = useStore((s) => s.timer.phase);
   const [text, setText] = useState('');
@@ -91,14 +95,14 @@ function ChatPanel() {
 }
 
 const EMOTES: [string, string, string][] = [['wave', '👋', 'El salla'], ['clap', '👏', 'Alkışla'], ['cheer', '🎉', 'Kutla'], ['heart', '❤️', 'Kalp'], ['coffee', '☕', 'Kahve molası']];
-function EmoteBar() {
+export function EmoteBar() {
   return <nav className="emotes" aria-label="Tepkiler">{EMOTES.map(([id, e, t]) => <button key={id} title={t} aria-label={t} onClick={() => sendEmote(id)}>{e}</button>)}</nav>;
 }
 
-function NetBanner() {
+export function NetBanner() {
   const net = useStore((s) => s.net), error = useStore((s) => s.error);
   if (net === 'reconnecting') return <div className="banner">Bağlantı koptu, yeniden bağlanıyor… Yerin 30 saniye korunuyor.</div>;
-  if (net === 'offline') return <div className="banner err">{error} <button onClick={leaveRoom}>Lobiye dön</button></div>;
+  if (net === 'offline') return <div className="banner err">{error} <button onClick={leaveRoom}>Odama dön</button></div>;
   return null;
 }
 
