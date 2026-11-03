@@ -9,7 +9,7 @@ import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
 import { TimerCard, ChatPanel, EmoteBar, NetBanner } from '../ui/RoomUI';
 import { FocusScreen, useCompanions, isRunning } from './FocusScreen';
-import { PersonCard, openPerson } from './PersonCard';
+import { PersonCard, openPerson, PeopleSheet, usePeople } from './PersonCard';
 import { useFriends, friendsCall, isBlocked } from '../friends';
 import { RewardToast } from '../ui/Wallet';
 import { WorldButton, WorldPanel } from '../ui/World';
@@ -236,7 +236,7 @@ export function HomeRoom() {
       <div ref={tags} className="home-tags" />
       <header className="topbar home-top" hidden={focusOpen}>
         <div className="brand"><span className="dot" />{library ? 'Kütüphane' : visiting ? (place.ownerName ? `${possessive(place.ownerName)} odası` : 'Arkadaşının odası') : room?.name || 'Odam'}{visiting && !library && room?.name && <small className="owner-note"> · {room.name}</small>}</div>
-        {place && <div className="people-pill" title="Odadakiler / sandalye sayısı">{Object.keys(players).length} / {place.cap} kişi</div>}
+        {place && <button className="people-pill people-btn" title="Odadakiler: arkadaş ekle, sayacına katıl, odandan çıkar" onClick={() => usePeople.setState({ open: true })}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.5" /><path d="M15.5 13.7c2.9-.4 5.5 1.5 5.5 4.8" /></svg>{Object.keys(players).length} / {place.cap}</button>}
         <WalletChip />
         {!editing && <ToolButtons />}
         {!editing && !visiting && <button className="acc" onClick={() => setEditing(true)}>Odayı düzenle</button>}
@@ -258,6 +258,7 @@ export function HomeRoom() {
       <ShopModal />
       <Panels />
       {!editing && <PersonCard canKick={!visiting} />}
+      {!editing && <PeopleSheet />}
       <HomeNotice />
     </div>
   );
