@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ECON, levelFromXP, xpStep, newWallet, rewardFocus, buy, CATALOG, itemById, isFree, avatarAllowed, titleFor, ACHIEVEMENTS } from '../src/economy';
+import { unlocksAt, ECON, levelFromXP, xpStep, newWallet, rewardFocus, buy, CATALOG, itemById, isFree, avatarAllowed, titleFor, ACHIEVEMENTS } from '../src/economy';
 import { defaultAvatar, PARTS } from '../src/avatar';
 
 describe('levels', () => {
@@ -114,5 +114,25 @@ describe('sanitizeWallet', () => {
     expect(sanitizeWallet(null).coins).toBe(150);
     const w = sanitizeWallet({ xp: -4, coins: 'x', owned: { f_cactus: 2, 'hack': 9, f_sofa: -1 }, stats: { pomos: 3.7 } });
     expect(w.xp).toBe(0); expect(w.coins).toBe(150); expect(w.owned).toEqual({ ...STARTER, f_cactus: 2 }); expect(w.stats.pomos).toBe(3);
+  });
+});
+
+describe('unlocksAt (level-up window, v1 ui.levelUp)', () => {
+  it('lists at most 8 items that open exactly at that level', () => {
+    const u = unlocksAt(3);
+    expect(u.length).toBeGreaterThan(0);
+    expect(u.length).toBeLessThanOrEqual(8);
+    expect(u.every((i) => i.lvl === 3)).toBe(true);
+  });
+  it('shows room items first and each outfit part once (not once per gender)', () => {
+    for (let lv = 2; lv <= 12; lv++) {
+      const u = unlocksAt(lv), keys = u.map((i) => i.name + '/' + (i.slot ?? i.cat));
+      expect(new Set(keys).size).toBe(keys.length);
+      const firstAv = u.findIndex((i) => i.cat === 'avatar');
+      if (firstAv >= 0) expect(u.slice(firstAv).every((i) => i.cat === 'avatar')).toBe(true);
+    }
+  });
+  it('is empty for a level nothing opens at', () => {
+    expect(unlocksAt(999)).toEqual([]);
   });
 });

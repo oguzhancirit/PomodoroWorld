@@ -3,6 +3,7 @@ import { isChatAllowed, isPaused, presetById, remainingMs, CHAT_MAX, CATEGORIES,
 import { useStore, serverNow } from '../store';
 import { leaveRoom, sendChat, sendEmote, sendActivity, sendTimer } from '../net';
 import { WalletChip, ShopModal, RewardToast } from './Wallet';
+import { LevelUp } from './LevelUp';
 import { ToolButtons, Panels, TodoChip } from './Panels';
 
 const PHASE: Record<Phase, string> = { focus: 'Odak', short_break: 'Mola', long_break: 'Uzun mola', idle: 'Hazır' };
@@ -17,7 +18,7 @@ export function RoomUI() {
       <EmoteBar />
       <NetBanner />
       <Notice />
-      <RewardToast />
+      <RewardToast /><LevelUp />
       <ShopModal />
       <Panels />
     </div>

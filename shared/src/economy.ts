@@ -149,6 +149,14 @@ const roomItems: Item[] = [
 ];
 
 export const CATALOG: readonly Item[] = [...avatarItems, ...roomItems];
+/** what opens exactly at level `lv` (the level-up window shows up to 8, like v1 ui.levelUp) */
+export const unlocksAt = (lv: number): Item[] => {
+  const at = CATALOG.filter((i) => i.lvl === lv), seen = new Set<string>();
+  // room things first (they have pictures); an outfit part is listed once, not once per gender
+  return [...at.filter((i) => i.cat !== 'avatar'), ...at.filter((i) => i.cat === 'avatar')]
+    .filter((i) => { const k = i.name + '/' + (i.slot ?? i.cat); if (seen.has(k)) return false; seen.add(k); return true; })
+    .slice(0, 8);
+};
 const BY_ID = new Map(CATALOG.map((i) => [i.id, i]));
 export const itemById = (id: string) => BY_ID.get(id);
 export const isFree = (i: Item) => i.price === 0;

@@ -92,3 +92,6 @@ export const useStore = create<State>((set, get) => ({
 
 /** server-corrected "now" */
 export const serverNow = () => Date.now() + useStore.getState().clockOffset;
+
+// dev server only: lets browser checks poke the store (never in builds)
+if (import.meta.env.DEV) (window as unknown as { __store: unknown }).__store = useStore;

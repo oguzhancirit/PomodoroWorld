@@ -15,6 +15,7 @@ import { RoomSettings, useRoomSettings } from './RoomSettings';
 import { PersonCard, openPerson, PeopleSheet, usePeople } from './PersonCard';
 import { useFriends, friendsCall, isBlocked } from '../friends';
 import { RewardToast } from '../ui/Wallet';
+import { LevelUp } from '../ui/LevelUp';
 import { WorldButton, WorldPanel } from '../ui/World';
 import { openHome, leaveRoom, openProfile } from '../net';
 
@@ -267,7 +268,7 @@ export function HomeRoom() {
         {!editing && <WorldButton />}
       </header>
       {!editing && !focusOpen && !visiting && !hintOff && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile yerleştir. “Dünya”dan arkadaşını çağır.<button aria-label="İpucunu kapat" onClick={() => { setHintOff(true); try { localStorage.setItem('pw2.hintOff', '1'); } catch { /* ignore */ } }}>×</button></p>}
-      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{!focusOpen && <TimerCard onOpen={() => setFocus(true)} together={together} />}<ChatPanel />{!focusOpen && <EmoteBar />}<NetBanner /><RewardToast /></div>}
+      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{!focusOpen && <TimerCard onOpen={() => setFocus(true)} together={together} />}<ChatPanel />{!focusOpen && <EmoteBar />}<NetBanner /><RewardToast /></div>}<LevelUp />
       {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
       <WorldPanel />
       {editing && room && wallet && (
