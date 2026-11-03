@@ -6,7 +6,7 @@ import { inviteCode, homeCapacity, parseFriendCode } from '@pw/shared';
 import { useStore } from '../store';
 import { identity } from '../identity';
 import { HTTP_BASE, DEMO_ONLY } from '../config';
-import { visitHome, joinStudyRoom } from '../net';
+import { visitHome, joinLibrary, currentRoomId } from '../net';
 import { useFriends, friendsCall, ago, type FriendView } from '../friends';
 
 const useWorld = create<{ open: boolean }>(() => ({ open: false }));
@@ -28,12 +28,14 @@ export function WorldPanel() {
   const room = useStore((s) => s.room), mode = useStore((s) => s.mode);
   const [code, setCode] = useState('');
   const [rooms, setRooms] = useState<OpenRoom[] | null>(null);
+  const [library, setLibrary] = useState(0);
+  const place = useStore((s) => s.place);
   const [copied, setCopied] = useState(false);
   const demo = DEMO_ONLY || mode === 'demo';
   useEffect(() => {
     if (!open || demo) return;
     let live = true; setRooms(null);
-    fetch(`${HTTP_BASE}/api/world`).then((r) => r.json()).then((d) => { if (live) setRooms((d.rooms as OpenRoom[]).filter((r) => r.owner !== identity().pid)); }).catch(() => live && setRooms([]));
+    fetch(`${HTTP_BASE}/api/world`).then((r) => r.json()).then((d) => { if (live) { setRooms((d.rooms as OpenRoom[]).filter((r) => r.owner !== identity().pid)); setLibrary(Number(d.library) || 0); } }).catch(() => live && setRooms([]));
     return () => { live = false; };
   }, [open, demo]);
   if (!open) return null;
@@ -74,7 +76,9 @@ export function WorldPanel() {
         <section>
           <h3>Çalışma alanları</h3>
           <div className="world-list">
-            <button className="world-card" onClick={() => { close(); joinStudyRoom(); }}><b>Ortak çalışma salonu</b><small>Herkes aynı sayaçla çalışır. Yakında 10 kişilik kütüphane olacak.</small></button>
+            <button className="world-card" disabled={place?.kind === 'library'} onClick={async () => { if (await joinLibrary()) close(); }}>
+              <b>Kütüphane</b><small>10 kişilik sessiz salon. Sayaç herkes için aynı ve hiç durmaz.</small>
+              <span>{place?.kind === 'library' ? 'buradasın' : demo ? '' : library ? `${library} kişi` : ''}</span></button>
           </div>
         </section>
         <section>
@@ -88,6 +92,7 @@ export function WorldPanel() {
 
 /** v1 friendsHTML: your code, add by code, who is online and where, go to them */
 function Friends({ go }: { go(code: string): void }) {
+  const libraryId = currentRoomId();
   const { code, friends, blocked, loaded, offline } = useFriends();
   const place = useStore((s) => s.place), flash = useStore((s) => s.flash);
   const [add, setAdd] = useState('');
@@ -105,10 +110,11 @@ function Friends({ go }: { go(code: string): void }) {
     const w = f.where;
     if (!w) return `Son görülme ${ago(f.seen)}`;
     const focus = w.phase === 'focus' ? ' · odakta' : '';
+    if (w.kind === 'library') return (place?.kind === 'library' && w.roomId === libraryId ? 'Seninle aynı kütüphanede' : 'Kütüphanede') + focus;
     if (place && w.owner === place.owner) return 'Seninle aynı odada' + focus;
     return (w.owner === f.pid ? `Kendi odasında · ${w.name}` : `${w.ownerName} odasında`) + focus;
   };
-  const canGo = (f: FriendView) => !!f.where && f.where.open && f.where.n < f.where.cap && f.where.owner !== place?.owner;
+  const canGo = (f: FriendView) => !!f.where && f.where.open && f.where.n < f.where.cap && (f.where.kind === 'library' ? f.where.roomId !== libraryId : f.where.owner !== place?.owner);
   return (
     <section>
       <h3>Arkadaşların <small>{friends.filter((f) => f.online).length ? `${friends.filter((f) => f.online).length} çevrimiçi` : ''}</small></h3>
@@ -124,7 +130,7 @@ function Friends({ go }: { go(code: string): void }) {
         <div key={f.pid} className="friend-row">
           <span className={`ini ${f.online ? 'on' : ''}`} aria-hidden="true">{f.n.slice(0, 1).toLocaleUpperCase('tr')}</span>
           <span className="who"><b>{f.n} <span className="tagid">#{f.code.slice(0, 4)}</span></b><small>{f.online ? where(f) : `Son görülme ${ago(f.seen)}`}</small></span>
-          {canGo(f) && <button onClick={() => go(f.where!.owner)}>{f.where!.owner === f.pid ? 'Odasına git' : 'Yanına git'}</button>}
+          {canGo(f) && <button onClick={() => (f.where!.kind === 'library' ? joinLibrary(f.where!.roomId).then((ok) => ok && close()) : go(f.where!.owner))}>{f.where!.owner === f.pid ? 'Odasına git' : 'Yanına git'}</button>}
           <button className="ghost" aria-label={`${f.n} arkadaşlıktan çıkar`} title="Arkadaşlıktan çıkar" onClick={() => void friendsCall('remove', f.pid)}>Kaldır</button>
         </div>))}</div>}
       {blocked.length > 0 && <p className="muted"><button className="ghost" onClick={() => setShowBlocked(!showBlocked)}>Engellediklerin ({blocked.length})</button></p>}

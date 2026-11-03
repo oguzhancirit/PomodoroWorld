@@ -12,7 +12,10 @@ import { loadLocalWallet, saveLocalWallet, myClock } from './economy';
 import { noteChat } from '@pw/shared';
 import { todoProgress } from './net';
 import { DEMO_ONLY } from './config';
-import { homeCapacity } from '@pw/shared';
+import { homeCapacity, libraryRoom, LIBRARY_SEATS, LIBRARY_NAME, ROOM_KEYS } from '@pw/shared';
+
+/** what a visitor needs to draw the library (same keys the server sends for a room) */
+export function libraryLayout() { const r = libraryRoom() as unknown as Record<string, unknown>; return JSON.stringify(Object.fromEntries(ROOM_KEYS.filter((k) => r[k] !== undefined).map((k) => [k, r[k]]))); }
 
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
 const BREAK_LINES = ['Mola! Su içmeyi unutmayın.', 'Bu turda 3 soru çözdüm.', 'Gözlerimi biraz dinlendireyim.', 'Kim kahve alıyor?', 'Bir tur daha, hadi!', 'Okuduğum bölüm çok iyiydi.', 'Biraz esneyelim mi?', 'Odaklanmak bugün kolay geldi.'];
@@ -40,7 +43,7 @@ export class LocalRoom {
   private category = useStore.getState().profile.category;
 
   /** 'home' = your own room (step 4): the timer waits for "Başlat"; in demo mode one bot friend drops by */
-  constructor(private speed: number, private kind: 'study' | 'home' = 'study', bots = true) {
+  constructor(private speed: number, private kind: 'study' | 'home' | 'library' = 'study', bots = true) {
     const st = useStore.getState();
     const base = presetById(st.profile.preset);
     this.baseFocusMin = base.focusMin;
@@ -50,7 +53,7 @@ export class LocalRoom {
     this.timer = kind === 'home' ? { phase: 'idle', phaseEndsAt: 0, round: 0 } : startTimer(Date.now(), this.preset);
     const players: Record<string, PlayerView> = {};
     const me: PlayerView = {
-      id: 'me', name: cleanName(st.profile.name) || 'Sen', avatar: encodeAvatar(look), level: levelFromXP(wallet.xp).level, seatIndex: kind === 'home' ? 0 : 5,
+      id: 'me', name: cleanName(st.profile.name) || 'Sen', avatar: encodeAvatar(look), level: levelFromXP(wallet.xp).level, seatIndex: kind === 'home' ? 0 : kind === 'library' ? 2 : 5,
       pose: 'sit', activity: activityFor(st.profile.category), bubble: '', connected: true,
     };
     players.me = me;
@@ -64,6 +67,20 @@ export class LocalRoom {
         st.upsertPlayer('bot0', { id: 'bot0', level: 4, name: n, avatar: randomAvatar(g), seatIndex: 1, pose: 'sit', activity: 'write', bubble: '', connected: true });
         this.later(1500, () => this.botSay('bot0', `Selam ${me.name}! Birlikte çalışalım mı? “Başlat”a bas, sayaç ikimiz için aynı.`, true));
       });
+      return;
+    }
+    if (kind === 'library') {
+      // demo only: a few classmates already study here; the timer is running, like the real library
+      if (bots && DEMO_ONLY) {
+        const taken = [2];
+        BOTS.slice(0, 4).forEach(([n, g], i) => {
+          const seat = firstFreeSeat(taken, LIBRARY_SEATS); taken.push(seat);
+          players['bot' + i] = { id: 'bot' + i, level: 2 + i * 3, name: n, avatar: randomAvatar(g), seatIndex: seat, pose: 'sit', activity: pick(ACTIVITIES), bubble: '', connected: true };
+        });
+      }
+      st.set({ wallet, net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'home', timer: { ...this.timer },
+        place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
+      this.loop = window.setInterval(() => this.tick(), 250);
       return;
     }
     const taken = [5];
@@ -156,7 +173,7 @@ export class LocalRoom {
   sit(seat: number) {
     const st = useStore.getState();
     const taken = Object.values(st.players).filter((p) => p.id !== 'me').map((p) => p.seatIndex);
-    if (isSeatFree(seat, taken, STUDY_ROOM.seats.length)) st.upsertPlayer('me', { seatIndex: seat });
+    if (isSeatFree(seat, taken, this.kind === 'library' ? LIBRARY_SEATS : STUDY_ROOM.seats.length)) st.upsertPlayer('me', { seatIndex: seat });
   }
   timerAction(action: TimerAction) {
     const st = useStore.getState();

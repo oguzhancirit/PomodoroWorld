@@ -16,8 +16,8 @@ A "Dünya" (world) button opens the rest: friends, open rooms, invite code, libr
   ban list, open/closed, shared timer + rewards (reuse StudyRoom logic). Demo mode: bots visit.
 - ✔ **4d** Client: app starts in Odam; guests drawn with the adapter; timer in Odam; Dünya panel (open rooms, invite code).
 - **4e ✔** Friends: `/api/friends` (shared/src/friends.ts rules), Player.code, person card, kick (HomeRoom `kick` → ban), blocks hide avatar/chat/emotes. Browser-checked with two players.
-- **4f ← next** Library (10 seats) on the old engine; retire the R3F 25-seat hall from the menu.
-- **4g** Social spaces + social-space chat counts for the "social" quest; room settings panel (old `roomset`).
+- **4f ✔** Library: `LibraryRoom` (server, 10 seats, filterBy preset, timer always runs), `shared/src/library.ts` (v1 "Gece Kütüphanesi" look), entered from Dünya; friends list shows "Kütüphanede · Yanına git" (joinById). Old study hall + its bot fallback removed from Lobby/Dünya; the R3F `screen === 'room'` code is now unreachable (delete later).
+- **4g ← next** Social spaces + social-space chat counts for the "social" quest; room settings panel (old `roomset`).
 
 ## Notes
 - Old `PW.Avatar` stays as `PW.OldAvatar` (item thumbnails); the world uses the adapter.

@@ -28,7 +28,8 @@ export function useCompanions() {
   return Object.values(players).filter((p) => p.id !== me && p.connected).map((p) => p.name);
 }
 
-export function FocusScreen({ onClose }: { onClose(): void }) {
+/** `fixed`: the library timer, which always runs and nobody can pause, skip or stop */
+export function FocusScreen({ onClose, fixed = false }: { onClose(): void; fixed?: boolean }) {
   const timer = useStore((s) => s.timer), roomPreset = useStore((s) => s.preset);
   const profile = useStore((s) => s.profile), setProfile = useStore((s) => s.setProfile);
   const others = useCompanions();
@@ -50,6 +51,7 @@ export function FocusScreen({ onClose }: { onClose(): void }) {
   const custom = profile.preset.startsWith('c');
 
   const main = () => {
+    if (fixed) return;
     if (idle) {
       const t = profile.task.trim();
       if (t) setProfile({ recent: [t, ...profile.recent.filter((x) => x !== t)].slice(0, 6) });
@@ -108,15 +110,16 @@ export function FocusScreen({ onClose }: { onClose(): void }) {
             {others.length > 0 && <p className="fx-note">Sayaç odadaki herkes için aynı: başlatınca arkadaşın da seninle odaklanır.</p>}
           </div>
         )}
-        <button ref={go} className={`fx-go ${!idle && !paused ? 'run' : ''}`} onClick={main} data-min={idle ? `${preset.focusMin} dk` : ''}>
+        {fixed && <p className="fx-note">Kütüphanenin sayacı herkes için aynı ve hiç durmaz. Molada sohbet açılır.</p>}
+        {!fixed && <button ref={go} className={`fx-go ${!idle && !paused ? 'run' : ''}`} onClick={main} data-min={idle ? `${preset.focusMin} dk` : ''}>
           <span className="pl">{!idle && !paused ? <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg> : <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M8 5v14l11-7z" /></svg>}</span>
           <span>{label}</span>
-        </button>
+        </button>}
         <div className="fx-tools">
           <button className="fx-icon" title="Yapılacaklar" aria-label="Yapılacaklar" onClick={() => usePanel.getState().set('todo')}><Svg d='<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>' /></button>
           <button className="fx-icon" title="Ortam sesleri" aria-label="Ortam sesleri" onClick={() => usePanel.getState().set('sound')}><Svg d='<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>' /></button>
-          {!idle && <button className="fx-icon" title={others.length ? 'Sıfırla (herkes için)' : 'Sıfırla'} aria-label="Sıfırla" onClick={() => sendTimer('stop')}><Svg d='<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/>' /></button>}
-          {!idle && <button className="fx-icon" title="Bu aşamayı atla" aria-label="Atla" onClick={() => sendTimer('skip')}><Svg d='<path d="M5 5l9 7-9 7zM17 5v14"/>' /></button>}
+          {!idle && !fixed && <button className="fx-icon" title={others.length ? 'Sıfırla (herkes için)' : 'Sıfırla'} aria-label="Sıfırla" onClick={() => sendTimer('stop')}><Svg d='<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/>' /></button>}
+          {!idle && !fixed && <button className="fx-icon" title="Bu aşamayı atla" aria-label="Atla" onClick={() => sendTimer('skip')}><Svg d='<path d="M5 5l9 7-9 7zM17 5v14"/>' /></button>}
           <button className="fx-icon" title="Odayı göster" aria-label="Odayı göster" onClick={onClose}><Svg d='<path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z"/>' /></button>
         </div>
       </div>

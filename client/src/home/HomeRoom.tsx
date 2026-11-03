@@ -22,6 +22,7 @@ export function HomeRoom() {
   const place = useStore((s) => s.place);
   // a friend's room: draw the look the server sends; my room: my saved room (editing stays mine only)
   const visiting = !!place && !place.mine;
+  const library = place?.kind === 'library';
   const room: Room | null = visiting ? (place.layout ? { ...defaultRoom(), ...JSON.parse(place.layout), name: place.name } : null) : myRoom;
   const look = room ? lookOf(room) : '';
   const host = useRef<HTMLDivElement>(null), tags = useRef<HTMLDivElement>(null);
@@ -48,10 +49,13 @@ export function HomeRoom() {
   const blocked = useFriends((s) => s.blocked);
   useEffect(() => { void friendsCall('list'); }, []);
   // v1: the camera comes close to your desk while the focus screen is open
+  // only undo the focus camera after it was used: before the room is drawn the engine has no base distance yet,
+  // and setFocusCam(null) would set the camera distance to NaN for good (the room then never shows)
+  const focusCamOn = useRef(false);
   useEffect(() => {
     const w = engine.world; if (!ready || !w || editing) return;
-    if (focusOpen) { if (w.avatars.get('me')?.seatIdx == null) seatMe(); w.setFocusCam('me'); }
-    else w.setFocusCam(null);
+    if (focusOpen) { if (w.avatars.get('me')?.seatIdx == null) seatMe(); w.setFocusCam('me'); focusCamOn.current = true; }
+    else if (focusCamOn.current) { focusCamOn.current = false; w.setFocusCam(null); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusOpen, ready, editing]);
 
@@ -125,7 +129,8 @@ export function HomeRoom() {
       seen.current[key] = p.bubble;
     }
     for (const id of [...w.avatars.keys()] as string[]) if (!here.has(id)) w.removeAvatar(id);
-  }, [ready, editing, players, meId, phase, look, profile.name, blocked]);
+  // `tick` changes right after a room is drawn: seats of the new room exist only then (a library has 10)
+  }, [ready, editing, players, meId, phase, look, profile.name, blocked, tick]);
   const emoted = useRef<Record<string, number>>({});
   useEffect(() => {
     const w = engine.world; if (!ready || !w) return;
@@ -227,7 +232,7 @@ export function HomeRoom() {
       <div ref={host} className="home-canvas" />
       <div ref={tags} className="home-tags" />
       <header className="topbar home-top" hidden={focusOpen}>
-        <div className="brand"><span className="dot" />{visiting ? (place.ownerName ? `${possessive(place.ownerName)} odası` : 'Arkadaşının odası') : room?.name || 'Odam'}{visiting && room?.name && <small className="owner-note"> · {room.name}</small>}</div>
+        <div className="brand"><span className="dot" />{library ? 'Kütüphane' : visiting ? (place.ownerName ? `${possessive(place.ownerName)} odası` : 'Arkadaşının odası') : room?.name || 'Odam'}{visiting && !library && room?.name && <small className="owner-note"> · {room.name}</small>}</div>
         {place && <div className="people-pill" title="Odadakiler / sandalye sayısı">{Object.keys(players).length} / {place.cap} kişi</div>}
         <WalletChip />
         {!editing && <ToolButtons />}
@@ -238,7 +243,7 @@ export function HomeRoom() {
       </header>
       {!editing && !focusOpen && !visiting && room && room.items.length <= 3 && <p className="home-hint">Mağazadan eşya al, “Odayı düzenle” ile istediğin yere koy. “Dünya”dan arkadaşını davet et.</p>}
       {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{!focusOpen && <TimerCard onOpen={() => setFocus(true)} together={together} />}<ChatPanel />{!focusOpen && <EmoteBar />}<NetBanner /><RewardToast /></div>}
-      {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
+      {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} fixed={library} />}
       <WorldPanel />
       {editing && room && wallet && (
         <EditBar

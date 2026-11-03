@@ -20,7 +20,8 @@ function loadProfile(): Profile {
 
 export type Screen = 'lobby' | 'room' | 'home';
 /** the live room you are in on the "home" screen: yours, or a friend's (step 4) */
-export interface Place { owner: string; mine: boolean; name: string; ownerName?: string; layout: string; cap: number }
+/** kind: 'library' = the public 10-seat library (step 4f); otherwise someone's own room */
+export interface Place { kind?: 'home' | 'library'; owner: string; mine: boolean; name: string; ownerName?: string; layout: string; cap: number }
 export type NetStatus = 'idle' | 'connecting' | 'online' | 'reconnecting' | 'offline';
 
 interface State {

@@ -25,6 +25,8 @@ export function libraryRoom(): Room {
   );
   return {
     name: LIBRARY_NAME, desc: '10 kişilik sessiz çalışma salonu.', cat: 'Genel', open: true, token: '', ban: [],
-    theme: 'th_library', view: 'v_city_night', size: 9, mood: 'candle', items,
+    theme: 'th_library', view: 'v_city_night', size: 9, mood: 'night', items,
+    // v1 "Gece Kütüphanesi" style (js/ui.js ROOM_STYLES)
+    wall: '#2F4A3E', wallPat: 'wainscot', floorT: 'herring', floorC: '#6B4630', trim: '#C9A35A', curtain: '#22406E',
   };
 }

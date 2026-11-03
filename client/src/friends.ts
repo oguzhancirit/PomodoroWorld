@@ -6,7 +6,7 @@ import { HTTP_BASE, DEMO_ONLY } from './config';
 import { identity } from './identity';
 import { useStore } from './store';
 
-export interface FriendWhere { owner: string; ownerName: string; name: string; open: boolean; n: number; cap: number; phase: string }
+export interface FriendWhere { kind?: 'home' | 'library'; roomId?: string; owner: string; ownerName: string; name: string; open: boolean; n: number; cap: number; phase: string }
 export interface FriendView { pid: string; code: string; n: string; online: boolean; seen: number; where?: FriendWhere }
 type Op = 'list' | 'add' | 'remove' | 'block' | 'unblock';
 

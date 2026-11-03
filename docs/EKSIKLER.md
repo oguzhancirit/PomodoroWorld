@@ -2,7 +2,7 @@
 
 ## Planned already
 - ✔ 4e Friends done: code + add, online/where, "Odasına git"/"Yanına git", "X geldi" toast, blocks (server profile `social`, `/api/friends`).
-- 4f Library: th_library 10-seat public study room.
+- ✔ 4f Library: 10-seat public study room (Dünya → Kütüphane).
 - 4g Social spaces: PUBLIC_ROOMS meydan/teras/oyun + NPCs (NPC_NAMES, NPC_TOPICS, NPC_LINES_*), salon split, Otur/Kalk; social chat → d_social.
 - Room settings (ui.renderRoomSet): name, desc, ROOM_CATS, open/closed, new link, unban list. Rules exist; no UI, no HTTP fields.
 - 5: intro film (PW.cinema, 3 chapters), backup export/import (+ to-dos), help modal, guided tour (TOUR).
@@ -11,7 +11,7 @@
 - Sign up / log in; a returning user is recognised and enters their room with the same saved character.
 - First-time sign-up → intro film (step 5) → own room. Today identity is per-browser (pw2.identity pid/secret).
 - Demo bots (Elif etc.) exist only in demo mode (DEMO_ONLY: artifact link or ?demo). Real site never shows bots;
-  the old study hall still falls back to bots if the server is down — removed with 4f.
+  the old study hall and its bot fallback are gone (4f).
 
 ## Not yet planned — found by the scan
 - ✔ Fixed: "Karakterim" button in Odam → character screen ("Kaydet ve odama dön").

@@ -1,8 +1,8 @@
 // Talks to the Colyseus server and copies the room state into the store.
 import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
-import { encodeAvatar, activityFor, parseInvite, type Activity, type Phase } from '@pw/shared';
+import { encodeAvatar, activityFor, parseInvite, LIBRARY_NAME, LIBRARY_SEATS, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
-import { LocalRoom, type TimerAction } from './localRoom';
+import { LocalRoom, libraryLayout, type TimerAction } from './localRoom';
 import { isFriend, isBlocked } from './friends';
 import { useTodos } from './todos';
 
@@ -12,39 +12,41 @@ import { sanitizeWallet } from '@pw/shared';
 export { DEMO_ONLY };
 let room: Room | null = null;
 let local: LocalRoom | null = null;
-
-export function startDemo() {
-  leaveQuiet();
-  local = new LocalRoom(useStore.getState().profile.fast ? 60 : 1);
-}
+/** the latest join wins: an older, slower join is dropped */
+let homeJob = 0;
 
 const NOTICES: Record<string, string> = {
   chat_closed: 'Odak sırasında sohbet kapalı. Molada açılır.',
   slow_down: 'Biraz yavaş: 3 saniyede bir mesaj.',
 };
 
-export async function joinStudyRoom() {
-  const st = useStore.getState();
-  if (DEMO_ONLY) { startDemo(); return true; }
+/* ---------- step 4f: the 10-seat library (replaces the old study hall and its bot fallback) ---------- */
+/** enter a library (a friend's one when `roomId` is given); demo mode runs it in this browser with bot classmates */
+export async function joinLibrary(roomId?: string): Promise<boolean> {
+  const st = useStore.getState(), job = ++homeJob;
+  if (DEMO_ONLY) { leaveQuiet(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'library'); return true; }
   const { profile } = st;
-  leaveQuiet();
-  st.set({ net: 'connecting', error: '', players: {}, chat: [], emotes: {}, place: null });
+  let r: Room;
   try {
     const client = new Client(SERVER);
-    room = await client.joinOrCreate('study_room', {
-      ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category), category: profile.category,
-    });
+    const opts = { ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: profile.preset, activity: activityFor(profile.category), category: profile.category };
+    r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate('library', opts);
   } catch (e) {
-    console.warn('join failed, falling back to demo mode', e);
-    startDemo(); useStore.getState().flash('Sunucuya ulaşılamadı: bot arkadaşlarla deneme modundasın.', 5000);
-    return true;
+    if (job !== homeJob) return false;
+    console.warn('library join failed', e);
+    st.flash(roomId ? 'Bu kütüphane dolu ya da kapandı. Dünya’dan başka bir kütüphaneye gir.' : 'Kütüphaneye bağlanılamadı. İnternetini kontrol edip tekrar dene.', 5000);
+    return false;
   }
-  wire(room, 'room');
+  if (job !== homeJob) { r.leave(true).catch(() => {}); return false; }
+  leaveQuiet();
+  room = r;
+  st.set({ players: {}, chat: [], emotes: {}, place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
+  wire(r, 'home');
+  st.flash('Kütüphanedesin. Sayaç herkes için aynı ve hiç durmaz; molada sohbet açılır.', 4500);
   return true;
 }
 
 /* ---------- step 4: your own room is live; friends join it ---------- */
-let homeJob = 0;
 /** open my room (only I can) */
 export const openHome = () => joinHome(identity().pid, '');
 /** go to a friend's room from an invite code or link */
@@ -178,3 +180,6 @@ function chime(freq: number) {
 }
 /** person card "Odamdan çıkar": only the room owner; the server checks */
 export const sendKick = (id: string) => { room?.send('kick', { id }); };
+
+/** the live room's id (to tell which library a friend is in) */
+export const currentRoomId = () => room?.roomId ?? '';

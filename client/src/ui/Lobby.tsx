@@ -4,7 +4,7 @@ import { WalletChip, ShopModal } from './Wallet';
 import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
 import { useStore } from '../store';
-import { joinStudyRoom, DEMO_ONLY } from '../net';
+import { DEMO_ONLY } from '../net';
 import { AvatarPreview } from './AvatarPreview';
 import { SafeCanvas } from './SafeCanvas';
 
@@ -95,7 +95,6 @@ export function Lobby() {
         <button className="go" disabled={!name || busy || !allowed} onClick={() => useStore.getState().set({ screen: 'home' })}>
           {busy ? 'Bağlanıyor…' : !name ? 'Önce adını yaz' : !allowed ? 'Önce parçaları al ya da ücretsizlere dön' : back ? 'Kaydet ve odama dön' : 'Odama gir'}
         </button>
-        <button className="go alt" disabled={!name || busy || !allowed} onClick={() => joinStudyRoom()}>Ortak çalışma salonu <small>— herkesle aynı sayaç</small></button>
         <ShopModal />
         <Panels />
       </section>
