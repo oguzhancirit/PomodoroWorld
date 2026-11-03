@@ -8,11 +8,11 @@
 ## Mission (user's own rule)
 Nothing from v1 is thrown away. First port every old feature **completely** into v2, then improve quality on top. Do not reinvent.
 - v1 = `index.html` + `js/*.js` (three r128 style, global `window.PW`). v2 = npm workspaces `shared/` (rules, pure TS) · `server/` (Colyseus 0.18 + express) · `client/` (Vite, React 19, R3F, zustand).
-- Port order: 1 economy+shop ✔ · 2 personal room "Odam" ✔ · 3 quests, to-dos, sounds, stats ✔ · **4 social spaces + friends ← next** · 5 intro film + **backup** (backup required; offline/PWA NOT wanted).
+- Port order: 1 economy+shop ✔ · 2 personal room "Odam" ✔ · 3 quests, to-dos, sounds, stats ✔ · **4 Odam-centred world ← next (plan: docs/ADIM4.md)** · 5 intro film + **backup** (backup required; offline/PWA NOT wanted).
 - Odam leftovers: room settings (name, desc, category, open/closed, invite link, ban list — old `js/ui.js` "roomset"), phone camera too close, solo timer in Odam. Step-3 leftovers: to-dos are browser-only (add to backup in step 5); "social" quest counts study-room break chat (add social-space chat in step 4).
 
-## Open decision (ask before big avatar work)
-Odam shows the **old** avatar; the study room shows the **new** Quaternius avatar. Options: (a) old avatar everywhere → its 66 clothing items come back, (b) adapter so the new avatar runs in the old engine (`root, setState, setAct, update, headWorld`).
+## Avatar decision (made: b)
+New Quaternius avatar everywhere. The old engine draws it through `client/src/legacy/avatarAdapter.ts` (old `PW.Avatar` API, cfg = avatar code). Old clothing items are not shown.
 
 ## Commands
 - Install: `npm install --ignore-scripts --legacy-peer-deps` (flag required, npm 10.9 bug)

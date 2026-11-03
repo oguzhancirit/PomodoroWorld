@@ -1,6 +1,6 @@
 // "Odam" — the player's own room, drawn by the original room engine with the original editor rules.
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { available, itemById, levelFromXP, ROOM_KEYS, type Room, type PlacedItem } from '@pw/shared';
+import { available, itemById, levelFromXP, ROOM_KEYS, avatarAllowed, defaultAvatar, encodeAvatar, type Room, type PlacedItem } from '@pw/shared';
 import { useStore } from '../store';
 import { saveRoom, refreshWallet } from '../economy';
 import { WalletChip, ShopModal } from '../ui/Wallet';
@@ -47,11 +47,13 @@ export function HomeRoom() {
 
   /* ---------- the player, sitting at the desk ---------- */
   const level = wallet ? levelFromXP(wallet.xp).level : 1;
+  // the new character (decision b): only pieces you own, like in the study room
+  const myCode = encodeAvatar(!wallet || avatarAllowed(wallet, profile.avatar) ? profile.avatar : defaultAvatar(profile.avatar.g));
   useEffect(() => {
     const w = engine.world; if (!ready || !w || !room) return;
-    if (!w.avatars.has('me')) w.addAvatar('me', PW.defaultAvatar(profile.avatar.g), { name: profile.name || 'Sen', level, isMe: true });
-    else w.updateAvatarInfo?.('me', { name: profile.name || 'Sen', level, isMe: true });
-  }, [ready, room, profile.name, profile.avatar.g, level]);
+    if (!w.avatars.has('me')) w.addAvatar('me', myCode, { name: profile.name || 'Sen', level, isMe: true });
+    else w.updateAvatarInfo?.('me', { name: profile.name || 'Sen', level, isMe: true, cfg: myCode });
+  }, [ready, room, profile.name, myCode, level]);
 
   const parkMe = useCallback(() => {
     const w = engine.world; if (!w) return; w.standAvatar('me'); const me = w.avatars.get('me');
@@ -67,7 +69,7 @@ export function HomeRoom() {
   useEffect(() => {
     const w = engine.world; if (!ready || !w || !room) return;
     w.loadRoom(defOf(room));
-    if (!w.avatars.has('me')) w.addAvatar('me', PW.defaultAvatar(profile.avatar.g), { name: profile.name || 'Sen', level, isMe: true });
+    if (!w.avatars.has('me')) w.addAvatar('me', myCode, { name: profile.name || 'Sen', level, isMe: true });
     if (latest.current.editing) {
       w.setEdit(true); parkMe();
       const g = pendingGhost.current; pendingGhost.current = null;
