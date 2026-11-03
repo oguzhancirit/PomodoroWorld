@@ -24,7 +24,8 @@ const HOSTS: Record<string, { name: string; g: Gender; hello: string; lines: str
     'Burada sohbet hep açık, istediğin zaman yazabilirsin.', 'Boş bir koltuğa tıklarsan oturursun.', 'Arkadaşlarının nerede olduğunu Dünya’dan görebilirsin.', 'Mola bitince odana dönüp yeni tura başlamayı unutma.'] },
   teras: { name: 'Bahçıvan Ece', g: 'f', hello: 'Selam {name}! Çatı Terası’na hoş geldin; şehrin manzarası eşliğinde nefeslen.', lines: [
     'Uzun molada biraz gökyüzüne bakmak iyi gelir.', 'Burada herkes molada; sohbet açık.', 'Bir arkadaşını görürsen kartına tıkla, arkadaş ekleyebilirsin.', 'Gün batımında burası çok güzel olur.'] },
-  oyun: { name: 'Oyuncu Kerem', g: 'm', hello: 'Hoş geldin {name}! Oyun Salonu molada kafa dağıtma yeri.', lines: [
+  oyun: { name: 'Oyuncu Kerem', g: 'm', hello: 'Hoş geldin {name}! Oyun Salonu molada kafa dağıtma yeri. Konsolda Pomo Canavarları var, bir dene!', lines: [
+    'TV’nin altındaki konsolda Pomo Canavarları oynanıyor; alttaki “Konsolda oyna” ya bas.', 'Ateş yaprağı, yaprak suyu, su ateşi yener. Unutma!',
     'Burada sohbet açık; molanı tatlı geçir.', 'Kutlamak için sol alttaki gülen yüze bas.', 'Mola bitince odana dön, sayacın seni bekliyor.', 'Yeni eşyaları jetonlarla mağazadan alabilirsin.'] },
 };
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];

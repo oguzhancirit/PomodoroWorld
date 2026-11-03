@@ -740,3 +740,63 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .acct-av { display: grid; place-items: center; background: var(--acc); font: 800 16px var(--f-display); color: #fff; }
 .acct-msg { flex-basis: 100%; color: #f6d58a; }
 .lobby .dice { justify-self: start; margin: 4px 0; }
+
+/* ---------- Pomo Canavarları (Oyun Salonu console game): a handheld console look in our palette ---------- */
+.mg-modal { z-index: 60; }
+.mg-console { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; padding: 14px 16px 18px; border-radius: 28px 28px 44px 44px; background: linear-gradient(170deg, #3a3354, #26213a); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, .8), inset 0 2px 0 rgba(255, 255, 255, .08), inset 0 -6px 0 rgba(0, 0, 0, .25); }
+.mg-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font: 800 11px var(--f-display); letter-spacing: .18em; color: #cfc8e6; }
+.mg-top b { flex: 1; }
+.mg-led { width: 8px; height: 8px; border-radius: 50%; background: #ff5a5a; box-shadow: 0 0 8px #ff5a5a; }
+.mg-x { width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, .08); font-size: 18px; color: #fff; }
+.mg-screen { position: relative; border-radius: 14px; padding: 10px; background: #0d0b16; border: 3px solid #120f1e; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .04); }
+.mg-field { position: relative; height: 250px; border-radius: 8px; overflow: hidden; background: linear-gradient(180deg, #a8dcff 0%, #d9f1ff 46%, #8fd27c 46%, #6fbf63 100%); }
+.mg-field::before, .mg-field::after { content: ''; position: absolute; border-radius: 50%; background: #5aa84f; opacity: .7; }
+.mg-field::before { right: 18px; top: 92px; width: 150px; height: 26px; }
+.mg-field::after { left: 14px; bottom: 16px; width: 170px; height: 30px; }
+.mg-foe { position: absolute; inset: 0; }
+.mg-foe .mg-bar { left: 8px; top: 8px; }
+.mg-foe .mg-spr { right: 30px; top: 30px; width: 100px; }
+.mg-me .mg-bar { right: 8px; bottom: 8px; }
+.mg-me .mg-spr { left: 24px; bottom: 18px; width: 128px; }
+.mg-spr { position: absolute; z-index: 1; transition: opacity .6s, transform .6s; animation: mg-idle 2.4s ease-in-out infinite; }
+.mg-spr.me { animation-delay: -1.2s; }
+.mg-spr.hit { animation: mg-hit .42s steps(2) 1; }
+.mg-spr.faint { opacity: 0; transform: translateY(30px); }
+.mg-svg { display: block; width: 100%; height: auto; overflow: visible; }
+@keyframes mg-idle { 50% { transform: translateY(-3px); } }
+@keyframes mg-hit { 0%, 100% { transform: translateX(0); filter: none; } 25% { transform: translateX(-6px); filter: brightness(2.2); } 75% { transform: translateX(6px); filter: brightness(2.2); } }
+.mg-bar { position: absolute; z-index: 2; width: 180px; padding: 6px 9px 7px; border-radius: 10px; background: #fffdf5; color: #1d1a2b; box-shadow: 0 3px 0 rgba(0, 0, 0, .25); font: 700 11px var(--f-body); }
+.mg-name { display: flex; justify-content: space-between; } .mg-name b { font: 800 13px var(--f-display); } .mg-name span { color: #6b6480; }
+.mg-hp { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+.mg-hp small { font: 800 8px var(--f-body); color: #f2a03d; letter-spacing: .06em; }
+.mg-hp span { flex: 1; height: 7px; border-radius: 4px; background: #e2ddd0; overflow: hidden; }
+.mg-hp i { display: block; height: 100%; border-radius: inherit; background: #3fbf6a; transition: width .5s ease-out, background .3s; }
+.mg-hp i.mid { background: #f2c14e; } .mg-hp i.low { background: #ef5a3c; }
+.mg-num { margin-top: 2px; text-align: right; font-size: 10.5px; color: #4b4462; } .mg-num em { font-style: normal; color: #ef5a3c; }
+.mg-xp { margin-top: 3px; height: 3px; border-radius: 3px; background: #e2ddd0; overflow: hidden; } .mg-xp i { display: block; height: 100%; background: #4fa8e8; }
+.mg-text { margin-top: 8px; min-height: 44px; padding: 10px 12px; border-radius: 8px; background: #fffdf5; color: #1d1a2b; font: 700 14px/1.35 var(--f-body); border: 3px solid #4b4462; }
+.mg-pad { margin-top: 12px; display: grid; gap: 8px; }
+.mg-moves { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mg-move { display: grid; gap: 2px; text-align: left; padding: 9px 11px; border-radius: 12px; color: #fff; background: #4b4462; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .25); }
+.mg-move b { font: 800 13.5px var(--f-body); } .mg-move small { font-size: 11px; opacity: .85; }
+.mg-move:disabled { opacity: .4; }
+.mg-move:hover:not(:disabled) { filter: brightness(1.12); }
+.t-ates.mg-move { background: #e0663a; } .t-su.mg-move { background: #3c89c8; } .t-yaprak.mg-move { background: #3e9f4e; } .t-normal.mg-move { background: #6d6585; }
+.mg-pick { padding: 8px 4px 4px; text-align: center; color: #fff; }
+.mg-h { margin: 4px 0 10px; font: 800 17px var(--f-display); }
+.mg-starters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mg-starter { display: grid; justify-items: center; gap: 2px; padding: 8px 4px 10px; border-radius: 12px; background: rgba(255, 255, 255, .06); border: 2px solid transparent; color: #fff; }
+.mg-starter:hover, .mg-starter:focus-visible { border-color: var(--acc2); background: rgba(255, 255, 255, .1); }
+.mg-starter .mg-svg { width: 78px; } .mg-starter b { font: 800 14px var(--f-display); } .mg-starter small { font-size: 11px; color: #cfc8e6; }
+.mg-tip { margin: 10px 0 2px; font-size: 12px; color: #cfc8e6; }
+.mg-after { display: grid; gap: 8px; text-align: center; color: #e9e5f5; font-size: 13.5px; } .mg-after p { margin: 0; }
+.mg-after .row { display: flex; gap: 8px; justify-content: center; }
+.mg-go { padding: 10px 18px; border-radius: 12px; background: var(--acc2); color: #2a0f08; font-weight: 800; }
+.mg-ghost { padding: 10px 14px; border-radius: 12px; background: rgba(255, 255, 255, .08); color: #fff; font-weight: 700; }
+.mg-wait { text-align: center; color: #8a83a3; letter-spacing: .3em; padding: 14px 0; }
+.mg-foot { margin: 0; text-align: center; font-size: 12px; color: #a39cbd; }
+.mg-link { justify-self: center; font-size: 12px; color: #a39cbd; text-decoration: underline; background: none; }
+/* the "play" button shown in the Oyun Salonu */
+.mg-open { position: absolute; left: 50%; bottom: 72px; transform: translateX(-50%); z-index: 6; display: inline-flex; align-items: center; gap: 8px; padding: 0 18px; height: 46px; border-radius: 999px; background: linear-gradient(135deg, #6d4cc2, #3c89c8); color: #fff; font: 800 14px var(--f-body); box-shadow: 0 10px 26px rgba(60, 80, 200, .45); animation: mg-glow 2.4s ease-in-out infinite; }
+@keyframes mg-glow { 50% { box-shadow: 0 10px 34px rgba(109, 76, 194, .75); } }
+@media (max-width: 600px) { .mg-open { bottom: 120px; } .mg-field { height: 220px; } .mg-bar { width: 150px; } .mg-me .mg-spr { width: 104px; } .mg-foe .mg-spr { width: 84px; } }

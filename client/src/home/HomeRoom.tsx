@@ -7,6 +7,7 @@ import { WalletChip, ShopModal } from '../ui/Wallet';
 import { ToolButtons, Panels } from '../ui/Panels';
 import { engine, defOf, lookOf, hist, PW, type World } from './engine';
 import { EditBar } from './EditBar';
+import { MonsterGame } from '../ui/MonsterGame';
 import { TimerCard, ChatPanel, EmoteBar, DaySummary, NetBanner } from '../ui/RoomUI';
 import { FocusScreen, useCompanions, isRunning } from './FocusScreen';
 import { TravelScreen } from '../ui/Travel';
@@ -23,6 +24,7 @@ import { openHome, leaveRoom, openProfile } from '../net';
 type Ghost = { id: string; r: number; extra: Record<string, unknown> } | null;
 
 export function HomeRoom() {
+  const [game, setGame] = useState(false); // the Oyun Salonu console game
   const myRoom = useStore((s) => s.room), wallet = useStore((s) => s.wallet), profile = useStore((s) => s.profile), setProfile = useStore((s) => s.setProfile);
   const place = useStore((s) => s.place);
   // a friend's room: draw the look the server sends; my room: my saved room (editing stays mine only)
@@ -272,7 +274,7 @@ export function HomeRoom() {
         {!editing && <WorldButton />}
       </header>
       {/* no written hint in the room any more: the guided tour shows the buttons once (user, 2026-11-03) */}
-      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{/* focus screen open: nothing around it to distract (user, 2026-11-03) */}{!focusOpen && <><TimerCard onOpen={() => setFocus(true)} together={together} /><ChatPanel /><EmoteBar /><DaySummary /></>}<NetBanner /><RewardToast /></div>}<LevelUp />
+      {!editing && <div className={`room-ui home-ui ${focusOpen ? 'focusing' : ''}`}>{/* focus screen open: nothing around it to distract (user, 2026-11-03) */}{!focusOpen && <><TimerCard onOpen={() => setFocus(true)} together={together} /><ChatPanel /><EmoteBar /><DaySummary />{place?.owner === 'social:oyun' && <button className="mg-open" onClick={() => setGame(true)}>🎮 Konsolda oyna</button>}</>}<NetBanner /><RewardToast /></div>}<LevelUp />{game && <MonsterGame onClose={() => setGame(false)} />}
       <Tour run={live && !editing && !focusOpen && !visiting && !!place?.mine && profile.introSeen} />
       {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
       <WorldPanel />
