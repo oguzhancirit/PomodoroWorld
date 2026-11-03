@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { CATALOG, ACHIEVEMENTS, encodeAvatar, levelFromXP, titleFor, owns, isFree, partName, type Item, type Slot } from '@pw/shared';
 import { useStore } from '../store';
-import { buyItem } from '../economy';
+import { buyItem, demoBoost } from '../economy';
+import { DEMO_ONLY } from '../config';
 import { thumb } from '../home/engine';
 import { usePartThumb } from '../avatar/partThumb';
 
@@ -69,7 +70,7 @@ export function ShopModal() {
     <div className="modal" role="dialog" aria-modal="true" aria-labelledby="shop-t" onClick={(e) => e.target === e.currentTarget && close()}>
       <div className="sheet">
         <header><div><h2 id="shop-t">Mağaza</h2><p>Odaklandıkça jeton kazanırsın. Seviye atladıkça yeni parçalar açılır.</p></div>
-          <div className="row"><WalletInline /><button className="x" aria-label="Kapat" onClick={close}>×</button></div></header>
+          <div className="row">{DEMO_ONLY && <button className="ghost sm demo-boost" title="Sadece demoda: her şeyi denemek için" onClick={() => { demoBoost(); setMsg('Deneme paketi: +3000 jeton ve seviye 10. Hepsini dene!'); }}>🎁 Deneme paketi</button>}<WalletInline /><button className="x" aria-label="Kapat" onClick={close}>×</button></div></header>
         <div className="tabs">
           <button className={tab === 'avatar' ? 'on' : ''} onClick={() => setTab('avatar')}>Karakter</button>
           <button className={tab === 'furn' ? 'on' : ''} onClick={() => setTab('furn')}>Eşyalar</button>

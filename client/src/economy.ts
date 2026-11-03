@@ -1,6 +1,6 @@
 // Wallet access for the page. Online: the server owns the wallet (HTTP + room messages).
 // Demo mode: the same shared rules run here and the wallet is kept in this browser.
-import {
+import { xpStep,
   buy as buyRule, newWallet, sanitizeWallet, sanitizeRoom, roomAllowedFor, clock, loginTick, claimQuest, claimLogin, setPledge, cancelPledge, noteDecor,
   type Wallet, type Room, type Payout,
 } from '@pw/shared';
@@ -16,6 +16,13 @@ const ROOM_KEY = 'pw2.room';
 export function loadLocalRoom(w: Wallet): Room { try { return roomAllowedFor(w, JSON.parse(localStorage.getItem(ROOM_KEY) || 'null') ?? undefined); } catch { return roomAllowedFor(w, null); } }
 
 /** this device's time zone, minutes east of UTC: quests reset at the player's own midnight */
+/** demo only: a try-out pack (3000 coins, level 10) so every new shop thing can be tried without hours of focus */
+export function demoBoost() {
+  if (!DEMO_ONLY) return;
+  const st = useStore.getState(); const w0 = st.wallet ?? loadLocalWallet();
+  let xp = 0; for (let L = 1; L < 10; L++) xp += xpStep(L);
+  const w = { ...w0, coins: w0.coins + 3000, xp: Math.max(w0.xp, xp) }; saveLocalWallet(w); st.set({ wallet: w });
+}
 export const myTz = () => -new Date().getTimezoneOffset();
 /** the player's calendar right now (day, week, hour) */
 export const myClock = () => clock(Date.now(), myTz());
