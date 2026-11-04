@@ -11,3 +11,7 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Neon (free Postgres) connection string, pasted by hand in the Render dashboard; never commit it.
+      # Without it the server keeps profiles in a file, which free Render loses on every restart.
+      - key: DATABASE_URL
+        sync: false
