@@ -39,3 +39,14 @@ Karar (2026-11-04): önce bedava, önce arkadaşlar, adres şimdilik `oguzhancir
 - Google ile giriş: Google Cloud'dan istemci kimliği (`GOOGLE_CLIENT_ID` + siteye `VITE_GOOGLE_CLIENT_ID`).
 - Şikâyet et / engelle, küfür süzgeci, gizlilik metni (KVKK).
 - Hep uyanık sunucu (Render Starter, aylık ~7 $) ve istenirse özel adres.
+
+## Durum (2026-11-04, oturum devri)
+
+- Oğuzhan Neon'da `pomodoroworld` organizasyonunu açtı (`org-frosty-sun-33643492`), ortam ayarlarına `NEON_API_KEY` ekledi
+  ve ağ izin listesine `neon.com` + `console.neon.tech` ekledi. Anahtar yalnızca yeni oturumda görünür.
+- Yeni oturumda yapılacak: Neon CLI kurmadan, doğrudan Neon REST API ile (`curl -H "Authorization: Bearer $NEON_API_KEY"`)
+  bu organizasyonda `pomodoroworld` projesini **aws-eu-central-1 (Frankfurt)** bölgesinde aç. Bağlantı adresini sohbete
+  yazma ve repoya koyma; Oğuzhan onu Neon'daki **Connect** düğmesinden alıp Render'daki `DATABASE_URL` kutusuna yapıştırır.
+  (Neon'un önerdiği `neon` CLI Apache-2.0 lisanslı; kullanıcı onayı alınmadı, gerek de yok.)
+- Sonra: Render Blueprint (yukarıdaki 2. adım) → Render adresi gelince siteyi `VITE_SERVER_URL` ile kurup `gh-pages`'e gönder,
+  iki tarayıcıyla canlı dene.
