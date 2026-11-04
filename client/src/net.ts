@@ -47,7 +47,7 @@ async function enterLibrary(roomId?: string): Promise<boolean> {
     st.flash(roomId ? 'Bu kütüphane dolu ya da kapandı. Dünya’dan başka bir kütüphaneye gir.' : 'Kütüphaneye bağlanılamadı. İnternetini kontrol edip tekrar dene.', 5000);
     return false;
   }
-  if (job !== homeJob) { r.leave(true).catch(() => {}); return false; }
+  if (job !== homeJob) { quit(r); return false; }
   leaveQuiet();
   room = r;
   st.set({ players: {}, chat: [], emotes: {}, place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
@@ -74,7 +74,7 @@ async function enterSocial(space: string, roomId?: string): Promise<boolean> {
     st.flash('Oraya şu an girilemedi. Biraz sonra tekrar dene.', 5000);
     return false;
   }
-  if (job !== homeJob) { r.leave(true).catch(() => {}); return false; }
+  if (job !== homeJob) { quit(r); return false; }
   leaveQuiet();
   room = r;
   const def = socialRoom(space);
@@ -124,7 +124,7 @@ async function joinHome(owner: string, token: string): Promise<boolean> {
     st.flash(/[ğüşıöçĞÜŞİÖÇ]/.test(msg) ? msg : 'Bu oda şu an açık değil.', 5000);
     return false;
   }
-  if (job !== homeJob) { r.leave(true).catch(() => {}); return false; }
+  if (job !== homeJob) { quit(r); return false; }
   leaveQuiet();
   room = r;
   st.set({ players: {}, chat: [], emotes: {}, place: { owner, mine, name: '', layout: '', cap: 2 } });
@@ -198,8 +198,9 @@ function wire(r: Room, screen: 'room' | 'home') {
   // a quiet room sends nothing for minutes, and the host's door closes a connection after 5 silent minutes
   // (measured live 2026-11-04: dropped after 309 s of quiet). A tiny clock check every 50 s keeps it talking both ways.
   const talk = setInterval(() => { if (room !== r) return clearInterval(talk); try { r.send('time', { t0: Date.now() }); } catch { /* reconnecting */ } }, 50_000);
-  r.onDrop(() => useStore.getState().set({ net: 'reconnecting' }));
-  r.onReconnect(() => { useStore.getState().set({ net: 'online' }); r.send('time', { t0: Date.now() }); });
+  // only the room you are in may talk about the connection
+  r.onDrop(() => { if (room === r) useStore.getState().set({ net: 'reconnecting' }); });
+  r.onReconnect(() => { if (room !== r) return; useStore.getState().set({ net: 'online' }); r.send('time', { t0: Date.now() }); });
   r.onLeave((code: number) => {
     clearInterval(talk);
     if (code === CloseCode.CONSENTED) return;
@@ -217,8 +218,12 @@ function wire(r: Room, screen: 'room' | 'home') {
   });
 }
 
+function quit(r: Room) { r.reconnection.enabled = false; r.removeAllListeners(); r.leave(true).catch(() => {}); }
 function leaveQuiet() {
-  const r = room; room = null; r?.leave(true).catch(() => {});
+  const r = room; room = null;
+  // a room we left stays silent for good (live 2026-11-04: after "Karakterim" the old line closed 30 s later on
+  // the host, the game kept trying to get back into the room it had left and showed "Bağlantı koptu" every time)
+  if (r) quit(r);
   local?.leave(); local = null;
 }
 /** leave the room and open the character screen (name, look, timer length); "Odama dön" brings you back */
