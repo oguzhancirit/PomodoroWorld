@@ -669,7 +669,7 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lg-logo { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font: 800 20px var(--f-display); letter-spacing: -.02em; }
 .lg-logo b { color: var(--acc2); font-weight: 800; }
 .lg-logo .dot { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffb3a1, var(--acc)); box-shadow: 0 0 14px rgba(239, 90, 60, .7); }
-.lg-art { position: relative; grid-row: 2; display: grid; grid-template-columns: repeat(2, var(--cw)); column-gap: calc(var(--cw) * .09); row-gap: calc(var(--cw) * .08); justify-content: center; align-content: center; align-items: start; --cw: clamp(230px, min(21vw, calc((100vh - 170px) / 2.16 * 2 - 230px)), 380px); --off: calc(var(--cw) * .2); align-self: center; padding: 18px 0 calc(var(--off) + 24px); }
+.lg-art { position: relative; grid-row: 2; display: grid; grid-template-columns: 1fr; justify-items: center; --cw: clamp(300px, min(30vw, 58vh), 420px); width: 100%; align-self: start; padding: 26px 0 40px; }
 /* behind the cards: three tilted orbits, each with a small light running round it, and slow soft glows */
 .lg-rings { position: absolute; left: 50%; top: 50%; width: 112%; height: 100%; transform: translate(-50%, -50%) rotate(-14deg); pointer-events: none; z-index: 0; }
 .lg-rings i { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .075); animation: lg-orbit 26s linear infinite; }
@@ -686,13 +686,14 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lg-glow i:nth-child(3) { left: 14%; bottom: 4%; background: radial-gradient(circle, rgba(242, 193, 78, .32), transparent 70%); animation-duration: 18s; animation-delay: -11s; }
 @keyframes lg-drift { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(8%, -6%) scale(1.12); } 100% { transform: translate(-6%, 5%) scale(.92); } }
 .lg-card { position: relative; z-index: 1; width: var(--cw); margin: 0; padding: 12px 14px 12px; border-radius: 18px; background: linear-gradient(160deg, rgba(48, 42, 70, .92), rgba(30, 27, 46, .95)); border: 1px solid rgba(255, 255, 255, .09); box-shadow: 0 30px 60px -28px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, .06); transition: transform .45s cubic-bezier(.2, .8, .3, 1); }
-/* two tidy columns, read 01 → 04: 01 | 02 on top, 03 | 04 below. The right column sits a little lower and every card
-   leans a touch, so it feels hand-placed, but no card covers another (user 2026-11-04: the overlapping cascade looked messy).
-   The width follows the screen (height too): a card is about cw/2 + 110px tall, so two rows always fit on a PC. */
-.lg-card { justify-self: stretch; transform: translateY(var(--y, 0)) rotate(var(--r, 0deg)); }
-.lg-card.c1 { --r: -2deg; } .lg-card.c2 { --r: 1.6deg; --y: var(--off); }
-.lg-card.c3 { --r: 1.2deg; } .lg-card.c4 { --r: -1.4deg; --y: var(--off); }
-.lg-card:hover { transform: translateY(calc(var(--y, 0px) - 4px)) rotate(0deg); z-index: 3; }
+/* one column, one card on top of the next like the reference (user 2026-11-04, their EngFlow phone shot): every card the
+   same width on the same centre line, leaning left/right in turn and nudged a few pixels, each one sliding a little over
+   the bottom edge (the caption line) of the card above. The page scrolls; the sign-in side stays put on a PC. */
+.lg-card { --r: 0deg; --x: 0px; transform: translateX(var(--x)) rotate(var(--r)); }
+.lg-card + .lg-card { margin-top: -8px; }
+.lg-card.c1 { --r: -2.2deg; --x: -2%; } .lg-card.c2 { --r: 1.8deg; --x: 3%; z-index: 2; }
+.lg-card.c3 { --r: -1.6deg; --x: -2%; z-index: 3; } .lg-card.c4 { --r: 1.6deg; --x: 3%; z-index: 4; }
+.lg-card:hover { transform: translateX(var(--x)) translateY(-4px) rotate(0deg); z-index: 5; }
 .lg-card header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; font: 700 12.5px var(--f-body); }
 .lg-card header span { display: inline-flex; align-items: center; gap: 7px; }
 .lg-card header span::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--acc2); }
@@ -714,7 +715,7 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lg-durs button b { font: 800 14px var(--f-head, var(--f-body)); color: #f4f1ec; margin-right: 1px; }
 .lg-durs button.on { background: rgba(239, 90, 60, .2); border-color: rgba(239, 90, 60, .55); color: #ffd9cf; }
 .lg-durs .lg-own { margin-left: 2px; font-size: 10.5px; color: var(--muted); white-space: nowrap; padding-right: 4px; }
-.lg-card figcaption { margin-top: 9px; font-size: 11.5px; color: var(--muted); display: flex; gap: 6px; }
+.lg-card figcaption { margin-top: 10px; padding-bottom: 18px; font-size: 11.5px; color: var(--muted); display: flex; gap: 6px; }
 .lg-side { grid-row: 2; display: grid; gap: 14px; align-content: center; position: sticky; top: 0; align-self: start; min-height: calc(100vh - 90px); }
 .lg-kicker { margin: 0; font: 800 11.5px var(--f-body); letter-spacing: .2em; text-transform: uppercase; color: var(--acc2); }
 .lg-side h1 { margin: 0; font: 800 clamp(30px, 3.3vw, 46px)/1.08 var(--f-display); letter-spacing: -.03em; }
@@ -740,15 +741,11 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lg-lock svg { width: 18px; height: 18px; flex: none; margin-top: 2px; stroke: currentColor; fill: none; stroke-width: 1.8; }
 .lg-tagline { grid-column: 1; grid-row: 3; margin: 0; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .lg-tagline::before { content: '✦'; color: var(--acc2); }
-@media (min-width: 901px) { .lg-card figcaption { display: none; } .lg-card { padding: 10px 12px; } .lg-card header { margin-bottom: 7px; } }
 @media (max-width: 900px) {
   .login { grid-template-columns: 1fr; grid-template-rows: auto; padding: 18px 16px 24px; overflow: auto; }
   .lg-art, .lg-side, .lg-tagline { grid-row: auto; grid-column: 1; }
-  .lg-art { grid-template-columns: 1fr; row-gap: 10px; padding: 6px 0 14px; --off: 0px; } .lg-rings { width: 130%; }
-  .lg-card { width: 80%; justify-self: start; }
+  .lg-art { padding: 34px 0 22px; --cw: 92%; } .lg-rings { width: 130%; }
   .lg-side { position: static; min-height: 0; }
-  .lg-card.c2, .lg-card.c4 { justify-self: end; }
-  .lg-card figcaption, .c2 .lg-row, .c4 .lg-row { display: none; }
   .lg-tagline { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .lg-live i, .lg-rings i, .lg-glow i { animation: none; } }
