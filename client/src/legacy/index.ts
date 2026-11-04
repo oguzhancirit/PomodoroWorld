@@ -140,6 +140,9 @@ PW.World.prototype.moveGhost = function (this: any) {
 const oldSeatsFor = PW.seatsFor;
 PW.seatsFor = function (id: string) {
   if (id === 'f_sofa_l') return [{ x: -0.55, z: 0.1, h: 0.48 }, { x: 0.15, z: 0.1, h: 0.48 }, { x: 0.86, z: 0.8, h: 0.48 }];
+  // office and gaming chairs (user 2026-11-04): their backrest stands close to the seat, so the back went through it.
+  // Sit a little further forward (the cushion height is still measured on the drawn model).
+  if (id === 'f_chair_office' || id === 'f_chair_gaming') return [{ x: 0, z: 0.13, h: 0.49 }];
   return oldSeatsFor(id);
 };
 

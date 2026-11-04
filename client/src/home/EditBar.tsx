@@ -86,7 +86,8 @@ export function EditBar(p: Props) {
       </>
     );
     const mine = CATALOG.filter((i) => i.cat === 'furn' && (wallet.owned[i.id] ?? 0) > 0)
-      .sort((a, b) => (Number(available(wallet, R, b.id) > 0) - Number(available(wallet, R, a.id) > 0)) || (a.sub ?? '').localeCompare(b.sub ?? ''));
+      // a fixed order (by kind, then name): placing the last one no longer throws it to the end of the list (user 2026-11-04)
+      .sort((a, b) => (a.sub ?? '').localeCompare(b.sub ?? '', 'tr') || a.name.localeCompare(b.name, 'tr'));
     list = [
       ...mine.map((it) => { const av = available(wallet, R, it.id); return (
         <button key={it.id} className={`eit ${av > 0 ? '' : 'none'}`} disabled={av <= 0} title={it.name} onClick={() => p.onGhost(it.id, 0)}>

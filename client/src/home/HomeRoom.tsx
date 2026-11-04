@@ -20,7 +20,7 @@ import { RewardToast } from '../ui/Wallet';
 import { LevelUp } from '../ui/LevelUp';
 import { Tour } from './Tour';
 import { WorldButton, WorldPanel } from '../ui/World';
-import { openHome, leaveRoom, openProfile } from '../net';
+import { openHome, leaveRoom, openProfile, sendSit } from '../net';
 
 type Ghost = { id: string; r: number; extra: Record<string, unknown> } | null;
 
@@ -85,7 +85,8 @@ export function HomeRoom() {
       if (latest.current.editing) return;
       // v1: clicking someone opens their person card
       if (ev.type === 'avatar' && ev.id && ev.id !== 'me') { openPerson(ev.id); return; }
-      if (ev.type === 'seat' && ev.idx != null) { w.sitAvatar('me', ev.idx); w.setAct('me', 'idle'); }
+      // the chair you pick is your chair: the room hears it, so starting a focus keeps you there (user 2026-11-04)
+      if (ev.type === 'seat' && ev.idx != null) { if (w.sitAvatar('me', ev.idx) !== false) sendSit(ev.idx); w.setAct('me', 'idle'); }
       else if (ev.type === 'floor' && ev.x != null) w.walkTo('me', ev.x, ev.z);
     };
     w.onPlace = (pos: PlacedItem) => placeItem(pos);
@@ -143,6 +144,8 @@ export function HomeRoom() {
   /* ---------- the people in this room (friends, and me as the server sees me) ---------- */
   const players = useStore((s) => s.players), meId = useStore((s) => s.me), phase = useStore((s) => s.timer.phase), emotes = useStore((s) => s.emotes);
   const seen = useRef<Record<string, string>>({});
+  // the seat the room gave me last: only a new one moves me (walking off or another chair is not undone on every update)
+  const mySeat = useRef<number | null>(null);
   useEffect(() => {
     const w = engine.world; if (!live || engine.film || !w || editing) return;
     // everyone has their own timer: the tag over each head shows that person's own phase
@@ -157,7 +160,7 @@ export function HomeRoom() {
         if (!w.avatars.has(key)) w.addAvatar(key, p.avatar, { name: p.name, level: p.level ?? 1 });
         const a = w.avatars.get(key);
         if (p.seatIndex >= 0) { if (a.seatIdx !== p.seatIndex) w.sitAvatar(key, p.seatIndex); } else if (a.seatIdx != null) w.standAvatar(key);
-      } else if (p.seatIndex >= 0 && w.avatars.get('me')?.seatIdx !== p.seatIndex) w.sitAvatar('me', p.seatIndex);
+      } else if (p.seatIndex >= 0 && p.seatIndex !== mySeat.current) { mySeat.current = p.seatIndex; if (w.avatars.get('me')?.seatIdx !== p.seatIndex) w.sitAvatar('me', p.seatIndex); }
       const ph = key === 'me' ? phase : p.phase;
       w.updateAvatarInfo(key, { name: key === 'me' ? (profile.name || 'Sen') : p.name, level: p.level ?? 1, status: statusOf(ph), ...(key === 'me' ? {} : { cfg: p.avatar }) });
       w.setAct(key, ph === 'focus' ? p.activity : p.bubble ? 'talk' : 'idle');
@@ -177,7 +180,7 @@ export function HomeRoom() {
   /* ---------- draw the room whenever its look changes ---------- */
   useEffect(() => {
     const w = engine.world; if (!live || engine.film || !w || !room) return;
-    w.loadRoom(defOf(room));
+    w.loadRoom(defOf(room)); mySeat.current = null;
     if (!w.avatars.has('me')) w.addAvatar('me', myCode, { name: profile.name || 'Sen', level, isMe: true });
     if (latest.current.editing) {
       w.setEdit(true); parkMe();

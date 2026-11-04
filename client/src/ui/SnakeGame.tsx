@@ -8,7 +8,9 @@ import { sfx } from '../sound';
 const W = 18, H = 14;
 const BEST = 'pw2.snake.best';
 const readBest = () => { try { return Number(localStorage.getItem(BEST)) || 0; } catch { return 0; } };
-const KEYS: Record<string, SnakeDir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
+const KEYS: Record<string, SnakeDir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Up: 'up', Down: 'down', Left: 'left', Right: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
+/** by physical key too (any keyboard layout) */
+const CODES: Record<string, SnakeDir> = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right' };
 
 type Phase = 'ready' | 'play' | 'pause' | 'over';
 
@@ -16,9 +18,10 @@ export function SnakeGame({ onClose }: { onClose: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const game = useRef<Game>(newSnake(W, H, Math.random));
   const [phase, setPhase] = useState<Phase>('ready');
+  if (import.meta.env.DEV) (window as unknown as { __snake: typeof game }).__snake = game; // browser checks read the board
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(readBest);
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const box = useRef<HTMLDivElement>(null);
 
   const draw = useCallback(() => {
     const c = canvas.current; if (!c) return;
@@ -77,7 +80,7 @@ export function SnakeGame({ onClose }: { onClose: () => void }) {
   }, [phase, draw]);
 
   useEffect(() => {
-    draw(); closeRef.current?.focus();
+    draw(); box.current?.focus(); // the game itself holds the keyboard (a focused button would eat Space)
     const onResize = () => { const c = canvas.current; if (c) c.width = 0; draw(); };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -86,12 +89,13 @@ export function SnakeGame({ onClose }: { onClose: () => void }) {
   // keys are read on the whole window: the Start button disappears when the game begins and takes the focus with it
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape') return onClose();
-    const d = KEYS[e.key];
+    const d = KEYS[e.key] ?? CODES[e.code];
     if (d) { e.preventDefault(); if (phase === 'over') return; turn(d); return; }
-    if (e.key === ' ') { e.preventDefault(); if (phase === 'over' || phase === 'ready') restart(); else setPhase((p) => (p === 'play' ? 'pause' : 'play')); }
+    if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); if (phase === 'over' || phase === 'ready') restart(); else setPhase((p) => (p === 'play' ? 'pause' : 'play')); }
   };
   const keyRef = useRef(onKey); keyRef.current = onKey;
-  useEffect(() => { const h = (e: KeyboardEvent) => keyRef.current(e); window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, []);
+  // capture phase, and nothing behind the game hears the keys (user 2026-11-04: play with the arrow keys)
+  useEffect(() => { const h = (e: KeyboardEvent) => { if (e.repeat && !KEYS[e.key]) return; keyRef.current(e); if (KEYS[e.key] || CODES[e.code] || e.key === ' ') e.stopPropagation(); }; window.addEventListener('keydown', h, true); return () => window.removeEventListener('keydown', h, true); }, []);
 
   // swipe on the screen (phones)
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -104,27 +108,27 @@ export function SnakeGame({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="modal mg-modal" role="dialog" aria-modal="true" aria-label="Yılan oyunu">
+    <div ref={box} tabIndex={-1} className="modal mg-modal" role="dialog" aria-modal="true" aria-label="Yılan oyunu" onPointerDown={() => box.current?.focus({ preventScroll: true })}>
       <div className="mg-console">
-        <div className="mg-top"><span className="mg-led" /><b>YILAN</b><span className="sn-score" aria-live="polite">🍅 {score}</span><button ref={closeRef} className="mg-x" onClick={onClose} aria-label="Oyunu kapat">×</button></div>
+        <div className="mg-top"><span className="mg-led" /><b>YILAN</b><span className="sn-score" aria-live="polite">🍅 {score}</span><button className="mg-x" onClick={onClose} aria-label="Oyunu kapat">×</button></div>
         <div className="mg-screen sn-screen" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <canvas ref={canvas} className="sn-canvas" aria-label={`Yılan oyunu, skor ${score}`} />
           {phase !== 'play' && (
             <div className="sn-over">
-              {phase === 'ready' && <><b>Domatesleri topla!</b><span>Ok tuşları ya da kaydırarak yön ver.<br />Duvara ve kuyruğuna çarpma.</span><button className="mg-go" onClick={restart}>Başla</button></>}
+              {phase === 'ready' && <><b>Domatesleri topla!</b><span className="sn-keys" aria-hidden="true"><kbd>▲</kbd><span><kbd>◀</kbd><kbd>▼</kbd><kbd>▶</kbd></span></span><span>Yön oklarıyla oyna (telefonda alttaki oklar).<br />Duvara ve kuyruğuna çarpma.</span><button className="mg-go" onClick={restart}>Başla</button></>}
               {phase === 'pause' && <><b>Durdu</b><button className="mg-go" onClick={() => setPhase('play')}>Devam</button></>}
               {phase === 'over' && <><b>Oyun bitti</b><span>Skor <strong>{score}</strong> · En iyi <strong>{Math.max(best, score)}</strong>{score > 0 && score >= best ? ' · Yeni rekor! 🎉' : ''}</span><div className="row"><button className="mg-go" autoFocus onClick={restart}>Tekrar oyna</button><button className="mg-ghost" onClick={onClose}>Odaya dön</button></div></>}
             </div>
           )}
         </div>
         <div className="mg-pad sn-pad" aria-label="Yön tuşları">
-          <button aria-label="Yukarı" onClick={() => turn('up')}>▲</button>
-          <button aria-label="Sola" onClick={() => turn('left')}>◀</button>
+          <button aria-label="Yukarı" onPointerDown={(e) => { e.preventDefault(); turn('up'); }}>▲</button>
+          <button aria-label="Sola" onPointerDown={(e) => { e.preventDefault(); turn('left'); }}>◀</button>
           <button aria-label="Durdur" className="sn-mid" onClick={() => (phase === 'play' ? setPhase('pause') : phase === 'pause' ? setPhase('play') : restart())}>{phase === 'play' ? 'II' : '▶'}</button>
-          <button aria-label="Sağa" onClick={() => turn('right')}>▶</button>
-          <button aria-label="Aşağı" onClick={() => turn('down')}>▼</button>
+          <button aria-label="Sağa" onPointerDown={(e) => { e.preventDefault(); turn('right'); }}>▶</button>
+          <button aria-label="Aşağı" onPointerDown={(e) => { e.preventDefault(); turn('down'); }}>▼</button>
         </div>
-        <p className="mg-foot">En iyi skorun: {best} · Boşluk tuşu: durdur</p>
+        <p className="mg-foot">En iyi skorun: {best} · Yön okları: yön ver · Boşluk: durdur</p>
       </div>
     </div>
   );

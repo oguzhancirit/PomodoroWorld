@@ -28,10 +28,18 @@ describe('snake: moving', () => {
     g = stepSnake({ ...g, food: { x: 0, y: 0 } }, fixed(0));
     expect(g.body[0]).toEqual({ x: 6, y: 4 }); expect(g.dir).toBe('up');
   });
-  it('two quick key presses in one step cannot reverse it either', () => {
+  it('two quick key presses are both kept and happen one step after the other (user 2026-11-04)', () => {
+    let g = { ...newSnake(12, 10, fixed(0)), food: { x: 0, y: 0 } };
+    g = turnSnake(g, 'up'); g = turnSnake(g, 'left');
+    g = stepSnake(g, fixed(0)); expect(g.dir).toBe('up'); expect(g.body[0]).toEqual({ x: 6, y: 4 });
+    g = stepSnake(g, fixed(0)); expect(g.dir).toBe('left'); expect(g.body[0]).toEqual({ x: 5, y: 4 });
+  });
+  it('quick presses still cannot reverse it, and at most two wait', () => {
     let g = newSnake(12, 10, fixed(0));
-    g = turnSnake(g, 'up'); g = turnSnake(g, 'left'); // left would be fine after up, but up has not happened yet
-    expect(g.next).toBe('up');
+    g = turnSnake(g, 'up'); g = turnSnake(g, 'down'); // straight back after up: ignored
+    expect(g.queue ?? []).toEqual([]);
+    g = turnSnake(g, 'left'); g = turnSnake(g, 'down'); g = turnSnake(g, 'right');
+    expect(g.next).toBe('up'); expect(g.queue).toEqual(['left', 'down']);
   });
 });
 

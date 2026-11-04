@@ -8,6 +8,8 @@ export interface SnakeGame {
   body: SnakePt[];
   /** the way it moved last step, and the way it will move next step (a key press only changes `next`) */
   dir: SnakeDir; next: SnakeDir;
+  /** quick presses waiting for the following steps (at most two), so a fast ↑ then ← is not lost */
+  queue?: SnakeDir[];
   food: SnakePt; score: number; over: boolean;
 }
 
@@ -29,15 +31,21 @@ export function newSnake(w: number, h: number, rnd: () => number): SnakeGame {
   return { w, h, body, dir: 'right', next: 'right', food: placeFood(body, w, h, rnd), score: 0, over: false };
 }
 
-/** a key press: ignored when it would turn the snake straight back into itself */
+/** a key press: ignored when it would turn the snake straight back into itself; a second quick one waits its turn */
 export function turnSnake(g: SnakeGame, d: SnakeDir): SnakeGame {
-  if (g.over || d === BACK[g.dir]) return g;
-  return { ...g, next: d };
+  if (g.over) return g;
+  const q = g.queue ?? [];
+  if (g.next === g.dir && !q.length) return d === BACK[g.dir] ? g : { ...g, next: d };
+  const last = q.length ? q[q.length - 1] : g.next;
+  if (d === last || d === BACK[last] || q.length >= 2) return g;
+  return { ...g, queue: [...q, d] };
 }
 
 export function stepSnake(g: SnakeGame, rnd: () => number): SnakeGame {
   if (g.over) return g;
   const dir = g.next, s = STEP[dir], head = { x: g.body[0].x + s.x, y: g.body[0].y + s.y };
+  const [nx, ...rq] = g.queue ?? [];
+  g = { ...g, next: nx ?? dir, queue: rq };
   if (head.x < 0 || head.y < 0 || head.x >= g.w || head.y >= g.h) return { ...g, dir, over: true };
   const eats = same(head, g.food);
   // the tail moves away this step unless the snake is growing, so its square is free to enter

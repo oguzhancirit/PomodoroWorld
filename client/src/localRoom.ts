@@ -194,7 +194,10 @@ export class LocalRoom {
   sit(seat: number) {
     const st = useStore.getState();
     const taken = Object.values(st.players).filter((p) => p.id !== 'me').map((p) => p.seatIndex);
-    if (isSeatFree(seat, taken, this.kind === 'library' ? LIBRARY_SEATS : STUDY_ROOM.seats.length)) st.upsertPlayer('me', { seatIndex: seat });
+    // how many chairs this room has: the library 10, a home or a social space counts its furniture
+    const cap = this.kind === 'library' ? LIBRARY_SEATS : this.kind === 'study' ? STUDY_ROOM.seats.length
+      : this.kind === 'social' ? roomSeats(socialRoom(this.space) ?? { items: [] } as never) : roomSeats(st.room ?? ({ items: [] } as never));
+    if (isSeatFree(seat, taken, cap)) st.upsertPlayer('me', { seatIndex: seat });
   }
   timerAction(action: TimerAction) {
     const st = useStore.getState();

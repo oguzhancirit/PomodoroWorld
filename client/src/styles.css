@@ -852,7 +852,11 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .sn-over { position: absolute; inset: 6px; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; border-radius: 8px; background: rgba(10, 14, 12, .72); color: #eef6ef; font-size: 13px; line-height: 1.45; }
 .sn-over b { font: 800 20px var(--f-display); }
 .sn-over .row { display: flex; gap: 8px; }
-.sn-pad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 44px); justify-content: center; gap: 6px; }
+.sn-keys { display: grid; justify-items: center; gap: 4px; }
+.sn-keys > span { display: flex; gap: 4px; }
+.sn-keys kbd { display: grid; place-items: center; width: 30px; height: 26px; border-radius: 7px; background: rgba(255, 255, 255, .14); border-bottom: 3px solid rgba(0, 0, 0, .35); font: 700 12px var(--f-display); color: #fff; }
+.mg-modal:focus { outline: none; }
+.sn-pad { grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 50px); touch-action: none; user-select: none; justify-content: center; gap: 6px; }
 .sn-pad button { border-radius: 12px; background: rgba(255, 255, 255, .08); color: #fff; font-size: 16px; }
 .sn-pad button:active { background: rgba(255, 255, 255, .18); }
 .sn-pad button:nth-child(1) { grid-area: 1 / 2; } .sn-pad button:nth-child(2) { grid-area: 2 / 1; } .sn-pad .sn-mid { grid-area: 2 / 2; font-size: 12px; background: rgba(239, 90, 60, .25); }
