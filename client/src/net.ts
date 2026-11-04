@@ -192,9 +192,13 @@ function wire(r: Room, screen: 'room' | 'home') {
     const rtt = Date.now() - m.t0; useStore.getState().set({ clockOffset: m.server + rtt / 2 - Date.now() });
   });
   r.send('time', { t0: Date.now() });
+  // a quiet room sends nothing for minutes, and the host's door closes a connection after 5 silent minutes
+  // (measured live 2026-11-04: dropped after 309 s of quiet). A tiny clock check every 50 s keeps it talking both ways.
+  const talk = setInterval(() => { if (room !== r) return clearInterval(talk); try { r.send('time', { t0: Date.now() }); } catch { /* reconnecting */ } }, 50_000);
   r.onDrop(() => useStore.getState().set({ net: 'reconnecting' }));
   r.onReconnect(() => { useStore.getState().set({ net: 'online' }); r.send('time', { t0: Date.now() }); });
   r.onLeave((code: number) => {
+    clearInterval(talk);
     if (code === CloseCode.CONSENTED) return;
     if (room !== r) return;
     const st = useStore.getState();
