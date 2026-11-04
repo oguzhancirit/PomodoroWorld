@@ -11,6 +11,7 @@ import {
 } from '@pw/shared';
 import { StudyRoomState, Player } from './state';
 import { profiles, type Profile } from '../profiles';
+import { sessions } from '../sessions';
 
 // how long each player was really here during the current focus
 interface FocusTrack { since: number | null; accMs: number; fromStart: boolean; intact: boolean }
@@ -36,6 +37,8 @@ export class StudyRoom extends Room {
   protected gone = new Set<string>();
   /** what each player works on (Ders, Kodlama…), for their statistics */
   private categoryOf = new Map<string, string>();
+  /** dropped players' reconnection seats, so a replaced one can be cancelled */
+  private waiting = new Map<string, { reject(e?: unknown): void }>();
 
   messages = {
     chat: validate(ChatMsg, (client: Client, { text }) => {
@@ -85,20 +88,28 @@ export class StudyRoom extends Room {
    *  like a dropped line, so the old self waited 30 s for a comeback; when the same player arrives again, the old
    *  copies leave at once. An old tab that is still open is told why, so it does not jump back in. */
   protected replaceTwins(pid: string) {
-    for (const [sid, prof] of [...this.profileOf]) {
-      if (prof.pid !== pid) continue;
-      this.gone.add(sid);
-      const c = this.clients.getById(sid);
-      c?.send('replaced', {});
-      this.onLeave(c ?? ({ sessionId: sid } as Client));
-      c?.leave();
-    }
+    for (const [sid, prof] of [...this.profileOf]) if (prof.pid === pid) this.dropTwin(sid);
+  }
+
+  /** this seat's player opened the game somewhere else (here or in another room): it earns nothing more,
+   *  keeps no reconnection seat and is told why, so the old tab does not jump back in */
+  private dropTwin(sid: string) {
+    this.gone.add(sid);
+    const c = this.clients.getById(sid);
+    // cancel a waiting reconnection seat first (onLeave forgets it)
+    const w = this.waiting.get(sid);
+    if (w) { this.waiting.delete(sid); w.reject(new Error('replaced')); }
+    c?.send('replaced', {});
+    this.onLeave(c ?? ({ sessionId: sid } as Client));
+    c?.leave();
   }
 
   onJoin(client: Client, options: unknown) {
     const o = parseJoin(options);
     let prof: Profile | null = null;
     if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.replaceTwins(prof.pid); this.profileOf.set(client.sessionId, prof); }
+    // one account, one place across the whole server: another room (other timer length, library, Odam…) lets go of you
+    if (prof) { const sid = client.sessionId; sessions.claim(prof.pid, { room: this.roomId, sessionId: sid, kick: () => this.dropTwin(sid) }); }
     const p = new Player();
     p.name = cleanName(o.name) || 'Misafir';
     // you can only wear parts you own (free ones are always yours)
@@ -124,7 +135,10 @@ export class StudyRoom extends Room {
     if (p) p.connected = false;
     const t = this.track.get(client.sessionId);
     if (t) { if (t.since) t.accMs += Date.now() - t.since; t.since = null; t.intact = false; }
-    this.allowReconnection(client, RECONNECT_SECONDS);
+    const d = this.allowReconnection(client, RECONNECT_SECONDS) as unknown as Promise<unknown> & { reject(e?: unknown): void };
+    this.waiting.set(client.sessionId, d);
+    const done = () => { this.waiting.delete(client.sessionId); };
+    d.then?.(done, done);
   }
 
   onReconnect(client: Client) {
@@ -135,6 +149,9 @@ export class StudyRoom extends Room {
   }
 
   onLeave(client: Client) {
+    const prof = this.profileOf.get(client.sessionId);
+    if (prof) sessions.release(prof.pid, this.roomId, client.sessionId);
+    this.waiting.delete(client.sessionId);
     this.state.players.delete(client.sessionId);
     this.track.delete(client.sessionId); this.profileOf.delete(client.sessionId); this.categoryOf.delete(client.sessionId);
     this.chatLimit.forget(client.sessionId); this.emoteLimit.forget(client.sessionId); this.timeLimit.forget(client.sessionId);

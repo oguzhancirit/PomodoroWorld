@@ -4,6 +4,7 @@ import { server } from '../src/app.config';
 import type { StudyRoom } from '../src/rooms/StudyRoom';
 import { encodeAvatar, defaultAvatar } from '@pw/shared';
 import { CloseCode } from '@colyseus/core';
+import { profiles } from '../src/profiles';
 
 let colyseus: ColyseusTestServer;
 beforeAll(async () => { colyseus = await boot(server); });
@@ -179,6 +180,56 @@ describe('StudyRoom', () => {
     const got = c.waitForMessage('reward');
     room.endPhaseIn(30);
     expect((await got).wallet.stats.pomos).toBe(0);
+  });
+
+  it('one player in two study rooms (25 and 50 min) is paid only once: the newer room wins', async () => {
+    const r25 = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const r50 = await colyseus.createRoom<StudyRoom>('study_room', { preset: 'p50' });
+    const who = { pid: 'pidtwice00001', secret: 't'.repeat(32) };
+    const a = await colyseus.connectTo(r25, { name: 'Tab1', ...who });
+    let replaced = false; a.onMessage('replaced', () => { replaced = true; });
+    const b = await colyseus.connectTo(r50, { name: 'Tab2', ...who });
+    await wait(80);
+    r25.forcePhase('focus'); r50.forcePhase('focus');
+    let paidOld = 0; a.onMessage('reward', () => { paidOld++; });
+    const got = b.waitForMessage('reward');
+    r25.endPhaseIn(30); r50.endPhaseIn(30);
+    const m = await got; await wait(80);
+    expect(paidOld).toBe(0);
+    expect(m.wallet.stats.pomos).toBe(1);
+    expect(profiles.get(who.pid)!.wallet.stats.pomos).toBe(1);
+    expect(replaced).toBe(true);
+    expect(r25.state.players.size).toBe(0);
+  });
+
+  it('a study room and a library are one place too: joining the library takes you out of the study room', async () => {
+    const hall = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const who = { pid: 'pidtwice00002', secret: 't'.repeat(32) };
+    const a = await colyseus.connectTo(hall, { name: 'Tab1', ...who });
+    let replaced = false; a.onMessage('replaced', () => { replaced = true; });
+    await colyseus.sdk.joinOrCreate('library', { name: 'Tab2', preset: 'p25', ...who });
+    await wait(80);
+    expect(replaced).toBe(true);
+    expect(hall.state.players.size).toBe(0);
+    let paid = 0; a.onMessage('reward', () => { paid++; });
+    hall.forcePhase('focus'); hall.endPhaseIn(30); await wait(120);
+    expect(paid).toBe(0);
+  });
+
+  it('a dropped tab whose player opened another room cannot come back into the old room', async () => {
+    const r25 = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const r50 = await colyseus.createRoom<StudyRoom>('study_room', { preset: 'p50' });
+    const who = { pid: 'pidtwice00003', secret: 't'.repeat(32) };
+    const a = await colyseus.connectTo(r25, { name: 'Old', ...who });
+    await wait(50);
+    a.reconnection.enabled = false;           // the old tab's line is down, its seat waits 30 s
+    a.connection.close(CloseCode.MAY_TRY_RECONNECT, 'network glitch');
+    await wait(80);
+    expect(r25.state.players.get(a.sessionId)?.connected).toBe(false);
+    await colyseus.connectTo(r50, { name: 'New', ...who });
+    await wait(80);
+    expect(r25.state.players.size).toBe(0);
+    await expect(colyseus.sdk.reconnect(a.reconnectionToken)).rejects.toBeTruthy();
   });
 
   it('a wrong secret for a known player id is refused', async () => {
