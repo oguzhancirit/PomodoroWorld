@@ -1,18 +1,21 @@
 // Going public (2026-11-04): the free server sleeps when nobody is online and needs about a minute to wake.
 // Before the first call we knock on /health until it answers, and a small banner says why we are waiting,
 // so nobody thinks the game is broken (and nobody lands in an offline room while it is only waking up).
+import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { HTTP_BASE, DEMO_ONLY, CONFIGURED } from './config';
 
 export type WakeState = 'idle' | 'waking' | 'awake' | 'down';
-export const useWake = create<{ state: WakeState }>(() => ({ state: DEMO_ONLY ? 'awake' : 'idle' }));
+// curtain: the full-screen wait card is up, so the small strip stays away (one message, not two)
+export const useWake = create<{ state: WakeState; curtain: boolean }>(() => ({ state: DEMO_ONLY ? 'awake' : 'idle', curtain: false }));
 
 let job: Promise<boolean> | null = null;
 /** resolves true once the server answers; false after giving up (a local dev server gets one quick try) */
 export function wakeServer(): Promise<boolean> {
   if (DEMO_ONLY || useWake.getState().state === 'awake') return Promise.resolve(true);
   return (job ??= (async () => {
-    const until = Date.now() + (CONFIGURED ? 150_000 : 3_000);
+    // a free server that was just updated can need a few minutes the first time
+    const until = Date.now() + (CONFIGURED ? 240_000 : 3_000);
     // a quick answer never shows the banner
     const slow = setTimeout(() => useWake.setState({ state: 'waking' }), 1500);
     try {
@@ -31,8 +34,39 @@ export function wakeServer(): Promise<boolean> {
 
 /** the strip at the top while the server wakes (or cannot be reached) */
 export function WakeBanner() {
-  const s = useWake((x) => x.state);
+  const s = useWake((x) => x.state), curtain = useWake((x) => x.curtain);
+  if (curtain) return null;
   if (s === 'waking') return <div className="wake-bar" role="status"><i aria-hidden="true" />Sunucu uyanıyor… Kimse yokken uyur, ilk girişte yaklaşık 1 dakika sürer.</div>;
   if (s === 'down') return <div className="wake-bar down" role="status">Sunucuya ulaşılamadı. Odan bu cihazda açık; internetini kontrol edip sayfayı yenile.<button type="button" onClick={() => location.reload()}>Yenile</button></div>;
   return null;
+}
+
+/** your room before it arrives (live, 2026-11-04): a dark empty room with buttons looked broken, and the buttons
+ *  opened screens meant for later. Until the room is here, one calm card covers everything: why we wait, for how long,
+ *  and "Tekrar dene" if the server does not answer. */
+export function WakeCurtain({ show }: { show: boolean }) {
+  const s = useWake((x) => x.state);
+  const [sec, setSec] = useState(0);
+  useEffect(() => { useWake.setState({ curtain: show }); return () => useWake.setState({ curtain: false }); }, [show]);
+  useEffect(() => {
+    if (!show) return setSec(0);
+    const t0 = Date.now(), t = setInterval(() => setSec(Math.round((Date.now() - t0) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [show]);
+  if (!show) return null;
+  // the server answered but the room still has not come: after a while say so instead of waiting forever
+  const down = s === 'down' || (s === 'awake' && sec > 30);
+  return (
+    <div className="wake-curtain" role="status">
+      {down ? <>
+        <b>Sunucuya ulaşılamadı</b>
+        <p>İnternetini kontrol et, sonra tekrar dene.</p>
+        <button type="button" onClick={() => location.reload()}>Tekrar dene</button>
+      </> : s === 'waking' ? <>
+        <i aria-hidden="true" />
+        <b>Sunucu uyanıyor… {sec} sn</b>
+        <p>Kimse yokken uyur. İlk girişte yaklaşık 1 dakika sürer, sonra odan açılır.</p>
+      </> : <span className="dot" aria-label="Yükleniyor" />}
+    </div>
+  );
 }
