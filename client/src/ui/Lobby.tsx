@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { CATALOG, ACCESSORIES, PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, encodeAvatar, defaultAvatar, cleanName, itemById, owns, avatarAllowed, levelFromXP, partName, type Slot, type Avatar } from '@pw/shared';
+import { CATALOG, ACCESSORIES, PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, encodeAvatar, defaultAvatar, cleanName, itemById, owns, avatarAllowed, partName, type Slot, type Avatar } from '@pw/shared';
 import { WalletChip, ShopModal, PartPic } from './Wallet';
 import { ToolButtons, Panels } from './Panels';
-import { buyItem } from '../economy';
 import { useStore } from '../store';
 import { DEMO_ONLY } from '../net';
 import { BackupBox, IntroButton, NotifyToggle, AccountBox } from './Backup';
@@ -25,10 +24,8 @@ export function Lobby() {
   const name = cleanName(profile.name);
   const busy = net === 'connecting';
   const wallet = useStore((s) => s.wallet);
-  const level = wallet ? levelFromXP(wallet.xp).level : 1;
   const missing = wallet ? (['head', 'body', 'legs', 'feet'] as Slot[]).map((sl) => itemById(`av.${a.g}.${a[sl]}`)!).filter((it) => it && !owns(wallet, it.id)) : [];
   const allowed = !wallet || avatarAllowed(wallet, a);
-  const [buyMsg, setBuyMsg] = useState('');
   // came back from the room ("Karakterim") rather than a first visit
   const [back] = useState(() => useStore.getState().profile.made);
 
@@ -59,16 +56,14 @@ export function Lobby() {
           </div>
           <button type="button" className="ghost dice" onClick={() => setProfile({ avatar: randomLook(a.g, wallet) })} title="Rastgele bir görünüm dene">🎲 Şansıma</button>
           <div className="tabs">{(Object.keys(SLOT_LABEL) as Slot[]).map((s) => <button key={s} className={slot === s ? 'on' : ''} onClick={() => setSlot(s)}>{SLOT_LABEL[s]}</button>)}</div>
-          <div className="chips">{PARTS[a.g][slot].map((p) => {
-            const it = itemById(`av.${a.g}.${p}`); const mine = !wallet || !it || owns(wallet, it.id);
-            return <button key={p} className={`${a[slot] === p ? 'on' : ''} ${mine ? '' : 'lock'}`} title={mine ? '' : it!.lvl > level ? `Seviye ${it!.lvl} gerekir` : `${it!.price} jeton`} onClick={() => set({ [slot]: p } as Partial<Avatar>)}>{label(p)}{mine ? '' : <small> · {it!.lvl > level ? `Sv ${it!.lvl}` : `${it!.price}`}</small>}</button>;
-          })}</div>
+          {/* first visit: only the parts you already have; paid ones are for later, in the shop (user, 2026-11-04) */}
+          <div className="chips">{PARTS[a.g][slot].filter((p) => mineNow(a.g, p, wallet)).map((p) => (
+            <button key={p} className={a[slot] === p ? 'on' : ''} onClick={() => set({ [slot]: p } as Partial<Avatar>)}>{label(p)}</button>
+          ))}</div>
           {!allowed && (
             <div className="buy-bar">
-              <span>Bu görünümde sende olmayan parçalar var: {missing.map((m) => m.name).join(', ')}</span>
-              {missing.map((m) => <button key={m.id} disabled={m.lvl > level || (wallet?.coins ?? 0) < m.price} onClick={async () => setBuyMsg((await buyItem(m.id)) ?? '')}>{m.lvl > level ? `${m.name}: Seviye ${m.lvl}` : `${m.name} al · ${m.price} jeton`}</button>)}
+              <span>Bu görünümde sende olmayan parçalar var: {missing.map((m) => m.name).join(', ')}. Onları sonra mağazadan alabilirsin.</span>
               <button className="ghost" onClick={() => set({ head: defaultAvatar(a.g).head, body: defaultAvatar(a.g).body, legs: defaultAvatar(a.g).legs, feet: defaultAvatar(a.g).feet })}>Ücretsiz parçalara dön</button>
-              {buyMsg && <em>{buyMsg}</em>}
             </div>
           )}
           <Swatches title="Ten" list={SKIN_TONES} value={a.skin} onPick={(skin) => set({ skin })} />
@@ -139,9 +134,15 @@ function Wardrobe() {
 }
 
 /** a surprise look from the parts you may wear (free or owned) and any colours: fun, and fast for a new player */
+/** a part you can wear right now: already yours, or free for everyone (before the wallet has come) */
+function mineNow(g: Avatar['g'], p: string, wallet: Parameters<typeof owns>[0] | null): boolean {
+  const it = itemById(`av.${g}.${p}`);
+  return !it || (wallet ? owns(wallet, it.id) : it.price === 0 && it.lvl <= 1);
+}
+
 function randomLook(g: Avatar['g'], wallet: Parameters<typeof owns>[0] | null): Avatar {
   const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
-  const part = (slot: Slot) => pick(PARTS[g][slot].filter((p) => { const it = itemById(`av.${g}.${p}`); return !wallet || !it || owns(wallet, it.id); }));
+  const part = (slot: Slot) => pick(PARTS[g][slot].filter((p) => mineNow(g, p, wallet)));
   return { g, head: part('head'), body: part('body'), legs: part('legs'), feet: part('feet'),
     skin: 1 + Math.floor(Math.random() * (SKIN_TONES.length - 1)), hair: Math.floor(Math.random() * HAIR_COLORS.length),
     top: Math.floor(Math.random() * CLOTH_COLORS.length), bottom: Math.floor(Math.random() * CLOTH_COLORS.length) };
