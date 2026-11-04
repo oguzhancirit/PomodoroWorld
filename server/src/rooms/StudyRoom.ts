@@ -11,12 +11,15 @@ import {
 } from '@pw/shared';
 import { StudyRoomState, Player } from './state';
 import { profiles, type Profile } from '../profiles';
+import { sessions } from '../sessions';
 
 // how long each player was really here during the current focus
 interface FocusTrack { since: number | null; accMs: number; fromStart: boolean; intact: boolean }
 
 const BUBBLE_MS = 6000;
 const RECONNECT_SECONDS = 30;
+/** close code sent to a tab that was replaced by a newer tab of the same player */
+export const REPLACED_CODE = 4001;
 
 export class StudyRoom extends Room {
   maxClients = STUDY_ROOM.maxClients;
@@ -30,6 +33,8 @@ export class StudyRoom extends Room {
   private scale = 1;
   private track = new Map<string, FocusTrack>();
   private profileOf = new Map<string, Profile>();
+  private waiting = new Map<string, { reject(e?: unknown): void }>();
+  private replacedIds = new Set<string>();
 
   messages = {
     chat: validate(ChatMsg, (client: Client, { text }) => {
@@ -79,6 +84,7 @@ export class StudyRoom extends Room {
     const o = parseJoin(options);
     let prof: Profile | null = null;
     if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.profileOf.set(client.sessionId, prof); }
+    if (prof) sessions.claim(prof.pid, { room: this.roomId, sessionId: client.sessionId, kick: () => this.replaced(client) });
     const p = new Player();
     p.name = cleanName(o.name) || 'Misafir';
     // you can only wear parts you own (free ones are always yours)
@@ -97,11 +103,14 @@ export class StudyRoom extends Room {
   }
 
   onDrop(client: Client) {
+    if (this.replacedIds.has(client.sessionId)) return;   // closed on purpose: no seat is kept
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = false;
     const t = this.track.get(client.sessionId);
     if (t) { if (t.since) t.accMs += Date.now() - t.since; t.since = null; t.intact = false; }
-    this.allowReconnection(client, RECONNECT_SECONDS);
+    const d = this.allowReconnection(client, RECONNECT_SECONDS);
+    this.waiting.set(client.sessionId, d);
+    d.then?.(() => this.waiting.delete(client.sessionId), () => this.waiting.delete(client.sessionId));
   }
 
   onReconnect(client: Client) {
@@ -112,9 +121,20 @@ export class StudyRoom extends Room {
   }
 
   onLeave(client: Client) {
+    const prof = this.profileOf.get(client.sessionId);
+    if (prof) sessions.release(prof.pid, this.roomId, client.sessionId);
+    this.waiting.delete(client.sessionId); this.replacedIds.delete(client.sessionId);
     this.state.players.delete(client.sessionId);
     this.track.delete(client.sessionId); this.profileOf.delete(client.sessionId);
     this.chatLimit.forget(client.sessionId); this.emoteLimit.forget(client.sessionId); this.timeLimit.forget(client.sessionId);
+  }
+
+  /** a newer tab of the same player took over: this one earns nothing more and is closed */
+  private replaced(client: Client) {
+    this.profileOf.delete(client.sessionId); this.track.delete(client.sessionId); this.replacedIds.add(client.sessionId);
+    const w = this.waiting.get(client.sessionId);
+    if (w) { this.waiting.delete(client.sessionId); w.reject(new Error('replaced')); return; }
+    client.leave(REPLACED_CODE, 'other_tab');
   }
 
   onDispose() { this.phaseTimer?.clear(); }

@@ -71,7 +71,9 @@ export async function joinStudyRoom() {
   r.onReconnect(() => { useStore.getState().set({ net: 'online' }); r.send('time', { t0: Date.now() }); });
   r.onLeave((code: number) => {
     if (code === CloseCode.CONSENTED) return;
-    useStore.getState().set({ net: 'offline', error: code === CloseCode.FAILED_TO_RECONNECT ? 'Bağlantı koptu.' : 'Odadan çıkıldı.' });
+    const error = code === 4001 ? 'Bu hesap başka bir sekmede açıldı. Orada devam ediyorsun.'   // REPLACED_CODE on the server
+      : code === CloseCode.FAILED_TO_RECONNECT ? 'Bağlantı koptu.' : 'Odadan çıkıldı.';
+    useStore.getState().set({ net: 'offline', error });
   });
   return true;
 }

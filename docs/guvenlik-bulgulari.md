@@ -4,14 +4,15 @@ Yöntem: `.claude/skills/pomodoro-world-guvenlik/SKILL.md`. Kapsam: `server/src`
 
 ## Orta
 
-### 1. Aynı hesapla çok sekme = çok ödül (jeton/XP hilesi)
+### 1. ✅ DÜZELTİLDİ — Aynı hesapla çok sekme = çok ödül (jeton/XP hilesi)
+- **Düzeltme:** `server/src/sessions.ts` — bir hesap aynı anda tek sekmede/odada; yeni sekme eskisini 4001 koduyla kapatır, eski sekmeye yeniden bağlanma hakkı verilmez. Testler: `server/test/sessions.test.ts`, `studyRoom.test.ts`.
 - **Yer:** `server/src/rooms/StudyRoom.ts:81` (`onJoin`) ve `:162-179` (`payFocus`).
 - **Ne oluyor:** Aynı `pid`/`secret` ile 5 sekme açan kişi, bir odakta 5 kez ödül alıyor. Ayrıca kendi sekmeleri birbirini "diğer oyuncu" sayıyor → +%30 birlikte çalışma bonusu tek kişiye gidiyor. Farklı odalarda (25/5 ve 50/10) da aynı hesapla aynı anda ödül toplanabilir.
 - **Kanıt:** Tek sekme: `pomos 1`, `+35 jeton`. Beş sekme aynı odakta: `pomos 5`, toplam `+95 jeton`, günlük hedef bonusu (+40) tek odakta açıldı.
 - **Etki:** Seviye/jeton ekonomisi (mağaza, seviye kilitleri, sıralama) bozulur. Başkasının hesabına zarar yok.
 - **En küçük düzeltme:** Kural: "bir `pid` aynı anda tek oturum". `onJoin`'de aynı `pid` başka oturumda varsa eski oturumu çıkar (veya yeniyi reddet); süreci tüm odalar için `profiles` üzerinde tutan bir "aktif oturum" haritası ile yap. `payFocus`'ta `others` sayımında aynı `pid` sayılmasın. Önce düşen test.
 
-### 2. Kimliksiz sınırsız profil açma (disk/hafıza doldurma)
+### 2. ⏸ BEKLİYOR (herkese açmadan önce) — Kimliksiz sınırsız profil açma (disk/hafıza doldurma)
 - **Yer:** `server/src/profiles.ts:25`, `server/src/http.ts:19`.
 - **Ne oluyor:** `/api/profile`'a rastgele `pid` ile gelen her istek yeni profil yaratıp diske yazıyor; hız sınırı yok. Her kayıtta bütün dosya baştan yazılıyor.
 - **Kanıt:** 300 profil 288 ms'de açıldı, hepsi kabul edildi.
@@ -31,7 +32,7 @@ Yöntem: `.claude/skills/pomodoro-world-guvenlik/SKILL.md`. Kapsam: `server/src`
 - **Yer:** `render.yaml` (free plan, disk tanımı yok), `server/src/profiles.ts:42` (`data/profiles.json`).
 - Render'ın ücretsiz planında dosya sistemi kalıcı değilse, her yeniden başlatma/deploy herkesin jeton ve eşyalarını siler. Render panelinden "Persistent Disk" var mı bakılmalı; yoksa kalıcı depo (disk veya veritabanı) gerekir.
 
-### 5. Tek kişinin sınırsız oda/bağlantı açması
+### 5. ⏸ BEKLİYOR (herkese açmadan önce) — Tek kişinin sınırsız oda/bağlantı açması
 - **Yer:** `server/src/app.config.ts:11`.
 - **Kanıt:** Bir istemci `create('study_room', { preset: 'x1'... })` ile 20 ayrı oda açtı. Her oda açık bir bağlantı ister ve boşalınca kapanır; ama IP başına bağlantı sınırı yok. Etkisi barındırma ortamının sınırlarına bağlı.
 - **Öneri:** `onAuth`'ta IP başına bağlantı sınırı; `preset` bilinmeyen değerse reddet.
