@@ -21,8 +21,11 @@ export function wakeServer(): Promise<boolean> {
     try {
       for (;;) {
         try {
-          const c = new AbortController(), t = setTimeout(() => c.abort(), 15_000);
-          const r = await fetch(`${HTTP_BASE}/health`, { signal: c.signal, cache: 'no-store' }).finally(() => clearTimeout(t));
+          // some phones (in-app browsers, a switch between Wi-Fi and mobile data) leave a request hanging and ignore
+          // "stop": we stop waiting ourselves after 15 s (live 2026-11-04: a friend's card counted to 500 s)
+          const c = new AbortController(); let t = 0;
+          const late = new Promise<never>((_, no) => { t = window.setTimeout(() => { c.abort(); no(new Error('timeout')); }, 15_000); });
+          const r = await Promise.race([fetch(`${HTTP_BASE}/health`, { signal: c.signal, cache: 'no-store' }), late]).finally(() => clearTimeout(t));
           if (r.ok) { useWake.setState({ state: 'awake' }); return true; }
         } catch { /* still asleep or no internet: knock again */ }
         if (Date.now() > until) { useWake.setState({ state: 'down' }); return false; }
@@ -55,17 +58,20 @@ export function WakeCurtain({ show }: { show: boolean }) {
   }, [show]);
   if (!show) return null;
   // the server answered but the room still has not come: after a while say so instead of waiting forever
-  const down = s === 'down' || (s === 'awake' && sec > 30);
+  // and by its own clock too, whatever a stuck request is doing (live 2026-11-04: counted to 500 s and never gave up)
+  const down = s === 'down' || (s === 'awake' && sec > 30) || sec > 240;
   return (
     <div className="wake-curtain" role="status">
       {down ? <>
         <b>Sunucuya ulaşılamadı</b>
-        <p>İnternetini kontrol et, sonra tekrar dene.</p>
+        <p>İnternetini kontrol et, sonra tekrar dene. Linki WhatsApp/Instagram içinde açtıysan Chrome ya da Safari'de açmayı dene.</p>
         <button type="button" onClick={() => location.reload()}>Tekrar dene</button>
       </> : s === 'waking' ? <>
         <i aria-hidden="true" />
         <b>Sunucu uyanıyor… {sec} sn</b>
         <p>Kimse yokken uyur ya da güncellenir. 1 dakika kadar sürer, sonra odan açılır.</p>
+        {sec > 60 && <><p>Uzun sürdü. Sayfayı yenilemeyi dene; olmazsa Wi-Fi ile mobil veri arasında geçiş yap ya da linki Chrome/Safari'de aç.</p>
+          <button type="button" onClick={() => location.reload()}>Tekrar dene</button></>}
       </> : <span className="dot" aria-label="Yükleniyor" />}
     </div>
   );
