@@ -28,8 +28,7 @@ Yöntem: `.claude/skills/pomodoro-world-guvenlik/SKILL.md`. Kapsam: `server/src`
 
 ## Doğrulanmalı (koddan görünüyor, hosting bilgisi gerekli)
 
-### 4. ✅ KOD HAZIR (Neon kurulumu Oğuzhan'da) — Render ücretsiz planda profiller kaybolabilir
-- **Düzeltme:** `DATABASE_URL` varsa kayıtlar Postgres'te (Neon ücretsiz). Kurulum: `docs/kalici-kayit-neon.md`. Gerçek Postgres ile kapat-aç denemesinde jeton ve eşya korundu.
+### 4. Render ücretsiz planda profiller kaybolabilir
 - **Yer:** `render.yaml` (free plan, disk tanımı yok), `server/src/profiles.ts:42` (`data/profiles.json`).
 - Render'ın ücretsiz planında dosya sistemi kalıcı değilse, her yeniden başlatma/deploy herkesin jeton ve eşyalarını siler. Render panelinden "Persistent Disk" var mı bakılmalı; yoksa kalıcı depo (disk veya veritabanı) gerekir.
 
