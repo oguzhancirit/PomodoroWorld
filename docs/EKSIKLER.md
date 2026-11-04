@@ -47,7 +47,7 @@
 - ✔ Speed: screens are lazy chunks; the sign-in page loads ~109 KB instead of 537 KB.
 - ✔ Timer: flip cards in the room timer card; the focus screen keeps the plain ring. Chat starts folded; chat and day summary side by side.
 - ✔ Karakterim = wardrobe of owned parts (name/body/colours fixed after creation).
-- ✔ Oyun Salonu: console + TV item (f_console, also in the shop), "Pomo Canavarları" one-player creature battle (shared/src/monsters.ts, ui/MonsterGame.tsx). Next: two players.
+- ✔ Oyun Salonu: console + TV item (f_console, also in the shop), "Yılan" snake game (shared/src/snake.ts, ui/SnakeGame.tsx); replaced the creature battle on 2026-11-04 (user: too pointless). TV faces the L sofa.
 - ✔ Personal touches on room items (shared room.ts: c colour, t own text ≤18 cleaned/censored, v design): own neon sign, design poster, letter garland, doormat with own words; free colour pickers everywhere.
 - ✔ 29 new shop things (plants, lights, hobbies, pets that move, rugs, wall pieces, desk things); shop search + "Yeni" / "Kişiselleştirilebilir" filters.
 - ✔ Floating room effects (snow, sakura, fireflies, leaves, stardust, bubbles; Room.fx, level-gated), 7 new wall/floor patterns, 7 new one-click looks.
@@ -56,4 +56,4 @@
 - ✔ Character accessories (8: glasses … crown) drawn on the Head bone (client/src/avatar/accessories.ts); optional last number in the avatar code; shop "Aksesuar" + wardrobe "Takı ve şapka".
 - ✔ Pet names (wooden sign), placed personal items auto-selected in the editor, older furniture marked as colourable.
 - ✔ Room likes (shared/src/likes.ts, /api/like): "♡ Beğen" in a friend's room, "❤ n" in your own (not in the demo).
-- Left: Google client id from the user; Apple sign-in (needs a paid Apple developer account); two-player Pomo Canavarları.
+- Left: Google client id from the user; Apple sign-in (needs a paid Apple developer account); two-player console game.
