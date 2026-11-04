@@ -48,5 +48,11 @@ Karar (2026-11-04): önce bedava, önce arkadaşlar, adres şimdilik `oguzhancir
   Postgres 17, veritabanı `neondb`, rol `neondb_owner`. Bağlantı adresi sohbete ve repoya yazılmadı;
   Oğuzhan onu Neon'daki **Connect** düğmesinden alıp Render'daki `DATABASE_URL` kutusuna yapıştırır.
   Bu bulut ortamı veritabanına doğrudan bağlanamaz (yalnız HTTPS izinli, DNS yok); bağlantıyı Render dener.
-- Sırada: Render Blueprint (yukarıdaki 2. adım, dal `claude/adoring-newton-vfiiyb`) → Render adresi gelince siteyi
-  `VITE_SERVER_URL=wss://<adres>` ile kurup `gh-pages`'e gönder (dalın `.git`'i korunur, `.nojekyll` olur), iki tarayıcıyla canlı dene.
+- ✔ Render: `https://pomodoro-world-server.onrender.com` (Blueprint, dal `claude/adoring-newton-vfiiyb`, `DATABASE_URL` = Neon).
+  Neon şifresi bir kez sohbete yapıştırıldı → Oğuzhan şifreyi Neon'da yeniledi (Reset password), Render'a yenisi kondu.
+- ✔ Site `VITE_SERVER_URL=wss://pomodoro-world-server.onrender.com` ile kuruldu, `gh-pages`'e gönderildi.
+- ✔ Canlı deneme (Playwright, iki ayrı tarayıcı, misafir girişi): iki oyuncu aynı Kütüphane odasında birbirini görüyor.
+  Coin: `/api/buy` ile 120'lik masa alındı (150 → 30), Render'da Restart service → sunucu da oyun ekranı da 30 gösteriyor.
+- ⚠ Bu bulut ortamında WebSocket ~20 sn sonra kopuyor (ajan ağ geçidi WebSocket desteklemiyor); telefonda denenmeli.
+- ⚠ Sunucu yeniden açılırken ilk `/api/profile` başarısız olursa (Render kısa süre 404 veriyor) istemci tarayıcıdaki
+  boş cüzdanı (150) gösteriyor ve tekrar sormuyor (`client/src/economy.ts` `refreshWallet`). Düzeltilecek: başarısızsa tekrar dene.
