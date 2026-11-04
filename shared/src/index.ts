@@ -13,3 +13,4 @@ export * from './social';
 export * from './backup';
 export * from './snake';
 export * from './likes';
+export * from './placement';

@@ -90,6 +90,11 @@ export function HomeRoom() {
     };
     w.onPlace = (pos: PlacedItem) => placeItem(pos);
     w.onInvalidPlace = () => flash('Buraya sığmıyor, başka bir yer dene.');
+    // a placed piece dragged to a new spot (legacy/placement.ts): one change, can be undone
+    w.onMoveItem = (idx: number, pos: PlacedItem) => {
+      change((x) => { if (x.items[idx]) x.items[idx] = { ...x.items[idx], ...pos } as PlacedItem; return x; }, true);
+      setSel(idx);
+    };
     setReady(true);
     return () => { engine.world = null; try { w.renderer.setAnimationLoop?.(null); w.renderer.dispose(); w.renderer.domElement.remove(); } catch { /* ignore */ } };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -248,6 +253,7 @@ export function HomeRoom() {
     walls() { const w = engine.world; if (!w) return; const next = ({ cut: 'up', up: 'down', down: 'cut' } as Record<string, string>)[w.wallMode || 'cut']; w.setWallMode(next); flash({ cut: 'Kesik duvarlar', up: 'Duvarlar yukarıda', down: 'Duvarlar aşağıda' }[next]!); setTick((t) => t + 1); },
     top() { engine.world?.toggleTopView(); setTick((t) => t + 1); },
     cancel() { engine.world?.cancelGhost(); setTick((t) => t + 1); },
+    place() { engine.world?.placeGhost(); setTick((t) => t + 1); },
   };
 
   /* keyboard like the old editor: Ctrl+Z / Ctrl+Y, R rotate, Delete remove, Esc cancel, T top view */

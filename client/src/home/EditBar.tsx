@@ -26,7 +26,7 @@ interface Props {
   onUndo(): void; onRedo(): void; onDone(): void;
   onChange(fn: (r: Room) => Room, keepSel?: boolean): void;
   onGhost(id: string, r?: number, extra?: Record<string, unknown>): void;
-  actions: { rotate(): void; remove(): void; move(): void; copy(): void; tint(k: 'c' | 'wd', v: string): void; touch(k: 'c' | 't' | 'v', v: string | number): void; walls(): void; top(): void; cancel(): void };
+  actions: { rotate(): void; remove(): void; move(): void; copy(): void; tint(k: 'c' | 'wd', v: string): void; touch(k: 'c' | 't' | 'v', v: string | number): void; walls(): void; top(): void; cancel(): void; place(): void };
 }
 
 export function EditBar(p: Props) {
@@ -131,7 +131,7 @@ export function EditBar(p: Props) {
       </button>); });
   }
 
-  const selName = selItem ? itemById(selItem.id)?.name ?? selItem.id : p.placing ? 'Yerleştiriliyor… tıkla ya da Esc' : 'Seçili eşya yok';
+  const selName = selItem ? itemById(selItem.id)?.name ?? selItem.id : p.placing ? 'Sürükle ya da dokun, sonra Koy' : 'Eşyayı tut ve sürükle';
   return (
     <section className="editbar" aria-label="Oda düzenleyici">
       <div className="e-top">
@@ -150,7 +150,7 @@ export function EditBar(p: Props) {
             <button className="ghost sm" disabled={!selFloor} title="Aynısından bir tane daha yerleştir" onClick={actions.copy}>Kopyala</button>
             <button className="ghost sm" disabled={!selItem} onClick={actions.remove}>Kaldır</button>
           </>}
-          {p.placing && <button className="ghost sm" onClick={actions.cancel}>Vazgeç</button>}
+          {p.placing && <><button className="ghost sm" onClick={actions.cancel}>Vazgeç</button><button className="acc sm" onClick={actions.place}>✓ Koy</button></>}
           <button className="acc sm" onClick={p.onDone}>Bitti</button>
         </div>
       </div>

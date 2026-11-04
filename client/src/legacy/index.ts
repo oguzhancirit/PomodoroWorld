@@ -13,6 +13,7 @@ export const PW = (window as any).PW;
 // Decision (b): the new character everywhere. The old engine builds avatars with `new PW.Avatar(cfg)`;
 // from now on cfg is the avatar code and the adapter draws the new model. The old class stays for reference.
 import { NewAvatar } from './avatarAdapter';
+import './placement';
 PW.OldAvatar = PW.Avatar;
 PW.Avatar = NewAvatar;
 
