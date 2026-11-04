@@ -107,13 +107,14 @@ describe('step 4: study with friends in your own room', () => {
   it('counts seats: sofas hold two, wall and desk items none', () => {
     expect(roomSeats({ items: [{ id: 'f_sofa', x: 0, z: 0, r: 0 }, { id: 'f_chair_wood', x: 1, z: 0, r: 0 }, { id: 'f_desk_wood', x: 0, z: 1, r: 0 }, { id: 'w_clock', w: 'w0', x: 0 }] })).toBe(3);
   });
-  it('room capacity = seats, at least 2 and at most 5 (small rooms keep their meaning)', () => {
+  it('everyone needs a seat, you too: people = seats, at most you + 3 (user, 2026-11-04)', () => {
     const chairs = (n: number) => ({ items: Array.from({ length: n }, (_, i) => ({ id: 'f_chair_wood', x: i, z: 0, r: 0 })) });
-    expect(homeCapacity(chairs(0))).toBe(2);
+    expect(homeCapacity(chairs(0))).toBe(1); // you can always be in your own room
+    expect(homeCapacity(chairs(1))).toBe(1);
     expect(homeCapacity(chairs(2))).toBe(2);
-    expect(homeCapacity(chairs(4))).toBe(4);
-    expect(homeCapacity(chairs(9))).toBe(5);
-    expect(HOME_MAX).toBe(5);
+    expect(homeCapacity(chairs(4))).toBe(4); // 4 chairs: you + 3 friends, shown as 1 / 4
+    expect(homeCapacity(chairs(9))).toBe(4);
+    expect(HOME_MAX).toBe(4);
   });
 });
 
@@ -123,6 +124,7 @@ describe('step 4: who may enter someone else\'s room', () => {
     expect(homeEntry(room({ open: false, ban: ['own000000001'] }), { pid: 'own000000001', owner: 'own000000001', count: 9 })).toBe('ok');
   });
   it('an open room lets friends in until the seats are full', () => {
+    // the starter room has two chairs: you + one friend
     expect(homeEntry(room(), { pid: 'gst000000001', owner: 'own000000001', count: 1 })).toBe('ok');
     expect(homeEntry(room(), { pid: 'gst000000001', owner: 'own000000001', count: 2 })).toBe('full');
   });

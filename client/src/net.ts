@@ -8,7 +8,7 @@ import { travel } from './ui/Travel';
 import { useTodos } from './todos';
 import { saveRoom } from './economy';
 
-import { SERVER, DEMO_ONLY } from './config';
+import { SERVER, DEMO_ONLY, HTTP_BASE } from './config';
 import { identity } from './identity';
 import { wakeServer, useWake } from './wake';
 import { sanitizeWallet } from '@pw/shared';
@@ -85,6 +85,11 @@ async function enterSocial(space: string, roomId?: string): Promise<boolean> {
 
 /* ---------- step 4: your own room is live; friends join it ---------- */
 /** open my room (only I can) */
+// The free host puts the server to sleep after 15 minutes without a web request, and an open game connection does
+// not count: during a long focus everyone was dropped ("Bağlantı koptu", live 2026-11-04). While someone is in a
+// room we knock every 4 minutes, so the server stays up exactly as long as people are playing.
+if (!DEMO_ONLY) setInterval(() => { if (room) fetch(`${HTTP_BASE}/health`, { cache: 'no-store' }).catch(() => {}); }, 4 * 60_000);
+
 export const openHome = () => joinHome(identity().pid, '');
 /** go to a friend's room from an invite code or link */
 export function visitHome(code: string) {

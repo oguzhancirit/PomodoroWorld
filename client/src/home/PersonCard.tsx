@@ -53,6 +53,7 @@ export function PeopleSheet() {
   useEffect(() => { if (!open) return; const t = setInterval(() => tick((x) => x + 1), 1000); return () => clearInterval(t); }, [open]);
   if (!open) return null;
   const close = () => usePeople.setState({ open: false });
+  const place = useStore((s) => s.place);
   const list = Object.values(players).sort((a, b) => Number(b.id === me) - Number(a.id === me) || a.name.localeCompare(b.name, 'tr'));
   const status = (p: (typeof list)[number]) => {
     if (!p.phase || p.phase === 'idle') return 'Boşta';
@@ -63,7 +64,7 @@ export function PeopleSheet() {
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label="Kişiler" onClick={(e) => e.target === e.currentTarget && close()} onKeyDown={(e) => e.key === 'Escape' && close()}>
       <div className="sheet people">
-        <header><div><h2>Kişiler</h2><p>Birine dokun: arkadaş ekle, sayacına katıl, odandan çıkar.</p></div><button className="x" aria-label="Kapat" onClick={close} autoFocus>×</button></header>
+        <header><div><h2>Kişiler</h2><p>Birine dokun: arkadaş ekle, sayacına katıl, odandan çıkar.</p>{place?.mine && <p className="seats-note">Odana {place.cap} kişi girebilir: herkese bir sandalye, sen dahil (en fazla 4). {place.cap < 4 && 'Daha çok arkadaş için sandalye koy.'}</p>}</div><button className="x" aria-label="Kapat" onClick={close} autoFocus>×</button></header>
         <div className="people-list">{list.map((p) => {
           const self = p.id === me, friend = !!p.code && friends.some((f) => f.pid === p.code);
           return (

@@ -26,7 +26,7 @@ const roomOf = async (owner: string) => {
 };
 
 describe('HomeRoom', () => {
-  it('the owner opens their room: their saved layout, 2 seats, timer waits until someone starts it', async () => {
+  it('the owner opens their room: their saved layout, 2 chairs = you + 1 friend, timer waits until someone starts it', async () => {
     const own = await player('Oguz');
     const c = await join(own, own.pid); await wait(50);
     const room = await roomOf(own.pid);
@@ -44,14 +44,14 @@ describe('HomeRoom', () => {
     await expect(join(g, own.pid)).rejects.toThrow(/çevrimiçi değil/);
   });
 
-  it('a friend joins an open room and gets the other chair; a third person finds it full', async () => {
-    const own = await player('Ece'), f = await player('Can'), x = await player('Zeki');
+  it('friends join an open room, one per chair; when the chairs are taken it is full', async () => {
+    const own = await player('Ece'), f = await player('Can'), y = await player('Yeliz');
     await join(own, own.pid);
     const cf = await join(f, own.pid); await wait(50);
     const room = await roomOf(own.pid);
     expect(room.state.players.get(cf.sessionId)!.seatIndex).toBe(1);
     expect(room.metadata.n).toBe(2);
-    await expect(join(x, own.pid)).rejects.toThrow(/dolu/);
+    await expect(join(y, own.pid)).rejects.toThrow(/dolu/);
   });
 
   it('a closed room needs the invite token; a banned player never gets in', async () => {

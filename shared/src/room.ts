@@ -125,11 +125,12 @@ export function roomAllowedFor(w: Wallet, room: unknown): Room {
 }
 
 /* ---------- step 4: friends study in your room; small rooms on purpose ---------- */
-export const HOME_MIN = 2;
-export const HOME_MAX = 5;
+export const HOME_MIN = 1;
+export const HOME_MAX = 4;
 /** how many people can sit in this room (a sofa holds two, an L sofa three) */
 export const roomSeats = (room: Pick<Room, 'items'>) => room.items.reduce((n, i) => n + (FURN.get(i.id)?.seat ?? 0), 0);
-/** how many people may be in your room at once: its seats, at least you + one friend, at most HOME_MAX */
+/** how many people may be in your room at once: one per seat, you too (user 2026-11-04: chairs are a must,
+ *  at most you + 3); you can always be in your own room */
 export const homeCapacity = (room: Pick<Room, 'items'>) => Math.max(HOME_MIN, Math.min(HOME_MAX, roomSeats(room)));
 
 export type HomeVerdict = 'ok' | 'banned' | 'closed' | 'full';
