@@ -49,11 +49,11 @@ export function PeopleSheet() {
   const open = usePeople((s) => s.open);
   const players = useStore((s) => s.players), me = useStore((s) => s.me);
   const friends = useFriends((s) => s.friends);
+  const place = useStore((s) => s.place);
   const [, tick] = useState(0);
   useEffect(() => { if (!open) return; const t = setInterval(() => tick((x) => x + 1), 1000); return () => clearInterval(t); }, [open]);
   if (!open) return null;
   const close = () => usePeople.setState({ open: false });
-  const place = useStore((s) => s.place);
   const list = Object.values(players).sort((a, b) => Number(b.id === me) - Number(a.id === me) || a.name.localeCompare(b.name, 'tr'));
   const status = (p: (typeof list)[number]) => {
     if (!p.phase || p.phase === 'idle') return 'Boşta';
