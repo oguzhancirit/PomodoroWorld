@@ -691,8 +691,8 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
    the bottom edge (the caption line) of the card above. The page scrolls; the sign-in side stays put on a PC. */
 .lg-card { --r: 0deg; --x: 0px; transform: translateX(var(--x)) rotate(var(--r)); }
 .lg-card + .lg-card { margin-top: -8px; }
-.lg-card.c1 { --r: -2.2deg; --x: -2%; } .lg-card.c2 { --r: 1.8deg; --x: 3%; z-index: 2; }
-.lg-card.c3 { --r: -1.6deg; --x: -2%; z-index: 3; } .lg-card.c4 { --r: 1.6deg; --x: 3%; z-index: 4; }
+.lg-card.c1 { --r: -3deg; --x: -2%; } .lg-card.c2 { --r: 2.8deg; --x: 3%; z-index: 2; }
+.lg-card.c3 { --r: -2.6deg; --x: -2%; z-index: 3; } .lg-card.c4 { --r: 2.4deg; --x: 3%; z-index: 4; }
 .lg-card:hover { transform: translateX(var(--x)) translateY(-4px) rotate(0deg); z-index: 5; }
 .lg-card header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; font: 700 12.5px var(--f-body); }
 .lg-card header span { display: inline-flex; align-items: center; gap: 7px; }
@@ -746,10 +746,9 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
    0.29 × its width tall, so the width is worked out from the screen height and four always fit. */
 @media (min-width: 901px) {
   .login { grid-template-columns: minmax(0, 1fr) clamp(300px, 36vw, 480px); column-gap: clamp(24px, 4vw, 80px); height: 100vh; overflow: hidden; }
-  .lg-art { --cw: clamp(300px, min(40vw, calc(((100vh - 120px) / 4 - 30px) / .325)), 440px); align-self: center; padding: 8px 0; }
+  .lg-art { --ph: clamp(110px, calc((100vh - 150px) / 4 - 33px), 180px); --pw: calc(var(--ph) * 1.6); --tw: clamp(165px, 14vw, 205px); align-self: center; padding: 8px 0; }
   .lg-side { min-height: 0; align-self: center; }
-  .lg-card { width: min(var(--cw), 94%); display: grid; grid-template-columns: 52% 1fr; grid-template-rows: auto auto auto; grid-template-areas: "m h" "m r" "m c"; align-content: center; row-gap: 7px; column-gap: 11px; padding: 9px 12px 9px 9px; border-radius: 16px; }
-  .lg-card + .lg-card { margin-top: 6px; }
+  .lg-card { width: auto; max-width: 100%; display: grid; grid-template-columns: var(--pw) var(--tw); grid-template-rows: auto auto auto; grid-template-areas: "m h" "m r" "m c"; align-content: center; row-gap: 7px; column-gap: 11px; padding: 9px 12px 9px 9px; border-radius: 16px; }
   .lg-card .lg-media { grid-area: m; aspect-ratio: 16 / 10; border-radius: 10px; }
   .lg-card header { grid-area: h; margin: 0; font-size: 12.5px; align-self: end; }
   .lg-card .lg-media { align-self: center; }
@@ -762,7 +761,8 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
   .lg-durs, .c2 .lg-row, .c4 .lg-row { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; } .lg-durs button { min-width: 0; }
   .lg-feats span { font-size: 10px; padding: 3px 5px; }
   .lg-feats { flex-wrap: wrap; }
-  .lg-card.c1 { --r: -1.4deg; } .lg-card.c2 { --r: 1.2deg; } .lg-card.c3 { --r: -1deg; } .lg-card.c4 { --r: 1deg; }
+  .lg-card.c1 { --r: -4deg; --x: -7%; } .lg-card.c2 { --r: 3.2deg; --x: 8%; } .lg-card.c3 { --r: -3deg; --x: -6%; } .lg-card.c4 { --r: 2.6deg; --x: 7%; }
+  .lg-card + .lg-card { margin-top: 14px; }
   .lg-tagline { display: none; }
 }
 @media (max-width: 900px) {
