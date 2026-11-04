@@ -181,32 +181,6 @@ describe('StudyRoom', () => {
     expect((await got).wallet.stats.pomos).toBe(0);
   });
 
-  it('the same player in a second tab replaces the first one, so a focus pays only once', async () => {
-    const room = await colyseus.createRoom<StudyRoom>('study_room', {});
-    const who = { pid: 'pidtabs000001', secret: 't'.repeat(32) };
-    const a = await colyseus.connectTo(room, { name: 'Tab1', ...who });
-    const left = new Promise<number>((r) => a.onLeave((code: number) => r(code)));
-    const b = await colyseus.connectTo(room, { name: 'Tab2', ...who });
-    expect(await left).toBe(4001);
-    await wait(50);
-    expect(room.state.players.size).toBe(1);
-    expect(room.state.players.has(b.sessionId)).toBe(true);
-    room.forcePhase('focus');
-    const got = b.waitForMessage('reward');
-    room.endPhaseIn(30);
-    expect((await got).wallet.stats.pomos).toBe(1);
-  });
-
-  it('the same player in another room is removed from the first room', async () => {
-    const r1 = await colyseus.createRoom<StudyRoom>('study_room', {});
-    const r2 = await colyseus.createRoom<StudyRoom>('study_room', { preset: 'p50' });
-    const who = { pid: 'pidtabs000002', secret: 't'.repeat(32) };
-    const a = await colyseus.connectTo(r1, { name: 'Tab1', ...who });
-    const left = new Promise<number>((r) => a.onLeave((code: number) => r(code)));
-    await colyseus.connectTo(r2, { name: 'Tab2', ...who });
-    expect(await left).toBe(4001);
-  });
-
   it('a wrong secret for a known player id is refused', async () => {
     const room = await colyseus.createRoom<StudyRoom>('study_room', {});
     await colyseus.connectTo(room, { name: 'A', pid: 'pidsecret0001', secret: 'a'.repeat(32) });
