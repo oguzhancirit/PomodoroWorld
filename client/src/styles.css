@@ -741,6 +741,28 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lg-lock svg { width: 18px; height: 18px; flex: none; margin-top: 2px; stroke: currentColor; fill: none; stroke-width: 1.8; }
 .lg-tagline { grid-column: 1; grid-row: 3; margin: 0; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
 .lg-tagline::before { content: '✦'; color: var(--acc2); }
+/* laptop / PC (user 2026-11-04: all four cards must be readable on one screen, no scrolling). The cards stay in one
+   column, stacked, but turn sideways: picture on the left, title, row and caption on the right. A card is then about
+   0.29 × its width tall, so the width is worked out from the screen height and four always fit. */
+@media (min-width: 901px) {
+  .login { grid-template-columns: minmax(0, 1fr) minmax(320px, 480px); height: 100vh; overflow: hidden; }
+  .lg-art { --cw: clamp(300px, min(44vw, calc(((100vh - 120px) / 4 - 18px) / .29)), 560px); align-self: center; padding: 8px 0; }
+  .lg-side { min-height: 0; align-self: center; }
+  .lg-card { width: min(var(--cw), 94%); display: grid; grid-template-columns: 46% 1fr; grid-template-rows: auto 1fr auto; grid-template-areas: "m h" "m r" "m c"; column-gap: 12px; padding: 9px 12px 9px 9px; border-radius: 16px; }
+  .lg-card + .lg-card { margin-top: 6px; }
+  .lg-card .lg-media { grid-area: m; aspect-ratio: 16 / 10; border-radius: 10px; }
+  .lg-card header { grid-area: h; margin: 2px 0 0; font-size: 13px; }
+  .lg-card .lg-row { grid-area: r; align-self: center; margin: 0; padding: 6px 7px; gap: 6px; font-size: 12px; flex-wrap: wrap; }
+  .lg-card figcaption { grid-area: c; margin: 0; padding: 0 0 2px; font-size: 11px; line-height: 1.35; }
+  .lg-tag { font-size: 8.5px; padding: 2px 6px; left: 6px; top: 6px; }
+  .c1 .lg-tag, .c2 .lg-tag { left: auto; right: 6px; }
+  .lg-durs { gap: 4px; padding: 5px; } .lg-durs button { padding: 5px 0; font-size: 10px; } .lg-durs button b { font-size: 13px; }
+  .lg-durs .lg-own, .c2 .lg-row em, .c4 .lg-row em { display: none; }
+  .lg-durs, .c2 .lg-row, .c4 .lg-row { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; } .lg-durs button { min-width: 0; }
+  .lg-feats span { font-size: 10px; padding: 3px 5px; }
+  .lg-card.c1 { --r: -1.4deg; } .lg-card.c2 { --r: 1.2deg; } .lg-card.c3 { --r: -1deg; } .lg-card.c4 { --r: 1deg; }
+  .lg-tagline { display: none; }
+}
 @media (max-width: 900px) {
   .login { grid-template-columns: 1fr; grid-template-rows: auto; padding: 18px 16px 24px; overflow: auto; }
   .lg-art, .lg-side, .lg-tagline { grid-row: auto; grid-column: 1; }
