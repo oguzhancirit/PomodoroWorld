@@ -1,5 +1,5 @@
 // First page (user, 2026-11-03, laid out like the sign-in screen they showed): three tilted cards on the left
-// (the focus screen with its timer lengths, making your character, making friends) and the sign-in on the right: Google, Apple (later),
+// (the focus screen with its timer lengths, making your character, a full room, making friends) and the sign-in on the right: Google, Apple (later),
 // guest. A live "people focusing now" line shows you will not be alone.
 import { useEffect, useRef, useState } from 'react';
 import { continueAsGuest, googleReady, mountGoogleButton, GOOGLE_CLIENT_ID } from '../account';
@@ -46,6 +46,7 @@ export function Login() {
       <div className="lg-logo"><span className="dot" />Pomodoro<b>World</b></div>
 
       <section className="lg-art" aria-label="Pomodoro World'den görüntüler">
+        <div className="lg-glow" aria-hidden="true"><i /><i /><i /></div>
         <div className="lg-rings" aria-hidden="true"><i /><i /><i /></div>
         <figure className="lg-card c1">
           <header><span>Odaklan</span><small>01</small></header>
@@ -56,11 +57,17 @@ export function Login() {
         <figure className="lg-card c2">
           <header><span>Kendi modelini yarat</span><small>02</small></header>
           <div className="lg-media"><img src={ASSET('avatar.webp')} alt="Karakter yaratma ekranı: saç, kıyafet ve renk seçenekleri" /><span className="lg-tag">Karakterin</span></div>
-          <div className="lg-row"><span className="lg-sw" style={{ background: '#e58bb0' }} /><span className="lg-sw" style={{ background: '#3e7cb1' }} /><span className="lg-sw" style={{ background: '#f2c14e' }} /><b>Saç, kıyafet, renk</b><em>🎲 Şansıma</em></div>
+          <div className="lg-row"><span className="lg-sw" style={{ background: '#e58bb0' }} /><span className="lg-sw" style={{ background: '#3e7cb1' }} /><span className="lg-sw" style={{ background: '#f2c14e' }} /><b>Tarzını seç</b><em>🎲 Şansıma</em></div>
           <figcaption>Saçını, kıyafetini ve renklerini seç; tarzın senin olsun.</figcaption>
         </figure>
         <figure className="lg-card c3">
-          <header><span>Sosyalleşmeyi unutma</span><small>03</small></header>
+          <header><span>Odanı kur</span><small>03</small></header>
+          <div className="lg-media"><img src={ASSET('room.webp')} alt="Eşyalarla dolu bir oda: kanepe, kilim, neon yazı, akvaryum, kedi, bitkiler" /><span className="lg-tag">Oğuzhan'ın odası</span></div>
+          <div className="lg-row lg-feats"><span>🛋️ 100+ eşya</span><span>✨ Neon</span><span>🍂 Efekt</span><span>🎨 Renk</span></div>
+          <figcaption>Eşyanı seç, rengini ver, adını yaz: oda senin tarzın olsun.</figcaption>
+        </figure>
+        <figure className="lg-card c4">
+          <header><span>Sosyalleşmeyi unutma</span><small>04</small></header>
           <div className="lg-media"><img src={ASSET('friends.webp')} alt="Sosyal alanda bir arada duran beş oyuncu" /><span className="lg-tag">Meydan Kafe · 5 kişi</span></div>
           <div className="lg-row ok"><span className="av">E</span><b>Elif</b> Mola! Kahve? ☕<em>az önce</em></div>
           <figcaption>Molada kütüphanede ya da kafede arkadaşlarınla buluş.</figcaption>
