@@ -6,18 +6,18 @@ import { useStore } from '../store';
 import { DEMO_ONLY } from '../net';
 import { BackupBox, IntroButton, NotifyToggle, AccountBox } from './Backup';
 import { Notice } from './RoomUI';
-import { AvatarPreview } from './AvatarPreview';
+import { AvatarPreview, useSpinDrag } from './AvatarPreview';
 import { SafeCanvas } from './SafeCanvas';
 
 const SLOT_LABEL: Record<Slot, string> = { head: 'Saç ve yüz', body: 'Üst', legs: 'Alt', feet: 'Ayakkabı' };
-const label = partName;
+
 
 export function Lobby() {
   const profile = useStore((s) => s.profile);
   const setProfile = useStore((s) => s.setProfile);
   const net = useStore((s) => s.net), error = useStore((s) => s.error);
   const [slot, setSlot] = useState<Slot>('head');
-  const [wave, setWave] = useState(false);
+  const drag = useSpinDrag();
   const a = profile.avatar;
   const code = useMemo(() => encodeAvatar(a), [a]);
   const set = (p: Partial<Avatar>) => setProfile({ avatar: { ...a, ...p } });
@@ -33,10 +33,10 @@ export function Lobby() {
     <main className="lobby">
       <section className="lobby-preview">
         <div className="brand"><span className="dot" />Pomodoro World</div>
-        <div className="preview-3d" onClick={() => { setWave(true); setTimeout(() => setWave(false), 1800); }}>
-          <SafeCanvas label="Karakter önizlemesi açılamadı."><AvatarPreview code={code} motion={wave ? 'wave' : 'idle'} /></SafeCanvas>
+        <div className="preview-3d" {...drag}>
+          <SafeCanvas label="Karakter önizlemesi açılamadı."><AvatarPreview code={code} motion="idle" /></SafeCanvas>
         </div>
-        <p className="hint">Karaktere dokun, el sallasın.</p>
+        <p className="hint">Karakteri parmağınla sağa sola çevir.</p>
       </section>
 
       <section className="lobby-panel">
@@ -58,7 +58,7 @@ export function Lobby() {
           <div className="tabs">{(Object.keys(SLOT_LABEL) as Slot[]).map((s) => <button key={s} className={slot === s ? 'on' : ''} onClick={() => setSlot(s)}>{SLOT_LABEL[s]}</button>)}</div>
           {/* first visit: only the parts you already have; paid ones are for later, in the shop (user, 2026-11-04) */}
           <div className="chips">{PARTS[a.g][slot].filter((p) => mineNow(a.g, p, wallet)).map((p) => (
-            <button key={p} className={a[slot] === p ? 'on' : ''} onClick={() => set({ [slot]: p } as Partial<Avatar>)}>{label(p)}</button>
+            <button key={p} className={a[slot] === p ? 'on' : ''} onClick={() => set({ [slot]: p } as Partial<Avatar>)}>{partName(p, a.g)}</button>
           ))}</div>
           {!allowed && (
             <div className="buy-bar">

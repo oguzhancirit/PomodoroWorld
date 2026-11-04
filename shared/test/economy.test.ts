@@ -89,6 +89,29 @@ describe('shop', () => {
     expect(CATALOG.some((i) => i.cat === 'furn')).toBe(true);
     for (const i of CATALOG) { expect(i.price).toBeGreaterThanOrEqual(0); expect(i.lvl).toBeGreaterThanOrEqual(1); }
   });
+  it('everyday clothes are free; hats, helmets and costumes stay in the shop (user, 2026-11-04)', () => {
+    const free = (id: string) => isFree(itemById(id)!);
+    for (const id of ['av.m.Beach_Body', 'av.m.Beach_Legs', 'av.m.Beach_Feet', 'av.m.Suit_Body', 'av.m.Punk_Body', 'av.m.Punk_Legs', 'av.m.Adventurer_Head',
+      'av.f.Formal_Body', 'av.f.Formal_Legs', 'av.f.Suit_Legs', 'av.f.Punk_Body', 'av.f.Soldier_Head']) expect(free(id), id).toBe(true);
+    for (const id of ['av.m.King_Head', 'av.m.Worker_Head', 'av.m.Farmer_Body', 'av.f.Witch_Head', 'av.f.Worker_Body']) expect(free(id), id).toBe(false);
+    // every slot still has something to buy, and one of them needs no level
+    for (const g of ['f', 'm'] as const) for (const slot of ['head', 'body', 'legs', 'feet'] as const) {
+      const paid = CATALOG.filter((i) => i.g === g && i.slot === slot && i.price > 0);
+      expect(paid.length, g + slot).toBeGreaterThan(0);
+      expect(paid.some((i) => i.lvl === 1), g + slot).toBe(true);
+    }
+  });
+  it('a part is named for what it is in its own slot, not after its outfit', () => {
+    expect(itemById('av.m.Beach_Feet')!.name).toBe('Terlik');
+    expect(itemById('av.m.Casual_Hoodie_Body')!.name).toBe('Kapüşonlu');
+    expect(itemById('av.m.Casual_Hoodie_Legs')!.name).toBe('Şort');
+    expect(itemById('av.f.Formal_Legs')!.name).toBe('Etek');
+    // inside one slot no two parts share a name
+    for (const g of ['f', 'm'] as const) for (const slot of ['head', 'body', 'legs', 'feet'] as const) {
+      const names = CATALOG.filter((i) => i.g === g && i.slot === slot).map((i) => i.name);
+      expect(new Set(names).size, g + slot + names.join()).toBe(names.length);
+    }
+  });
   it('default avatars are free to wear', () => {
     expect(avatarAllowed(newWallet(), defaultAvatar('f'))).toBe(true);
     expect(avatarAllowed(newWallet(), defaultAvatar('m'))).toBe(true);

@@ -127,14 +127,37 @@ const PART_NAMES: Record<string, string> = {
   Casual: 'Günlük', Casual_Hoodie: 'Kapüşonlu', Casual_2: 'Rahat', Formal: 'Şık', Suit: 'Takım', Punk: 'Punk', SciFi: 'Bilimkurgu',
   Adventurer: 'Gezgin', Soldier: 'Kısa saç', Medieval: 'Ortaçağ', Witch: 'Cadı şapkası', Worker: 'İşçi', Beach: 'Plaj', Farmer: 'Çiftçi', King: 'Taç',
 };
-export const partName = (part: string) => PART_NAMES[part.replace(/_(Head|Body|Legs|Feet)$/, '')] ?? part;
+/** what each part really is in its own slot (user 2026-11-04: "Kapüşonlu" on shoes changed nothing you could see).
+ *  Keyed by gender + part; looked at in the 3D preview one by one. */
+const SLOT_NAMES: Record<string, string> = {
+  'm.Casual_Hoodie_Head': 'Dağınık saç', 'm.Casual_2_Head': 'Arkaya taranmış', 'm.Suit_Head': 'Yana taranmış', 'm.Beach_Head': 'Dik saç',
+  'm.Adventurer_Head': 'Uzun saç, sakal', 'm.Punk_Head': 'Mohikan', 'm.Farmer_Head': 'Kovboy şapkası', 'm.Worker_Head': 'Baret', 'm.King_Head': 'Taç ve sakal',
+  'm.Casual_Hoodie_Body': 'Kapüşonlu', 'm.Casual_2_Body': 'Tişört', 'm.Beach_Body': 'Bol tişört', 'm.Suit_Body': 'Takım ceket',
+  'm.Punk_Body': 'Atlet ve yelek', 'm.Farmer_Body': 'Tulum', 'm.Worker_Body': 'İş yeleği',
+  'm.Casual_Hoodie_Legs': 'Şort', 'm.Casual_2_Legs': 'Pantolon', 'm.Beach_Legs': 'Plaj şortu', 'm.Suit_Legs': 'Kumaş pantolon',
+  'm.Punk_Legs': 'Yırtık kot', 'm.Farmer_Legs': 'Tulum altı', 'm.Worker_Legs': 'Kargo pantolon',
+  'm.Casual_Hoodie_Feet': 'Spor ayakkabı', 'm.Casual_2_Feet': 'Kırmızı spor ayakkabı', 'm.Beach_Feet': 'Terlik', 'm.Suit_Feet': 'Klasik ayakkabı',
+  'm.Punk_Feet': 'Bot', 'm.Farmer_Feet': 'Çizme', 'm.Worker_Feet': 'İş botu',
+  'f.Casual_Head': 'Düz kesim', 'f.Formal_Head': 'Kızıl dalgalı', 'f.Suit_Head': 'Yana taranmış', 'f.Adventurer_Head': 'Kısa toplu',
+  'f.Soldier_Head': 'Koyu düz saç', 'f.Medieval_Head': 'Başlık', 'f.SciFi_Head': 'Mavi perçem', 'f.Punk_Head': 'Mohikan', 'f.Witch_Head': 'Cadı şapkası', 'f.Worker_Head': 'Baret',
+  'f.Casual_Body': 'Tişört', 'f.Formal_Body': 'Elbise', 'f.Suit_Body': 'Ceket', 'f.Punk_Body': 'Kısa bluz', 'f.Worker_Body': 'İş yeleği',
+  'f.Casual_Legs': 'Pantolon', 'f.Formal_Legs': 'Etek', 'f.Suit_Legs': 'Kumaş pantolon', 'f.Punk_Legs': 'Yırtık tayt', 'f.Worker_Legs': 'Kargo pantolon',
+  'f.Casual_Feet': 'Spor ayakkabı', 'f.Formal_Feet': 'Babet', 'f.Suit_Feet': 'Klasik ayakkabı', 'f.Punk_Feet': 'Bot', 'f.Worker_Feet': 'İş botu',
+};
+/** the part's own name; with the gender it is the slot name ("Terlik"), without it the outfit name ("Plaj") */
+export const partName = (part: string, g?: Gender) => (g && SLOT_NAMES[`${g}.${part}`]) || (PART_NAMES[part.replace(/_(Head|Body|Legs|Feet)$/, '')] ?? part);
+/** user 2026-11-04: everyday clothes are free for everyone from the first screen; hats, helmets and costumes are for the shop */
+const PAID_OUTFITS: Record<Gender, string[]> = { m: ['Punk_Head', 'Farmer', 'Worker', 'King'], f: ['Medieval', 'SciFi', 'Punk_Head', 'Witch', 'Worker'] };
+const paidPart = (g: Gender, part: string) => PAID_OUTFITS[g].some((o) => part === o || part.startsWith(o + '_'));
 
-const avatarItems: Item[] = (['f', 'm'] as Gender[]).flatMap((g) => (['head', 'body', 'legs', 'feet'] as Slot[]).flatMap((slot) =>
-  PARTS[g][slot].map((part, i) => ({
-    id: `av.${g}.${part}`, name: partName(part), cat: 'avatar' as const, g, slot, part,
-    // the first two of every slot are free; the rest cost coins and some need a level
-    price: i < 2 ? 0 : 60 + (i - 2) * 30, lvl: i < 3 ? 1 : Math.min(12, i),
-  }))));
+const avatarItems: Item[] = (['f', 'm'] as Gender[]).flatMap((g) => (['head', 'body', 'legs', 'feet'] as Slot[]).flatMap((slot) => {
+  let j = 0; // place among the paid parts of this slot: the first needs no level, the rest get dearer
+  return PARTS[g][slot].map((part) => {
+    const paid = paidPart(g, part), k = paid ? j++ : 0;
+    return { id: `av.${g}.${part}`, name: partName(part, g), cat: 'avatar' as const, g, slot, part,
+      price: paid ? 60 + k * 30 : 0, lvl: paid ? (k === 0 ? 1 : Math.min(12, k + 2)) : 1 };
+  });
+}));
 // accessories (user 2026-11-03): for both bodies, bought once, worn from the wardrobe
 const ACC_PRICE: Record<string, [number, number]> = { glasses: [80, 1], sunglasses: [120, 2], catears: [150, 3], headphones: [180, 3], beanie: [120, 2], cap: [140, 4], flowers: [200, 5], crown: [400, 8] };
 const accItems: Item[] = ACCESSORIES.slice(1).map((a) => ({ id: `av.acc.${a}`, name: ACC_NAMES[a] ?? a, cat: 'avatar' as const, sub: 'Aksesuar', part: a, price: ACC_PRICE[a]?.[0] ?? 150, lvl: ACC_PRICE[a]?.[1] ?? 3 }));
