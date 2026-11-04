@@ -22,10 +22,10 @@ export function libraryRoom(): Room {
     { id: 'f_bookshelf', x: -4.28, z: -1.5, r: 1 }, { id: 'f_bookshelf', x: -4.28, z: -0.2, r: 1 },
     { id: 'f_bookshelf', x: 4.28, z: -1.5, r: 3 }, { id: 'f_bookshelf', x: 4.28, z: -0.2, r: 3 }, { id: 'f_bookshelf', x: 4.28, z: 1.1, r: 3 },
     // a reading corner with the fireplace, and the old globe and telescope
-    { id: 'f_fireplace', x: -4.22, z: 2.2, r: 1 }, { id: 'f_candles', x: -3.7, z: 3.6, r: 0 }, { id: 'f_lamp_floor', x: -3.9, z: 0.9, r: 0 },
+    { id: 'f_fireplace', x: -4.22, z: 2.2, r: 1 }, { id: 'f_candles', x: -3.2, z: 3.5, r: 0 }, { id: 'f_lamp_floor', x: -3.9, z: 0.9, r: 0 },
     { id: 'f_globe', x: 3.0, z: 3.7, r: 0 }, { id: 'f_telescope', x: 3.8, z: 2.6, r: 3 }, { id: 'f_lamp_floor', x: 3.9, z: 3.9, r: 0 },
     { id: 'f_monstera', x: -3.9, z: -2.75, r: 0 }, { id: 'f_olive', x: 3.9, z: -2.75, r: 0 }, { id: 'f_bird_paradise', x: -3.9, z: 3.9, r: 0 }, { id: 'f_plane_model', x: 2.0, z: 3.9, r: 1 },
-    { id: 'f_rug_kilim', x: 0, z: 0, r: 0 }, { id: 'f_rug_rect', x: -2.7, z: 2.6, r: 1 },
+    { id: 'f_rug_kilim', x: 0, z: 0, r: 0 },
     { id: 'w_worldmap', w: 'w1', x: 3.5 }, { id: 'w_painting', w: 'w1', x: -2.2 }, { id: 'w_clock', w: 'w3', x: 3.0 }, { id: 'w_diploma', w: 'w2', x: 1.2 }, { id: 'w_frames', w: 'w2', x: -1.2 },
   );
   return {

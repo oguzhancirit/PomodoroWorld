@@ -335,9 +335,9 @@
         ['f_table_round', 2.8, 0.9, 0], ['f_chair_wood', 2.8, 0.05, 0], ['f_chair_wood', 2.8, 1.75, 2], ['f_chair_wood', 3.65, 0.9, 3], ['f_pendant', 2.8, 0.9, 0, { c: '#C7432F' }], ['d_mug', 2.7, 0.8, 0], ['d_books', 2.95, 1.0, 1],
         // the lounge
         ['f_sofa_l', -3.6, 2.8, 0], ['f_armchair', -1.0, 3.9, 3], ['f_rug_round', -3.0, 4.1, 0], ['f_cat', -2.6, 4.3, 1, { t: 'Fıstık' }], ['f_lamp_floor', -5.0, 4.9, 0],
-        ['f_bookshelf', -5.28, -1.2, 1], ['f_record', -5.22, 0.6, 1], ['f_piano', 5.3, 3.4, 3],
+        ['f_bookshelf', -5.28, -1.2, 1], ['f_record', -5.22, 0.6, 1], ['f_piano', 5.0, 3.4, 3],
         ['f_monstera', -5.0, -4.95, 0], ['f_olive', 5.0, 5.0, 0], ['f_bird_paradise', 5.0, -3.4, 0], ['f_flower_vase', 4.9, 1.6, 0],
-        ['w_menu', 'w0', 2.4], N('w0', -0.9, 'MEYDAN KAFE', '#FFB347'), ['w_fairy', 'w0', -3.4], ['w_clock', 'w0', 4.6],
+        ['w_menu', 'w0', 2.4], N('w0', -3.4, 'MEYDAN KAFE', '#FFB347'), ['w_fairy', 'w0', -3.4], ['w_clock', 'w0', 4.6],
         ['w_painting', 'w1', 3.4], ['w_frames', 'w1', -0.6], ['w_plantshelf', 'w1', -3.0],
         ['w_polaroid', 'w3', -2.0], ['w_ivy', 'w3', 1.2], ['w_neon', 'w3', 3.4], ['w_garland', 'w2', 0, 0, { t: 'HOŞ GELDİN' }],
       ],
