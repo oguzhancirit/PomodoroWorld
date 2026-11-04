@@ -44,9 +44,9 @@ Karar (2026-11-04): önce bedava, önce arkadaşlar, adres şimdilik `oguzhancir
 
 - Oğuzhan Neon'da `pomodoroworld` organizasyonunu açtı (`org-frosty-sun-33643492`), ortam ayarlarına `NEON_API_KEY` ekledi
   ve ağ izin listesine `neon.com` + `console.neon.tech` ekledi. Anahtar yalnızca yeni oturumda görünür.
-- Yeni oturumda yapılacak: Neon CLI kurmadan, doğrudan Neon REST API ile (`curl -H "Authorization: Bearer $NEON_API_KEY"`)
-  bu organizasyonda `pomodoroworld` projesini **aws-eu-central-1 (Frankfurt)** bölgesinde aç. Bağlantı adresini sohbete
-  yazma ve repoya koyma; Oğuzhan onu Neon'daki **Connect** düğmesinden alıp Render'daki `DATABASE_URL` kutusuna yapıştırır.
-  (Neon'un önerdiği `neon` CLI Apache-2.0 lisanslı; kullanıcı onayı alınmadı, gerek de yok.)
-- Sonra: Render Blueprint (yukarıdaki 2. adım) → Render adresi gelince siteyi `VITE_SERVER_URL` ile kurup `gh-pages`'e gönder,
-  iki tarayıcıyla canlı dene.
+- ✔ Neon projesi açıldı (REST API ile, CLI yok): `pomodoroworld`, kimlik `odd-truth-90319479`, **aws-eu-central-1 (Frankfurt)**,
+  Postgres 17, veritabanı `neondb`, rol `neondb_owner`. Bağlantı adresi sohbete ve repoya yazılmadı;
+  Oğuzhan onu Neon'daki **Connect** düğmesinden alıp Render'daki `DATABASE_URL` kutusuna yapıştırır.
+  Bu bulut ortamı veritabanına doğrudan bağlanamaz (yalnız HTTPS izinli, DNS yok); bağlantıyı Render dener.
+- Sırada: Render Blueprint (yukarıdaki 2. adım, dal `claude/adoring-newton-vfiiyb`) → Render adresi gelince siteyi
+  `VITE_SERVER_URL=wss://<adres>` ile kurup `gh-pages`'e gönder (dalın `.git`'i korunur, `.nojekyll` olur), iki tarayıcıyla canlı dene.
