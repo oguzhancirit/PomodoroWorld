@@ -18,19 +18,21 @@ if (new URLSearchParams(location.search).has('home')) useStore.getState().set({ 
 /** while a screen is still downloading: the same dark background with a small pulsing dot */
 const Loading = () => <div className="screen-loading" role="status" aria-label="Yükleniyor"><span /></div>;
 
-// an invite link (#oda-CODE) opens the friend's room once you are in the game
+// an invite link (#oda-CODE) opens the friend's room once you are in the game. A brand-new player first
+// watches the film and makes a character (the film plays in their own room), then goes to the friend.
 let pendingInvite = '';
+const inGame = () => { const st = useStore.getState(); return st.screen === 'home' && st.profile.made; };
 const takeInvite = () => { if (location.hash.startsWith('#oda-')) { pendingInvite = location.hash.slice(5); history.replaceState(null, '', location.pathname + location.search); } };
 
 export function App() {
   useEffect(() => {
     refreshWallet();
     takeInvite();
-    const onHash = () => { takeInvite(); if (pendingInvite && useStore.getState().screen === 'home') { visitHome(pendingInvite); pendingInvite = ''; } };
+    const onHash = () => { takeInvite(); if (pendingInvite && inGame()) { visitHome(pendingInvite); pendingInvite = ''; } };
     addEventListener('hashchange', onHash); return () => removeEventListener('hashchange', onHash);
   }, []);
   const screen = useStore((s) => s.screen);
-  useEffect(() => { if (screen === 'home' && pendingInvite) { const c = pendingInvite; pendingInvite = ''; setTimeout(() => visitHome(c), 300); } }, [screen]);
+  useEffect(() => { if (pendingInvite && inGame()) { const c = pendingInvite; pendingInvite = ''; setTimeout(() => visitHome(c), 300); } }, [screen]);
   if (screen === 'login') return <><WakeBanner /><Login /></>;
   return (
     <Suspense fallback={<Loading />}>
