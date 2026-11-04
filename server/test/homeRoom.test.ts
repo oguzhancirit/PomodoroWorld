@@ -79,6 +79,14 @@ describe('HomeRoom', () => {
     expect(cf.sessionId).toBeTruthy();
   });
 
+  it('an old invite link (the owner made a new one) says so, instead of "closed"', async () => {
+    const own = await player('Ece'), f = await player('Mert');
+    await colyseus.http.post('/api/room', { body: { pid: own.pid, secret: own.secret, room: { ...own.room, open: false, token: 'yeni123' } } });
+    await join(own, own.pid);
+    await expect(join(f, own.pid, { token: own.room.token })).rejects.toThrow(/eski/);
+    await expect(join(f, own.pid)).rejects.toThrow(/kapalı/);
+  });
+
   it('a focus in your room pays like the study room', async () => {
     const own = await player('Sena'); const c = await join(own, own.pid); await wait(50);
     const room = await roomOf(own.pid);

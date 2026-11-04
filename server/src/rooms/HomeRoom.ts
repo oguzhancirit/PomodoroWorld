@@ -12,6 +12,7 @@ const HomeJoin = z.object({ owner: PlayerId, pid: PlayerId, secret: PlayerSecret
 const KickMsg = z.object({ id: z.string().max(40) });
 const REFUSE: Record<string, string> = {
   closed: 'Bu oda kapalı: girmek için davet linki gerekiyor.',
+  stale: 'Bu davet linki eski: arkadaşın yeni link yapmış. Ondan yenisini iste.',
   banned: 'Bu odaya giremezsin.',
   full: 'Oda dolu: bütün sandalyeler dolu.',
 };
@@ -69,7 +70,7 @@ export class HomeRoom extends PersonalRoom {
     if (profiles.open(pid, parseJoin(options).secret)) this.replaceTwins(pid);
     const count = this.state.players.size;
     const verdict = homeEntry(this.room, { pid, owner: this.owner, count, token });
-    if (verdict !== 'ok') throw new Error(REFUSE[verdict]);
+    if (verdict !== 'ok') throw new Error(REFUSE[verdict === 'closed' && token ? 'stale' : verdict]);
     super.onJoin(client, options);
     if (pid === this.owner) this.state.ownerName = this.ownerName = cleanName(parseJoin(options).name) || 'Oyuncu';
     this.meta();
