@@ -145,7 +145,7 @@ export function homeEntry(room: Pick<Room, 'items' | 'open' | 'token' | 'ban'>, 
 export const inviteCode = (owner: string, token: string) => `${owner}-${token}`;
 export function parseInvite(input: unknown): { owner: string; token: string } | null {
   if (typeof input !== 'string') return null;
-  const s = input.trim(); const at = s.lastIndexOf('#oda-');
+  const s = input.trim().toLowerCase(); const at = s.lastIndexOf('#oda-');
   const m = /^([a-z0-9]{12,24})(?:-([a-z0-9]{3,10}))?$/.exec(at >= 0 ? s.slice(at + 5) : s);
   return m ? { owner: m[1], token: m[2] ?? '' } : null;
 }

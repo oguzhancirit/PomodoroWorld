@@ -145,6 +145,11 @@ describe('step 4: who may enter someone else\'s room', () => {
     expect(parseInvite('<script>')).toBeNull();
     expect(parseInvite('')).toBeNull();
   });
+  it('invite codes typed in capitals (phone keyboards, the friend code look) still work', () => {
+    expect(parseInvite('OWN000000001-ABC123')).toEqual({ owner: 'own000000001', token: 'abc123' });
+    expect(parseInvite('Own000000001-Abc123')).toEqual({ owner: 'own000000001', token: 'abc123' });
+    expect(parseInvite('https://pw.example/#oda-OWN000000001-ABC123')).toEqual({ owner: 'own000000001', token: 'abc123' });
+  });
 });
 
 describe('personal touches on items (user 2026-11-03: everyone shows their own style)', () => {
