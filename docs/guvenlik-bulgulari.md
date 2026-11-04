@@ -2,6 +2,14 @@
 
 Yöntem: `.claude/skills/pomodoro-world-guvenlik/SKILL.md`. Kapsam: `server/src`, `shared/src`, `client/src` (XSS ve sır taraması), v1 yedek içe alma. Kanıtlar yerel deneme testiyle (`@colyseus/testing`) alındı, test sonra silindi. Canlı sunucuya dokunulmadı.
 
+## Güncel durum (2026-11-04, akşam)
+Asıl geliştirme `claude/adoring-newton-vfiiyb` dalında ilerliyor (ana dalın 105 commit önünde). Bu dalda yapılan
+"tek hesap" ve "Postgres kayıt" çalışması o dalda zaten vardı; tekrar olmasın diye geri alındı (revert, tarih korunuyor).
+O dal yerel Postgres ile denendi:
+- ✅ Madde 4 çözülmüş: Neon/Postgres (`server/src/db.ts`), veritabanı okunamazsa sunucu açılmıyor, kapanırken son kayıt yazılıyor (kapat-aç denemesinde 100 jeton korundu).
+- 🟡 Madde 1 yarım: aynı oda içinde "bir oyuncu, bir beden" var (`replaceTwins`), ama **aynı hesap iki farklı odada** (ör. `p25` ve `p50` çalışma odası, ya da kişisel oda) aynı anda ödül alıyor — denemede iki oda da ödül verdi. Düzeltme fikri: tüm odaların ortak kullandığı bir "aktif oturum" haritası (pid → oda+oturum); yeni giriş eskisini kapatsın. Bu dalda yazılmış örnek: commit `03a2d82` (`server/src/sessions.ts`).
+- ⏸ Madde 2 ve 5: herkese açmadan önce.
+
 ## Orta
 
 ### 1. Aynı hesapla çok sekme = çok ödül (jeton/XP hilesi)
