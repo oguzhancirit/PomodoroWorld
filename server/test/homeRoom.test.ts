@@ -74,7 +74,7 @@ describe('HomeRoom', () => {
     await colyseus.http.post('/api/room', { body: { pid: own.pid, secret: own.secret, room: { ...own.room, open: false, ban: [b.pid] } } });
     await join(own, own.pid);
     await expect(join(f, own.pid)).rejects.toThrow(/davet/);
-    await expect(join(b, own.pid, { token: own.room.token })).rejects.toThrow(/giremezsin/);
+    await expect(join(b, own.pid, { token: own.room.token })).rejects.toThrow(/giremezsin: oda sahibi seni odasından çıkardı/);
     const cf = await join(f, own.pid, { token: own.room.token });
     expect(cf.sessionId).toBeTruthy();
   });

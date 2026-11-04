@@ -13,7 +13,7 @@ const KickMsg = z.object({ id: z.string().max(40) });
 const REFUSE: Record<string, string> = {
   closed: 'Bu oda kapalı: girmek için davet linki gerekiyor.',
   stale: 'Bu davet linki eski: arkadaşın yeni link yapmış. Ondan yenisini iste.',
-  banned: 'Bu odaya giremezsin.',
+  banned: 'Bu odaya giremezsin: oda sahibi seni odasından çıkardı.',
   full: 'Oda dolu: bütün sandalyeler dolu.',
 };
 
