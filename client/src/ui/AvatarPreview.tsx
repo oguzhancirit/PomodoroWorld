@@ -14,8 +14,8 @@ function Turntable({ children }: { children: React.ReactNode }) {
 /** Live 3D preview of the avatar being designed in the lobby. */
 export function AvatarPreview({ code, motion }: { code: string; motion: Motion }) {
   return (
-    <Canvas dpr={[1, 2]} camera={{ position: [0, 1.15, 3.4], fov: 32 }} shadows
-      onCreated={({ gl, camera }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; camera.lookAt(0, 0.85, 0); }}>
+    <Canvas dpr={[1, 2]} camera={{ position: [0, 1.05, 4.0], fov: 32 }} shadows
+      onCreated={({ gl, camera }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; camera.lookAt(0, 0.9, 0); }}>
       <hemisphereLight args={['#fff4e6', '#5b4a66', 1.6]} />
       <directionalLight position={[2.5, 4, 3]} intensity={2.2} castShadow />
       <directionalLight position={[-3, 2, -2]} intensity={1.1} color="#ffb3a1" />
