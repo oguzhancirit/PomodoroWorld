@@ -1,4 +1,4 @@
-import{r as e}from"./rolldown-runtime-XKyaHtl9.js";import{I as t}from"./demoHosts-BmW1nmHB.js";import{b as n,x as r}from"./net-C3bCAo0G.js";import{Lr as i,Y as a,_o as o,dr as s,pr as c,sa as l}from"./assets-_2SkANgF.js";function u(){return u=Object.assign?Object.assign.bind():function(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var r in n)({}).hasOwnProperty.call(n,r)&&(e[r]=n[r])}return e},u.apply(null,arguments)}var d={uniforms:{tDiffuse:{value:null},h:{value:1/512}},vertexShader:`
+import{r as e}from"./rolldown-runtime-XKyaHtl9.js";import{L as t}from"./demoHosts-CCWC2WHf.js";import{b as n,x as r}from"./net-D1L3sQIi.js";import{Lr as i,Y as a,_o as o,dr as s,pr as c,sa as l}from"./assets-_2SkANgF.js";function u(){return u=Object.assign?Object.assign.bind():function(e){for(var t=1;t<arguments.length;t++){var n=arguments[t];for(var r in n)({}).hasOwnProperty.call(n,r)&&(e[r]=n[r])}return e},u.apply(null,arguments)}var d={uniforms:{tDiffuse:{value:null},h:{value:1/512}},vertexShader:`
       varying vec2 vUv;
 
       void main() {
