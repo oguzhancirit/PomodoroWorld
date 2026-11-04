@@ -36,7 +36,7 @@ export function wakeServer(): Promise<boolean> {
 export function WakeBanner() {
   const s = useWake((x) => x.state), curtain = useWake((x) => x.curtain);
   if (curtain) return null;
-  if (s === 'waking') return <div className="wake-bar" role="status"><i aria-hidden="true" />Sunucu uyanıyor… Kimse yokken uyur, ilk girişte yaklaşık 1 dakika sürer.</div>;
+  if (s === 'waking') return <div className="wake-bar" role="status"><i aria-hidden="true" />Sunucuya bağlanılıyor… Sunucu uyuyorsa ya da güncelleniyorsa 1 dakika kadar sürer.</div>;
   if (s === 'down') return <div className="wake-bar down" role="status">Sunucuya ulaşılamadı. Odan bu cihazda açık; internetini kontrol edip sayfayı yenile.<button type="button" onClick={() => location.reload()}>Yenile</button></div>;
   return null;
 }
@@ -65,7 +65,7 @@ export function WakeCurtain({ show }: { show: boolean }) {
       </> : s === 'waking' ? <>
         <i aria-hidden="true" />
         <b>Sunucu uyanıyor… {sec} sn</b>
-        <p>Kimse yokken uyur. İlk girişte yaklaşık 1 dakika sürer, sonra odan açılır.</p>
+        <p>Kimse yokken uyur ya da güncellenir. 1 dakika kadar sürer, sonra odan açılır.</p>
       </> : <span className="dot" aria-label="Yükleniyor" />}
     </div>
   );

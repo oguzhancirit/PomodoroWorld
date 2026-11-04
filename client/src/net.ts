@@ -10,7 +10,7 @@ import { saveRoom } from './economy';
 
 import { SERVER, DEMO_ONLY } from './config';
 import { identity } from './identity';
-import { wakeServer } from './wake';
+import { wakeServer, useWake } from './wake';
 import { sanitizeWallet } from '@pw/shared';
 export { DEMO_ONLY };
 let room: Room | null = null;
@@ -192,7 +192,15 @@ function wire(r: Room, screen: 'room' | 'home') {
   r.onLeave((code: number) => {
     if (code === CloseCode.CONSENTED) return;
     if (room !== r) return;
-    useStore.getState().set({ net: 'offline', error: code === CloseCode.FAILED_TO_RECONNECT ? 'Bağlantı koptu.' : 'Odadan çıkıldı.' });
+    const st = useStore.getState();
+    // the server restarted (an update, or the free host woke it again) and forgot the room: we cannot slip back
+    // into it, so in the game screen we simply join again from the start (live, 2026-11-04: stuck on "Bağlantı koptu")
+    if (st.screen === 'home') {
+      room = null; useWake.setState({ state: 'idle' });
+      st.set({ net: 'idle', error: '', players: {}, me: '', place: null, chat: [] }); // HomeRoom opens your room again
+      return;
+    }
+    st.set({ net: 'offline', error: code === CloseCode.FAILED_TO_RECONNECT ? 'Bağlantı koptu.' : 'Odadan çıkıldı.' });
   });
 }
 

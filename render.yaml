@@ -11,6 +11,15 @@ services:
     buildCommand: npm install --ignore-scripts --legacy-peer-deps
     startCommand: npm start -w server
     healthCheckPath: /health
+    # every new deploy restarts the server and drops everyone for a minute: only deploy when the server's own code
+    # changes (site-only changes go to GitHub Pages and need no restart)
+    buildFilter:
+      paths:
+        - server/**
+        - shared/**
+        - package.json
+        - package-lock.json
+        - render.yaml
     envVars:
       - key: NODE_VERSION
         value: "22"
