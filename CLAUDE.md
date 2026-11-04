@@ -35,3 +35,4 @@ Odam shows the **old** avatar; the study room shows the **new** Quaternius avata
 
 ## Where things are
 File map and engine details: `docs/MIMARI.md` — read it when you start a new area.
+Security review: `.claude/skills/pomodoro-world-guvenlik/SKILL.md`; open findings in `docs/guvenlik-bulgulari.md`.
