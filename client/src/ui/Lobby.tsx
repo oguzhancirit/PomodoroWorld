@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CATALOG, ACCESSORIES, PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, PRESETS, CATEGORIES, encodeAvatar, defaultAvatar, cleanName, itemById, owns, avatarAllowed, levelFromXP, partName, type Slot, type Avatar } from '@pw/shared';
+import { CATALOG, ACCESSORIES, PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, encodeAvatar, defaultAvatar, cleanName, itemById, owns, avatarAllowed, levelFromXP, partName, type Slot, type Avatar } from '@pw/shared';
 import { WalletChip, ShopModal, PartPic } from './Wallet';
 import { ToolButtons, Panels } from './Panels';
 import { buyItem } from '../economy';
@@ -44,7 +44,7 @@ export function Lobby() {
 
       <section className="lobby-panel">
         <div className="lobby-top"><h1>{back ? 'Karakterin ve ayarların' : 'Birlikte çalış, odaklan, sohbet et.'}</h1><div className="row"><ToolButtons /><WalletChip /></div></div>
-        <p className="sub">{back ? <>Merhaba <b>{name}</b>! Gardırobundan istediğin parçayı seç, hemen üstüne giyilsin.</> : 'Odadaki herkes aynı sayacı görür. Odakta sohbet kapanır, molada açılır.'}</p>
+        <p className="sub">{back ? <>Merhaba <b>{name}</b>! Gardırobundan istediğin parçayı seç, hemen üstüne giyilsin.</> : 'Adını yaz, karakterini seç. Gerisini odanda ayarlarsın.'}</p>
 
         {back ? <Wardrobe /> : <>
         <label className="field">Adın
@@ -77,16 +77,7 @@ export function Lobby() {
           <Swatches title="Alt rengi" list={CLOTH_COLORS} value={a.bottom} onPick={(bottom) => set({ bottom })} />
         </div>
 
-        <div className="field">Ne çalışacaksın?
-          <div className="chips">{CATEGORIES.map(([id, n]) => <button key={id} className={profile.category === id ? 'on' : ''} onClick={() => setProfile({ category: id })}>{n}</button>)}</div>
-        </div>
-        <div className="field">Süre · odak / mola <small>Herkes kendi sayacını kurar; odak ekranından da değiştirebilirsin.</small>
-          <div className="durs">{PRESETS.map((p) => (
-            <button key={p.id} className={profile.preset === p.id ? 'on' : ''} onClick={() => setProfile({ preset: p.id })}>
-              <b>{p.focusMin}<small> / {p.shortMin}</small></b><span>{p.hint}</span>
-            </button>
-          ))}</div>
-        </div>
+        {/* what you study and how long: chosen on the focus screen in your room, not here (user, 2026-11-04) */}
         </>}
 
         {DEMO_ONLY && (
