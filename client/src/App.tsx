@@ -4,6 +4,7 @@ import { SafeCanvas } from './ui/SafeCanvas';
 import { refreshWallet } from './economy';
 import { startScreen } from './account';
 import { Login } from './ui/Login';
+import { WakeBanner } from './wake';
 
 // the sign-in page must open fast: the 3D room, the character screen and the study room load only when needed
 const Lobby = lazy(() => import('./ui/Lobby').then((m) => ({ default: m.Lobby })));
@@ -30,9 +31,10 @@ export function App() {
   }, []);
   const screen = useStore((s) => s.screen);
   useEffect(() => { if (screen === 'home' && pendingInvite) { const c = pendingInvite; pendingInvite = ''; setTimeout(() => visitHome(c), 300); } }, [screen]);
-  if (screen === 'login') return <Login />;
+  if (screen === 'login') return <><WakeBanner /><Login /></>;
   return (
     <Suspense fallback={<Loading />}>
+      <WakeBanner />
       {screen === 'home' ? <SafeCanvas label="Odan bu cihazda açılamadı (3D desteklenmiyor)."><HomeRoom /></SafeCanvas>
         : screen === 'room' ? <StudyRoom /> : <Lobby />}
     </Suspense>

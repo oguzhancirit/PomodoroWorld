@@ -7,6 +7,7 @@ import { xpStep,
 import { useStore } from './store';
 import { identity } from './identity';
 import { DEMO_ONLY, HTTP_BASE } from './config';
+import { wakeServer } from './wake';
 
 const LOCAL_KEY = 'pw2.wallet';
 export function loadLocalWallet(): Wallet { try { return sanitizeWallet(JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null')); } catch { return newWallet(); } }
@@ -34,6 +35,7 @@ export async function refreshWallet() {
     useStore.getState().set({ wallet, room: useStore.getState().room ?? loadLocalRoom(wallet) }); return;
   }
   try {
+    if (!(await wakeServer())) throw new Error('server asleep');
     const r = await fetch(`${HTTP_BASE}/api/profile`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...identity(), tz: myTz() }) });
     const j = await r.json(); if (j.ok) useStore.getState().set({ wallet: sanitizeWallet(j.wallet), room: sanitizeRoom(j.room) });
   } catch {

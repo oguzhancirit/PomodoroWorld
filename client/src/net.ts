@@ -10,6 +10,7 @@ import { saveRoom } from './economy';
 
 import { SERVER, DEMO_ONLY } from './config';
 import { identity } from './identity';
+import { wakeServer } from './wake';
 import { sanitizeWallet } from '@pw/shared';
 export { DEMO_ONLY };
 let room: Room | null = null;
@@ -36,6 +37,7 @@ async function enterLibrary(roomId?: string): Promise<boolean> {
   const { profile } = st;
   let r: Room;
   try {
+    await wakeServer(); // a sleeping free server first wakes up (banner on top)
     const client = new Client(SERVER);
     const opts = { ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
     r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate('library', opts);
@@ -62,6 +64,7 @@ async function enterSocial(space: string, roomId?: string): Promise<boolean> {
   const { profile } = st;
   let r: Room;
   try {
+    await wakeServer(); // a sleeping free server first wakes up (banner on top)
     const client = new Client(SERVER);
     const opts = { ...identity(), space, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
     r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate('social', opts);
@@ -99,6 +102,7 @@ async function joinHome(owner: string, token: string): Promise<boolean> {
   st.set({ net: 'connecting', error: '' });
   let r: Room;
   try {
+    await wakeServer();
     const client = new Client(SERVER);
     const opts = { ...identity(), owner, token: token || undefined, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
     r = mine ? await client.joinOrCreate('home', opts) : await client.join('home', opts);

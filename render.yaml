@@ -1,6 +1,8 @@
 # Render.com blueprint for the Pomodoro World game server (Colyseus).
 # New → Blueprint → pick this repo. The free plan sleeps when nobody is online;
-# the first visitor then waits about a minute while it wakes up.
+# the first visitor then waits about a minute while it wakes up (the game shows a "waking up" strip).
+# Players are kept in a free Postgres database (Neon): paste its address into DATABASE_URL when asked.
+# Step-by-step guide: docs/YAYIN.md
 services:
   - type: web
     name: pomodoro-world-server
@@ -8,6 +10,11 @@ services:
     plan: free
     buildCommand: npm install --ignore-scripts --legacy-peer-deps
     startCommand: npm start -w server
+    healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
