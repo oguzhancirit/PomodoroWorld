@@ -669,7 +669,7 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lg-logo { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font: 800 20px var(--f-display); letter-spacing: -.02em; }
 .lg-logo b { color: var(--acc2); font-weight: 800; }
 .lg-logo .dot { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffb3a1, var(--acc)); box-shadow: 0 0 14px rgba(239, 90, 60, .7); }
-.lg-art { position: relative; grid-row: 2; display: grid; align-content: start; --cw: clamp(230px, min(21vw, calc((100vh - 150px) / 2.5 * 2 - 220px)), 350px); width: 100%; max-width: calc(var(--cw) * 2 + 36px); justify-self: center; align-self: center; padding: 18px 0 28px; }
+.lg-art { position: relative; grid-row: 2; display: grid; grid-template-columns: repeat(2, var(--cw)); column-gap: calc(var(--cw) * .09); row-gap: calc(var(--cw) * .08); justify-content: center; align-content: center; align-items: start; --cw: clamp(230px, min(21vw, calc((100vh - 170px) / 2.16 * 2 - 230px)), 380px); --off: calc(var(--cw) * .2); align-self: center; padding: 18px 0 calc(var(--off) + 24px); }
 /* behind the cards: three tilted orbits, each with a small light running round it, and slow soft glows */
 .lg-rings { position: absolute; left: 50%; top: 50%; width: 112%; height: 100%; transform: translate(-50%, -50%) rotate(-14deg); pointer-events: none; z-index: 0; }
 .lg-rings i { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .075); animation: lg-orbit 26s linear infinite; }
@@ -686,14 +686,13 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 .lg-glow i:nth-child(3) { left: 14%; bottom: 4%; background: radial-gradient(circle, rgba(242, 193, 78, .32), transparent 70%); animation-duration: 18s; animation-delay: -11s; }
 @keyframes lg-drift { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(8%, -6%) scale(1.12); } 100% { transform: translate(-6%, 5%) scale(.92); } }
 .lg-card { position: relative; z-index: 1; width: var(--cw); margin: 0; padding: 12px 14px 12px; border-radius: 18px; background: linear-gradient(160deg, rgba(48, 42, 70, .92), rgba(30, 27, 46, .95)); border: 1px solid rgba(255, 255, 255, .09); box-shadow: 0 30px 60px -28px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(255, 255, 255, .06); transition: transform .45s cubic-bezier(.2, .8, .3, 1); }
-/* a cascade read top to bottom like the reference: 01 left, 02 right and half a card lower, 03 under 01, 04 under 02.
-   Each card covers only a corner of the one before, so the time chips and the rows stay in view; the width follows the
-   screen (height too), so all four fit on a PC. A card is about cw/2 + 110px tall, the numbers below come from that. */
-.lg-card.c1 { justify-self: start; margin-left: 0; transform: rotate(-4deg); }
-.lg-card.c2 { justify-self: end; margin-top: calc(var(--cw) * -.25 - 55px); transform: rotate(3deg); }
-.lg-card.c3 { justify-self: start; margin-left: 3%; margin-top: calc(var(--cw) * -.25 - 40px); transform: rotate(-2.5deg); }
-.lg-card.c4 { justify-self: end; margin-right: 2%; margin-top: calc(var(--cw) * -.25 - 40px); transform: rotate(2deg); }
-.lg-card:hover { transform: rotate(0) translateY(-4px); z-index: 3; }
+/* two tidy columns, read 01 → 04: 01 | 02 on top, 03 | 04 below. The right column sits a little lower and every card
+   leans a touch, so it feels hand-placed, but no card covers another (user 2026-11-04: the overlapping cascade looked messy).
+   The width follows the screen (height too): a card is about cw/2 + 110px tall, so two rows always fit on a PC. */
+.lg-card { justify-self: stretch; transform: translateY(var(--y, 0)) rotate(var(--r, 0deg)); }
+.lg-card.c1 { --r: -2deg; } .lg-card.c2 { --r: 1.6deg; --y: var(--off); }
+.lg-card.c3 { --r: 1.2deg; } .lg-card.c4 { --r: -1.4deg; --y: var(--off); }
+.lg-card:hover { transform: translateY(calc(var(--y, 0px) - 4px)) rotate(0deg); z-index: 3; }
 .lg-card header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; font: 700 12.5px var(--f-body); }
 .lg-card header span { display: inline-flex; align-items: center; gap: 7px; }
 .lg-card header span::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--acc2); }
@@ -745,9 +744,10 @@ body.cinema .topbar, body.cinema .room-ui, body.cinema .home-hint { display: non
 @media (max-width: 900px) {
   .login { grid-template-columns: 1fr; grid-template-rows: auto; padding: 18px 16px 24px; overflow: auto; }
   .lg-art, .lg-side, .lg-tagline { grid-row: auto; grid-column: 1; }
-  .lg-art { padding: 6px 0 14px; --cw: 76%; } .lg-rings { width: 130%; }
+  .lg-art { grid-template-columns: 1fr; row-gap: 10px; padding: 6px 0 14px; --off: 0px; } .lg-rings { width: 130%; }
+  .lg-card { width: 80%; justify-self: start; }
   .lg-side { position: static; min-height: 0; }
-  .lg-card.c2, .lg-card.c4 { margin: -6px 0 0 auto; } .lg-card.c3 { margin: -6px 0 0 0; }
+  .lg-card.c2, .lg-card.c4 { justify-self: end; }
   .lg-card figcaption, .c2 .lg-row, .c4 .lg-row { display: none; }
   .lg-tagline { display: none; }
 }
