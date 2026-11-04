@@ -1,0 +1,5 @@
+Character models: "Ultimate Modular Men" and "Ultimate Modular Women" by Quaternius (https://quaternius.com)
+Animations: "Universal Animation Library [Standard]" by Quaternius (https://quaternius.com)
+License: CC0 1.0 Universal (public domain) — https://creativecommons.org/publicdomain/zero/1.0/
+The animations were retargeted onto the modular rig and the desk poses (typing / writing / reading)
+were derived from the sitting clip by tools/retarget.mjs in this repository.
