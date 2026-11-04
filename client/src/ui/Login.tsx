@@ -1,5 +1,5 @@
 // First page (user, 2026-11-03, laid out like the sign-in screen they showed): three tilted cards on the left
-// (the intro film playing, making friends, building your room) and the sign-in on the right: Google, Apple (later),
+// (the focus screen with its timer lengths, making your character, making friends) and the sign-in on the right: Google, Apple (later),
 // guest. A live "people focusing now" line shows you will not be alone.
 import { useEffect, useRef, useState } from 'react';
 import { continueAsGuest, googleReady, mountGoogleButton, GOOGLE_CLIENT_ID } from '../account';
@@ -48,9 +48,10 @@ export function Login() {
       <section className="lg-art" aria-label="Pomodoro World'den görüntüler">
         <div className="lg-rings" aria-hidden="true"><i /><i /><i /></div>
         <figure className="lg-card c1">
-          <header><span>Tanıtım</span><small>01</small></header>
-          <FilmClip />
-          <figcaption>↑ Pomodoro World'ü bir dakikada tanı.</figcaption>
+          <header><span>Odaklan</span><small>01</small></header>
+          <div className="lg-media"><img src={ASSET('focus.webp')} alt="Odak ekranı: büyük sayaç, ne çalışacağın ve süre seçenekleri" /><span className="lg-tag">Odak ekranı</span></div>
+          <Durations />
+          <figcaption>Süreni sen seç: kısa ısınma ya da uzun maraton.</figcaption>
         </figure>
         <figure className="lg-card c2">
           <header><span>Kendi modelini yarat</span><small>02</small></header>
@@ -88,21 +89,14 @@ export function Login() {
   );
 }
 
-/** the intro film as a small looping clip with a pause button and a progress line, like a real player */
-function FilmClip() {
-  const ref = useRef<HTMLVideoElement>(null);
-  const [paused, setPaused] = useState(false);
-  const [k, setK] = useState(0);
-  const flip = () => { const v = ref.current; if (!v) return; if (v.paused) { void v.play(); setPaused(false); } else { v.pause(); setPaused(true); } };
+/* the timer lengths you can pick (same as @pw/shared PRESETS; written out so the first page stays light) */
+const DURS = [[25, 5], [45, 15], [50, 10], [90, 20]] as const;
+function Durations() {
+  const [on, setOn] = useState(0);
   return (
-    <div className="lg-media">
-      <video ref={ref} src={ASSET('film.webm')} poster={ASSET('film.webp')} autoPlay muted loop playsInline aria-label="Tanıtım filmi"
-        onTimeUpdate={(e) => { const v = e.currentTarget; setK(v.duration ? v.currentTime / v.duration : 0); }} />
-      <span className="lg-tag">Tanıtım filmi</span>
-      <button type="button" className="lg-pause" onClick={flip} aria-label={paused ? 'Oynat' : 'Duraklat'}>
-        <svg viewBox="0 0 12 12" aria-hidden="true">{paused ? <path d="M2 1l9 5-9 5z" /> : <path d="M2 1h3v10H2zM7 1h3v10H7z" />}</svg>
-      </button>
-      <div className="lg-bar" aria-hidden="true"><i style={{ width: `${Math.round(k * 1000) / 10}%` }} /></div>
+    <div className="lg-row lg-durs" role="radiogroup" aria-label="Odak / mola süresi">
+      {DURS.map(([f, b], i) => <button key={f} type="button" role="radio" aria-checked={on === i} className={on === i ? 'on' : ''} onClick={() => setOn(i)}><b>{f}</b>/{b}</button>)}
+      <span className="lg-own">+ sana özel</span>
     </div>
   );
 }
