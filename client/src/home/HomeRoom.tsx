@@ -78,6 +78,8 @@ export function HomeRoom() {
     let w: World;
     try { w = new PW.World(host.current, tags.current, { quality: lite ? 'low' : 'high' }); } catch (e) { console.warn('room engine failed', e); setFailed(true); return; }
     engine.world = w; (window as unknown as { __world: World }).__world = w;
+    // three.js asks the GPU for an error report after every new shader, which makes each one wait; only do that while developing
+    try { w.renderer.debug.checkShaderErrors = import.meta.env.DEV; } catch { /* ignore */ }
     w.onClick = (ev: { type: string; id?: string; index?: number; idx?: number; x?: number; z?: number }) => {
       if (ev.type === 'edit-select') { setSel(ev.index ?? -1); return; }
       if (latest.current.editing) return;

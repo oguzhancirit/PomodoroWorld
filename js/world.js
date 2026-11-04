@@ -129,6 +129,20 @@
       } catch (e) { console.warn('post fx off', e); this.post = null; }
     }
     setQuality(q) { if (q === this.quality) return; this.quality = q; this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q === 'high' ? 2 : 1.25)); this.setupPost(); this.resize(); if (this.def) this.applyMood(); }
+    /* adaptive quality (2026-11-04, user: "kasılmaları azalt"): every 2 s look at how many frames were slow. When more
+       than a third took over 26 ms, render with fewer pixels (2 → 1.5 → 1.25 → 1); at 1 drop the bloom pass. Never goes back
+       up, so the picture does not keep changing. The first 1.5 s after a room loads are skipped (shaders compiling). */
+    adapt(dt) {
+      const now = performance.now(), q = (this.q = this.q || { t0: now + 1500, n: 0, slow: 0 });
+      if (now < q.t0) return;
+      q.n++; if (dt > 0.026) q.slow++;
+      if (now - q.t0 < 2000 || q.n < 8) return;
+      const bad = q.slow / q.n > 0.34; this.q = { t0: now + (bad ? 1000 : 0), n: 0, slow: 0 };
+      if (!bad) return;
+      const r = this.renderer, pr = r.getPixelRatio();
+      if (pr > 1.01) { r.setPixelRatio(Math.max(1, pr > 1.6 ? 1.5 : pr - 0.25)); this.resize(); }
+      else if (this.post) { this.post = null; }
+    }
     resize() {
       const w = this.host.clientWidth || window.innerWidth, h = this.host.clientHeight || window.innerHeight;
       this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
@@ -273,6 +287,10 @@
       for (const [id, a] of this.avatars) { if (a.seatIdx != null) { const s = a.seatIdx; a.seatIdx = null; this.sitAvatar(id, s < this.seats.length ? s : null); } }
       this.applyWallCut(true);
       if (this.edit.on) this.select(this.edit.sel);
+      // get the new room's shaders compiling in the background now (the GPU does it in parallel where it can), so the
+      // first frames of the room do not stall; and do not judge the frame rate while that happens
+      this.q = null;
+      try { this.renderer.compileAsync && this.renderer.compileAsync(this.scene, this.camera).catch(() => {}); } catch (e) { /* older three */ }
     }
     buildAtmosphere() {
       const half = this.half, F = this.fxGroup;
@@ -449,7 +467,7 @@
       if (this.half) this.applyWallCut(false);
       for (const g of this.animated) g.userData.update(this.time, dt);
       for (const p of this.pointLights) if (p.userData.flicker && p.intensity > 0) p.intensity = p.userData.base * (0.85 + Math.sin(this.time * 11 + p.id) * 0.08 + Math.sin(this.time * 23) * 0.05);
-      if (this.viewAnimated && this.viewTex) { this.viewT += dt; if (this.viewT > 0.11) { this.viewT = 0; PW.paintView(PW.viewFor(this.def), this.viewTex.userData.ctx, 1024, 512, this.time); this.viewTex.needsUpdate = true; } }
+      if (this.viewAnimated && this.viewTex) { this.viewT += dt; if (this.viewT > 0.25) { this.viewT = 0; PW.paintView(PW.viewFor(this.def), this.viewTex.userData.ctx, 1024, 512, this.time); this.viewTex.needsUpdate = true; } }
       if (this.shaft) this.shaft.material.uniforms.uTime.value = this.time;
       if (this.dust) { const a = this.dust.geometry.attributes.position; for (let i = 0; i < this.dustSeed.length; i++) { const s = this.dustSeed[i]; a.setXYZ(i, s[0] + Math.sin(this.time * 0.2 + s[3]) * 0.25, ((s[1] + this.time * 0.04 + s[3]) % 2.8) + 0.1, s[2] + Math.cos(this.time * 0.17 + s[3]) * 0.25); } a.needsUpdate = true; }
       for (const [, a] of this.avatars) {
@@ -466,6 +484,7 @@
         if (vis) { const x = (this.tmpV.x * 0.5 + 0.5) * this.w, y = (-this.tmpV.y * 0.5 + 0.5) * this.h; a.tag.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`; a.tag.style.zIndex = String(1000 - Math.round(this.tmpV.z * 500)); }
       }
       if (this.selBox) this.selBox.update();
+      this.adapt(dt);
       if (this.post) { if (this.post.tone) this.post.tone.uniforms.uExp.value = this.renderer.toneMappingExposure; this.post.comp.render(dt); } else this.renderer.render(this.scene, this.camera);
     }
   }

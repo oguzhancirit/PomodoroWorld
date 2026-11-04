@@ -24,7 +24,22 @@ function useLiveCount() {
   return n;
 }
 
+/* while someone reads this page, quietly fetch the room (code + both character models) so "continue" opens it at once
+   (2026-11-04, user: shorten the waiting). Starts after the page has settled, so the first paint stays light. */
+function useWarmUp() {
+  useEffect(() => {
+    const go = () => {
+      void import('../home/HomeRoom').catch(() => {});
+      void import('../avatar/assets').then((a) => { void a.loadRig('m').catch(() => {}); void a.loadRig('f').catch(() => {}); }).catch(() => {});
+    };
+    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number };
+    const t = setTimeout(() => (w.requestIdleCallback ? w.requestIdleCallback(go, { timeout: 2500 }) : go()), 1200);
+    return () => clearTimeout(t);
+  }, []);
+}
+
 export function Login() {
+  useWarmUp();
   const gRef = useRef<HTMLDivElement>(null);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);

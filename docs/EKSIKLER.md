@@ -57,3 +57,9 @@
 - ✔ Pet names (wooden sign), placed personal items auto-selected in the editor, older furniture marked as colourable.
 - ✔ Room likes (shared/src/likes.ts, /api/like): "♡ Beğen" in a friend's room, "❤ n" in your own (not in the demo).
 - Left: Google client id from the user; Apple sign-in (needs a paid Apple developer account); two-player console game.
+
+## Performance round (2026-11-04)
+- Engine (`js/world.js`): adaptive quality — every 2 s, if over a third of frames took >26 ms, pixel ratio steps 2 → 1.5 → 1.25 → 1, then the bloom pass is dropped (never steps back up). Animated window view repaints 4×/s instead of 9×/s. After a room loads, `renderer.compileAsync` starts its shaders in the background.
+- `HomeRoom`: `renderer.debug.checkShaderErrors` only in dev (it made every new shader wait for a GPU report).
+- `Login`: after the page settles it quietly loads the room code and both character models, so "continue" opens faster.
+- Measuring here is limited: the container has no GPU (software WebGL), so frame times are not real-device numbers.
