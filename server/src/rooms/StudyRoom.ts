@@ -81,10 +81,24 @@ export class StudyRoom extends Room {
     this.setMetadata({ preset: this.preset.id });
   }
 
+  /** one player, one body (live 2026-11-04: every reload added a copy of you, even in a full room). A reload looks
+   *  like a dropped line, so the old self waited 30 s for a comeback; when the same player arrives again, the old
+   *  copies leave at once. An old tab that is still open is told why, so it does not jump back in. */
+  protected replaceTwins(pid: string) {
+    for (const [sid, prof] of [...this.profileOf]) {
+      if (prof.pid !== pid) continue;
+      this.gone.add(sid);
+      const c = this.clients.getById(sid);
+      c?.send('replaced', {});
+      this.onLeave(c ?? ({ sessionId: sid } as Client));
+      c?.leave();
+    }
+  }
+
   onJoin(client: Client, options: unknown) {
     const o = parseJoin(options);
     let prof: Profile | null = null;
-    if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.profileOf.set(client.sessionId, prof); }
+    if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.replaceTwins(prof.pid); this.profileOf.set(client.sessionId, prof); }
     const p = new Player();
     p.name = cleanName(o.name) || 'Misafir';
     // you can only wear parts you own (free ones are always yours)

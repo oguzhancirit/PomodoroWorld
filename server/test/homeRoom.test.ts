@@ -54,6 +54,21 @@ describe('HomeRoom', () => {
     await expect(join(y, own.pid)).rejects.toThrow(/dolu/);
   });
 
+  it('opening the game again (a reload, a second tab) replaces your old self instead of adding a copy (live, 2026-11-04)', async () => {
+    const own = await player('Ozi'), f = await player('Arkadas');
+    const first = await join(own, own.pid); await wait(50);
+    let replaced = false; first.onMessage('replaced', () => { replaced = true; });
+    await join(own, own.pid); await join(own, own.pid); await wait(80);
+    const room = await roomOf(own.pid);
+    expect(room.state.players.size).toBe(1);
+    expect(replaced).toBe(true);
+    // a friend who reloads in a full room is let back in: their old copy does not hold the chair
+    await join(f, own.pid); await wait(50);
+    await join(f, own.pid); await wait(80);
+    expect(room.state.players.size).toBe(2);
+    expect([...room.state.players.values()].map((p) => p.code).sort()).toEqual([f.pid, own.pid].sort());
+  });
+
   it('a closed room needs the invite token; a banned player never gets in', async () => {
     const own = await player('Deniz'), f = await player('Bora'), b = await player('Kotu');
     await colyseus.http.post('/api/room', { body: { pid: own.pid, secret: own.secret, room: { ...own.room, open: false, ban: [b.pid] } } });

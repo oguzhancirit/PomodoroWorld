@@ -90,6 +90,7 @@ async function enterSocial(space: string, roomId?: string): Promise<boolean> {
 // room we knock every 4 minutes, so the server stays up exactly as long as people are playing.
 if (!DEMO_ONLY) setInterval(() => { if (room) fetch(`${HTTP_BASE}/health`, { cache: 'no-store' }).catch(() => {}); }, 4 * 60_000);
 
+let replaced: Room | null = null;
 export const openHome = () => joinHome(identity().pid, '');
 /** go to a friend's room from an invite code or link */
 export function visitHome(code: string) {
@@ -170,6 +171,8 @@ function wire(r: Room, screen: 'room' | 'home') {
   // a blocked person's lines never show (v1 S.blocked)
   const blockedId = (id: string) => isBlocked(useStore.getState().players[id]?.code ?? '');
   r.onMessage('chat', (m: { id: string; name: string; text: string; at: number }) => { if (!blockedId(m.id)) useStore.getState().addChat(m); });
+  // the game was opened again somewhere else (another tab or device): this one steps aside and stays out
+  r.onMessage('replaced', () => { replaced = r; });
   r.onMessage('kicked', () => { useStore.getState().flash('Oda sahibi seni odasından çıkardı.', 5000); leaveRoom(); });
   r.onMessage('emote', (m: { id: string; e: string }) => {
     if (blockedId(m.id)) return;
@@ -202,6 +205,7 @@ function wire(r: Room, screen: 'room' | 'home') {
     if (code === CloseCode.CONSENTED) return;
     if (room !== r) return;
     const st = useStore.getState();
+    if (replaced === r) { room = null; st.set({ net: 'offline', error: 'Oyun başka bir pencerede açıldı.' }); return; }
     // the server restarted (an update, or the free host woke it again) and forgot the room: we cannot slip back
     // into it, so in the game screen we simply join again from the start (live, 2026-11-04: stuck on "Bağlantı koptu")
     if (st.screen === 'home') {
