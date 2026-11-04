@@ -30,7 +30,7 @@ export const MOOD_LVL: Record<string, number> = ${JSON.stringify(PW.MOOD_LVL)};
 export const WOOD_TONE_IDS = ['oak', 'walnut', 'light', 'white', 'black', 'cherry'] as const;
 export const OLD_DEFAULT_ROOM = ${JSON.stringify(def)};
 /** v1 public social spaces (PW.PUBLIC_ROOMS, kind social): layout items are [id, x, z, quarter turns] */
-export const SOCIAL_SPACES = ${JSON.stringify(PW.PUBLIC_ROOMS.filter((r) => r.kind === 'social').map((r) => pick(r, ['id', 'name', 'desc', 'theme', 'view', 'mood', 'size', 'npc', 'items'])))};
+export const SOCIAL_SPACES = ${JSON.stringify(PW.PUBLIC_ROOMS.filter((r) => r.kind === 'social').map((r) => pick(r, ['id', 'name', 'desc', 'theme', 'view', 'mood', 'size', 'npc', 'fx', 'wall', 'wallPat', 'floorT', 'floorC', 'trim', 'curtain', 'items'])))};
 /** v1 people who fill the social spaces (shown in demo mode only, user 2026-11-03) */
 export const NPC_NAMES: readonly string[] = ${JSON.stringify(PW.NPC_NAMES)};
 export const NPC_LINES_SOCIAL: readonly string[] = ${JSON.stringify(PW.NPC_LINES_SOCIAL)};

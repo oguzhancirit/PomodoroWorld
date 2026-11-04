@@ -264,6 +264,123 @@
   };
   PW.POSTER_COUNT = POSTERS.length;
   PW.posterThumb = (v) => { const c = document.createElement('canvas'); c.width = 48; c.height = 64; const g = c.getContext('2d'); g.scale(48 / 192, 64 / 256); POSTERS[v](g, 192, 256); return c.toDataURL(); };
+  /* ---------- public room atmosphere (user 2026-11-04: every place its own vibe, full of things to look at) ---------- */
+  // game posters: invented games, each its own colours and pixel art (d.v)
+  const pix = (c, x, y, s, rows, cols) => rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') { c.fillStyle = cols[ch]; c.fillRect(x + i * s, y + j * s, s, s); } }));
+  const title = (c, w, t, y, col, size = 22) => { c.font = `900 ${size}px "Sora", "Trebuchet MS", sans-serif`; c.textAlign = 'center'; c.lineWidth = 5; c.strokeStyle = '#120F1C'; c.strokeText(t, w / 2, y); c.fillStyle = col; c.fillText(t, w / 2, y); };
+  const GAME_POSTERS = [
+    (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#3B1D6E'); g.addColorStop(1, '#E8553D'); c.fillStyle = g; c.fillRect(0, 0, w, h); c.fillStyle = '#2A1347'; for (let i = 0; i < 6; i++) c.fillRect(i * 34, h * 0.7 - (i % 3) * 18, 30, h); pix(c, 64, 70, 8, ['..yy..', '.yyyy.', 'yybbyy', 'yyyyyy', '.y..y.', 'y....y'], { y: '#FFD24F', b: '#120F1C' }); title(c, w, 'PİKSEL', 36, '#FFD24F'); title(c, w, 'MACERA', 214, '#FFFFFF', 26); },
+    (c, w, h) => { c.fillStyle = '#070B1E'; c.fillRect(0, 0, w, h); c.fillStyle = '#FFF'; for (let i = 0; i < 70; i++) c.fillRect((i * 53) % w, (i * 97) % h, 2, 2); c.fillStyle = '#4FD8FF'; c.beginPath(); c.moveTo(w / 2, 90); c.lineTo(w / 2 + 30, 170); c.lineTo(w / 2 - 30, 170); c.fill(); c.fillStyle = '#FF8466'; c.beginPath(); c.moveTo(w / 2 - 14, 170); c.lineTo(w / 2, 200); c.lineTo(w / 2 + 14, 170); c.fill(); c.fillStyle = '#B48AFF'; c.beginPath(); c.arc(150, 60, 22, 0, 7); c.fill(); title(c, w, 'UZAY AKINI', 36, '#4FD8FF'); },
+    (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#FF3FA4'); g.addColorStop(0.55, '#5B2BB5'); g.addColorStop(0.55, '#120F1C'); g.addColorStop(1, '#120F1C'); c.fillStyle = g; c.fillRect(0, 0, w, h); c.strokeStyle = '#26E0FF'; c.lineWidth = 2; for (let i = -6; i <= 6; i++) { c.beginPath(); c.moveTo(w / 2, h * 0.55); c.lineTo(w / 2 + i * 40, h); c.stroke(); } for (let j = 0; j < 5; j++) { const y = h * 0.55 + j * j * 5 + j * 6; c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); } c.fillStyle = '#FFD24F'; c.beginPath(); c.arc(w / 2, h * 0.42, 34, Math.PI, 0); c.fill(); title(c, w, 'NEON YARIŞ', 40, '#FFFFFF'); },
+    (c, w, h) => { c.fillStyle = '#1D2B1F'; c.fillRect(0, 0, w, h); c.fillStyle = '#2E4632'; for (let y = 0; y < h; y += 24) for (let x = (y / 24) % 2 ? 0 : 20; x < w; x += 40) c.fillRect(x, y, 36, 20); c.fillStyle = '#F2994A'; c.beginPath(); c.arc(60, 120, 10, 0, 7); c.arc(132, 120, 10, 0, 7); c.fill(); pix(c, 76, 130, 7, ['..ss..', '.ssss.', 'ss..ss', 'ssssss', 's.ss.s'], { s: '#E9E1D3' }); title(c, w, 'ZİNDAN', 40, '#F2994A', 28); },
+    (c, w, h) => { c.fillStyle = '#7CC4F2'; c.fillRect(0, 0, w, h); c.fillStyle = '#6FBF63'; c.fillRect(0, h * 0.6, w, h); c.fillStyle = '#555'; c.beginPath(); c.moveTo(w * 0.3, h); c.lineTo(w * 0.45, h * 0.6); c.lineTo(w * 0.55, h * 0.6); c.lineTo(w * 0.7, h); c.fill(); for (const [x, col] of [[70, '#E8553D'], [120, '#3E7CB1']]) { c.fillStyle = col; c.fillRect(x - 18, 180, 36, 18); c.fillStyle = '#111'; c.fillRect(x - 16, 196, 8, 8); c.fillRect(x + 8, 196, 8, 8); } title(c, w, 'KART KUPASI', 40, '#FFD24F'); },
+    (c, w, h) => { c.fillStyle = '#16141F'; c.fillRect(0, 0, w, h); const cols = ['#E8553D', '#F2C14E', '#6CBF6A', '#4FD8FF', '#B48AFF']; for (let i = 0; i < 5; i++) { c.fillStyle = cols[i]; c.fillRect(30 + i * 28, 200 - i * 26, 24, 26 + i * 26); } title(c, w, 'SEVİYE', 40, '#FFFFFF', 26); title(c, w, 'ATLA!', 68, '#6CBF6A', 26); },
+  ];
+  B.w_poster_game = (g, d = {}) => {
+    const v = Math.max(0, Math.min(GAME_POSTERS.length - 1, d.v | 0));
+    box(g, 0.66, 0.9, 0.025, '#111', 0, 0, 0.012);
+    const tex = PW.canvasTex(192, 256, GAME_POSTERS[v]);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.82), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, emissive: '#FFFFFF', emissiveMap: tex, emissiveIntensity: 0.18 })); p.position.z = 0.027; g.add(p);
+  };
+  PW.GAME_POSTER_COUNT = GAME_POSTERS.length;
+  const oldThumb = PW.posterThumb;
+  PW.posterThumb = (v, id) => { if (id !== 'w_poster_game') return oldThumb(v); const c = document.createElement('canvas'); c.width = 48; c.height = 64; const x = c.getContext('2d'); x.scale(48 / 192, 64 / 256); GAME_POSTERS[v](x, 192, 256); return c.toDataURL(); };
+
+  // langırt (table football): two teams on eight rods
+  B.f_foosball = (g) => {
+    legs4(g, 1.1, 0.62, 0.66, 0.035, '#1C1D22', 0.08);
+    box(g, 1.24, 0.12, 0.74, '#C7432F', 0, 0.7, 0);
+    box(g, 1.14, 0.012, 0.64, '#3FA34D', 0, 0.762, 0);
+    box(g, 0.006, 0.002, 0.62, '#F6F4EF', 0, 0.769, 0); tor(g, 0.09, 0.004, '#F6F4EF', 0, 0.769, 0).rotation.x = Math.PI / 2;
+    for (const sz of [-1, 1]) box(g, 1.24, 0.14, 0.05, '#A8362A', 0, 0.83, sz * 0.345);
+    for (const sx of [-1, 1]) { box(g, 0.05, 0.14, 0.74, '#A8362A', sx * 0.595, 0.83, 0); box(g, 0.03, 0.06, 0.2, '#111', sx * 0.57, 0.8, 0); }
+    const team = [0, 0, 1, 0, 1, 0, 1, 1], men = [1, 2, 3, 5, 5, 3, 2, 1];
+    for (let i = 0; i < 8; i++) {
+      const x = -0.49 + i * 0.14, t = team[i], col = t ? '#3E7CB1' : '#F2C14E';
+      const rod = cyl(g, 0.009, 0.009, 1.1, metal('#C9CED6'), x, 0.85, 0, 8); rod.rotation.x = Math.PI / 2;
+      const hz = t ? 0.56 : -0.56; const hd = cyl(g, 0.022, 0.022, 0.12, '#111', x, 0.85, hz, 10); hd.rotation.x = Math.PI / 2;
+      for (let k = 0; k < men[i]; k++) { const z = (k - (men[i] - 1) / 2) * (0.56 / Math.max(men[i], 2)); box(g, 0.03, 0.09, 0.045, col, x, 0.81, z); sph(g, 0.018, col, x, 0.87, z, 8, 6); }
+    }
+    sph(g, 0.016, '#FFFFFF', 0.05, 0.785, 0.06, 10, 8);
+  };
+  // an arcade cabinet with a glowing screen and marquee
+  B.f_arcade = (g, d = {}) => {
+    const body = d.c || '#5B2BB5';
+    box(g, 0.66, 0.9, 0.62, body, 0, 0.45, 0);
+    box(g, 0.66, 0.8, 0.4, body, 0, 1.3, -0.11);
+    const panel = box(g, 0.66, 0.06, 0.3, '#1C1D22', 0, 0.95, 0.16); panel.rotation.x = 0.25;
+    sph(g, 0.03, '#E8553D', -0.15, 1.02, 0.18, 10, 8); cyl(g, 0.008, 0.008, 0.07, '#111', -0.15, 0.99, 0.18, 6);
+    for (const [x, c] of [[0.05, '#4FD8FF'], [0.13, '#FFD24F'], [0.21, '#6CBF6A']]) cyl(g, 0.022, 0.022, 0.02, glow(c, 0.8), x, 0.99, 0.17, 12);
+    const scr = PW.canvasTex(160, 128, (c, w, h) => { c.fillStyle = '#050713'; c.fillRect(0, 0, w, h); const cols = ['#FF3FA4', '#FFD24F', '#6CBF6A', '#4FD8FF']; for (let r = 0; r < 4; r++) for (let i = 0; i < 9; i++) { c.fillStyle = cols[r]; c.fillRect(10 + i * 16, 18 + r * 10, 12, 6); } c.fillStyle = '#F6F4EF'; c.fillRect(70, 112, 22, 5); c.beginPath(); c.arc(90, 86, 4, 0, 7); c.fill(); c.font = 'bold 10px monospace'; c.fillText('SKOR 2500', 6, 12); });
+    const sm = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.4), new THREE.MeshStandardMaterial({ map: scr, emissive: '#FFFFFF', emissiveMap: scr, emissiveIntensity: 1.1 })); sm.position.set(0, 1.3, 0.095); sm.rotation.x = -0.12; g.add(sm);
+    const mq = PW.canvasTex(256, 64, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#FF3FA4'); gr.addColorStop(1, '#26E0FF'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.font = '900 34px "Sora", sans-serif'; c.textAlign = 'center'; c.fillStyle = '#120F1C'; c.fillText(d.t || 'OYUN', w / 2, 45); });
+    box(g, 0.66, 0.2, 0.36, body, 0, 1.8, -0.06);
+    const mm = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.16), new THREE.MeshStandardMaterial({ map: mq, emissive: '#FFFFFF', emissiveMap: mq, emissiveIntensity: 1.2 })); mm.position.set(0, 1.8, 0.122); g.add(mm);
+    for (const sx of [-1, 1]) box(g, 0.012, 1.7, 0.012, glow('#26E0FF', 2), sx * 0.334, 0.95, 0.3);
+    g.userData.lightAt = [0, 1.3, 0.5]; g.userData.lightColor = '#9D7BFF'; g.userData.lightPower = 0.5;
+  };
+  // bilardo table
+  B.f_pool = (g) => {
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 0.14, 0.62, 0.14, '#4A2B18', sx * 0.9, 0.31, sz * 0.4);
+    rbox(g, 2.1, 0.16, 1.1, 0.03, '#5A3520', 0, 0.7, 0);
+    box(g, 1.86, 0.03, 0.86, '#1F7A4D', 0, 0.79, 0);
+    for (const sz of [-1, 1]) box(g, 2.06, 0.07, 0.11, '#2E6B45', 0, 0.82, sz * 0.48);
+    for (const sx of [-1, 1]) box(g, 0.11, 0.07, 0.86, '#2E6B45', sx * 0.98, 0.82, 0);
+    for (const sx of [-1, 0, 1]) for (const sz of [-1, 1]) cyl(g, 0.045, 0.045, 0.02, '#111', sx * 0.92, 0.81, sz * 0.42, 12);
+    const balls = ['#F2C14E', '#3E7CB1', '#E8553D', '#8E6CC1', '#F2994A', '#2F7D5B', '#7A2E2E', '#111', '#F2C14E', '#3E7CB1'];
+    let k = 0; for (let row = 0; row < 4; row++) for (let i = 0; i <= row; i++) sph(g, 0.028, balls[k++ % balls.length], 0.35 + row * 0.05, 0.835, (i - row / 2) * 0.058, 10, 8);
+    sph(g, 0.028, '#FFFFFF', -0.45, 0.835, 0.05, 10, 8);
+    const cue = cyl(g, 0.008, 0.014, 1.4, '#D9B98A', -0.2, 0.86, -0.25, 8); cue.rotation.z = Math.PI / 2; cue.rotation.y = 0.15;
+  };
+  // dart board on a dark backing
+  B.w_dart = (g) => {
+    rbox(g, 0.62, 0.62, 0.03, 0.03, '#1C1D22', 0, 0, 0.015);
+    const tex = PW.canvasTex(256, 256, (c, w) => {
+      const m = w / 2; c.fillStyle = '#111'; c.beginPath(); c.arc(m, m, m, 0, 7); c.fill();
+      for (let i = 0; i < 20; i++) { const a0 = (i - 0.5) * Math.PI / 10, a1 = (i + 0.5) * Math.PI / 10;
+        for (const [r0, r1, c1, c2] of [[0.62, 0.95, '#E8553D', '#2F7D5B'], [0.1, 0.56, '#F2E6D3', '#1C1D22'], [0.56, 0.62, '#E8553D', '#2F7D5B'], [0.62, 0.9, '#F2E6D3', '#1C1D22']]) {
+          c.fillStyle = i % 2 ? c1 : c2; c.beginPath(); c.arc(m, m, m * r1 * 0.85, a0, a1); c.arc(m, m, m * r0 * 0.85, a1, a0, true); c.fill(); } }
+      c.fillStyle = '#2F7D5B'; c.beginPath(); c.arc(m, m, m * 0.085, 0, 7); c.fill(); c.fillStyle = '#E8553D'; c.beginPath(); c.arc(m, m, m * 0.04, 0, 7); c.fill();
+    });
+    const b = cyl(g, 0.24, 0.24, 0.04, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }), 0, 0, 0.05, 40); b.rotation.x = Math.PI / 2; b.rotation.y = Math.PI / 2;
+    for (const [x, y, c] of [[0.04, 0.06, '#FFD24F'], [-0.07, -0.02, '#4FD8FF'], [0.01, -0.09, '#FF3FA4']]) { const dt = cyl(g, 0.006, 0.003, 0.12, '#C9CED6', x, y, 0.13, 6); dt.rotation.x = Math.PI / 2; const f = box(g, 0.035, 0.002, 0.035, c, x, y, 0.19); f.rotation.z = 0.8; }
+  };
+  // café counter: wooden front, marble top, espresso machine, a cake under a glass dome, cups
+  B.f_bar = (g) => {
+    box(g, 2.2, 1.0, 0.62, '#6B4128', 0, 0.5, 0);
+    for (let i = 0; i < 11; i++) box(g, 0.012, 0.86, 0.012, '#4A2B18', -1.0 + i * 0.2, 0.5, 0.315);
+    box(g, 2.3, 0.05, 0.7, '#ECE7E0', 0, 1.025, 0.02);
+    box(g, 0.42, 0.38, 0.34, metal('#C9CED6'), -0.65, 1.24, -0.08); box(g, 0.36, 0.06, 0.3, '#1C1D22', -0.65, 1.46, -0.08);
+    for (const sx of [-1, 1]) cyl(g, 0.025, 0.02, 0.06, '#1C1D22', -0.65 + sx * 0.1, 1.1, 0.1, 8);
+    sph(g, 0.012, glow('#5DE0B5'), -0.5, 1.36, 0.095, 6, 4);
+    cyl(g, 0.17, 0.19, 0.02, metal('#C9CED6'), 0.25, 1.06, 0, 20); cyl(g, 0.13, 0.13, 0.1, '#F2C9A0', 0.25, 1.12, 0, 20); cyl(g, 0.131, 0.131, 0.02, '#E58BB0', 0.25, 1.17, 0, 20);
+    for (let i = 0; i < 5; i++) sph(g, 0.014, '#C7432F', 0.25 + Math.cos(i * 1.26) * 0.08, 1.19, Math.sin(i * 1.26) * 0.08, 6, 4);
+    const dome = sph(g, 0.17, mat('#DDF1FF', { opacity: 0.3, rough: 0.05 }), 0.25, 1.08, 0, 20, 12); dome.castShadow = false;
+    for (let i = 0; i < 4; i++) cyl(g, 0.04, 0.032, 0.08, ['#F6F4EF', '#E8553D', '#3E7CB1', '#F2C14E'][i], 0.6 + (i % 2) * 0.1, 1.09 + Math.floor(i / 2) * 0.08, -0.12 + (i % 2) * 0.03, 12);
+    box(g, 0.2, 0.26, 0.02, '#1C1D22', 0.92, 1.18, -0.1).rotation.x = -0.2;
+  };
+  // chalkboard menu
+  B.w_menu = (g) => framed(g, 1.0, 0.7, PW.canvasTex(320, 224, (c, w, h) => {
+    c.fillStyle = '#25302A'; c.fillRect(0, 0, w, h); c.fillStyle = '#F6F4EF'; c.textAlign = 'center'; c.font = 'bold 30px "Sora", sans-serif'; c.fillText('MENÜ', w / 2, 38);
+    c.font = '18px "Sora", sans-serif'; c.textAlign = 'left';
+    [['Filtre kahve', '45'], ['Latte', '60'], ['Demli çay', '15'], ['Cheesecake', '90'], ['Domates çorbası', '55']].forEach(([a, b], i) => { c.fillStyle = '#F6F4EF'; c.fillText(a, 26, 76 + i * 30); c.fillStyle = '#F2C14E'; c.textAlign = 'right'; c.fillText(b, w - 26, 76 + i * 30); c.textAlign = 'left'; });
+  }), '#6B4128');
+  // a big striped parasol for the terrace
+  B.f_parasol = (g, d = {}) => {
+    cyl(g, 0.22, 0.25, 0.08, '#3A3D44', 0, 0.04, 0, 20); cyl(g, 0.022, 0.022, 2.2, '#F6F4EF', 0, 1.15, 0, 8);
+    const col = d.c || '#E8553D';
+    const tex = PW.canvasTex(256, 32, (c, w, h) => { for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#F6F4EF' : col; c.fillRect(i * w / 8, 0, w / 8, h); } });
+    const top = new THREE.Mesh(new THREE.ConeGeometry(1.15, 0.42, 16, 1, true), new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, roughness: 0.8 })); top.position.y = 2.2; g.add(top);
+    sph(g, 0.04, '#F6F4EF', 0, 2.43, 0, 8, 6);
+  };
+  // a long planter of flowers
+  B.f_planter = (g, d = {}) => {
+    box(g, 1.2, 0.4, 0.42, '#8A5A3A', 0, 0.2, 0); for (let i = 0; i < 5; i++) box(g, 1.21, 0.012, 0.43, '#6B4128', 0, 0.06 + i * 0.075, 0);
+    box(g, 1.14, 0.02, 0.36, '#4A3426', 0, 0.39, 0);
+    const r = U.seeded(d.seed || 17), cols = ['#E8553D', '#F2C14E', '#E58BB0', '#FFFFFF', '#B48AFF'];
+    for (let i = 0; i < 22; i++) { const x = -0.5 + r() * 1.0, z = -0.12 + r() * 0.24, h = 0.15 + r() * 0.25; cyl(g, 0.006, 0.006, h, '#3F7A3A', x, 0.4 + h / 2, z, 4); sph(g, 0.04 + r() * 0.025, cols[i % cols.length], x, 0.4 + h, z, 8, 6); }
+    for (let i = 0; i < 10; i++) { const s = sph(g, 0.09, mat('#4C8C4A', { flat: true }), -0.5 + i * 0.11, 0.45, (i % 2 ? 1 : -1) * 0.08, 8, 6); s.scale.y = 0.6; }
+  };
   PW.NEON_COLORS = ['#FF4FA0', '#FF8466', '#F2C14E', '#7CF29A', '#4FD8FF', '#8E6CFF', '#FFFFFF'];
   // a letter garland: one paper flag per letter of d.t, on a string
   B.w_garland = (g, d = {}) => {

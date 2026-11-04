@@ -191,7 +191,7 @@ function Touches({ it, touch }: { it: PlacedItem; touch: (k: 'c' | 't' | 'v', v:
       )}
       {def.vars && (
         <div className="swatches touch-vars"><span className="lbl">Desen</span>{Array.from({ length: def.vars }, (_, v) => (
-          <button key={v} className={`var ${(cur.v ?? 0) === v ? 'on' : ''}`} aria-label={`Desen ${v + 1}`} onClick={() => touch('v', v)}><img alt="" src={PW.posterThumb(v)} /></button>
+          <button key={v} className={`var ${(cur.v ?? 0) === v ? 'on' : ''}`} aria-label={`Desen ${v + 1}`} onClick={() => touch('v', v)}><img alt="" src={PW.posterThumb(v, it.id)} /></button>
         ))}</div>
       )}
     </>

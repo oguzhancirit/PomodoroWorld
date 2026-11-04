@@ -63,3 +63,9 @@
 - `HomeRoom`: `renderer.debug.checkShaderErrors` only in dev (it made every new shader wait for a GPU report).
 - `Login`: after the page settles it quietly loads the room code and both character models, so "continue" opens faster.
 - Measuring here is limited: the container has no GPU (software WebGL), so frame times are not real-device numbers.
+
+## Build mode + public room atmosphere (2026-11-04)
+- Build mode (`shared/src/placement.ts`, tested; engine side `client/src/legacy/placement.ts`): drag placed pieces; a taken spot slides to the nearest free one (red only when the neighbourhood is full); desk things land on the nearest desk; shelves/sofas/desks/kitchen back onto a near wall; chairs face their table; wall pieces can be aimed at the floor. Phones: the piece starts in the middle, a tap moves it, drag + let go places it; "✓ Koy" button. Green/red footprint plate under the piece.
+- Public rooms each have their own look (`PUBLIC_ROOMS` wall/wallPat/floorT/floorC/trim/curtain/fx, carried by `socialRoom`); layout tuples take an extras object `{t, c, v}` (`PW.normItems`, `socialRoom`).
+- Oyun Salonu: black walls, pink neon trim, checker floor, neon words, 9 game posters, dart, 3 arcade cabinets, pool, foosball, L sofa + bean bags. Meydan Kafe: brick, counter + stools + menu board, pendant lamps over tables. Çatı Terası: deck, planters, parasols, floor cushions, fireflies. Kütüphane: book walls, fireplace corner, candle mood, stardust.
+- New pieces (also in the shop): f_foosball, f_arcade, f_pool, f_bar, f_parasol, f_planter, w_dart, w_poster_game (6 designs), w_menu.

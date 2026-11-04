@@ -104,7 +104,7 @@ export const cinema = (() => {
     // ---- 2. a social space in the World ----
     chapter(1); await fade(true); stage(''); alive();
     const R = PW.PUBLIC_ROOMS.find((r) => r.id === 'meydan');
-    w.clearAvatars(); w.loadRoom({ theme: R.theme, view: R.view, size: R.size, items: R.items, mood: R.mood });
+    w.clearAvatars(); w.loadRoom({ theme: R.theme, view: R.view, size: R.size, items: R.items, mood: R.mood, wall: R.wall, wallPat: R.wallPat, floorT: R.floorT, floorC: R.floorC, trim: R.trim, curtain: R.curtain });
     const rnd = U.seeded(42), names = ['Deniz', 'Kerem', 'Zeynep', 'Mert'];
     names.forEach((n, i) => { const id = 'c-n' + i; w.addAvatar(id, randomAvatar(rnd() < 0.5 ? 'f' : 'm'), { name: n, level: 3 + i * 4 }); if (i < 2) { const s = w.freeSeat(false); if (s != null) w.sitAvatar(id, s); } else w.avatars.get(id).av.root.position.set(i === 2 ? -1.2 : 1.4, 0, i === 2 ? 0.8 : -0.6); });
     w.avatars.get('c-n2').av.root.rotation.y = 1.2; w.avatars.get('c-n3').av.root.rotation.y = -2.2;

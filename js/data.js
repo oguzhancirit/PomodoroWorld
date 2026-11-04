@@ -177,6 +177,13 @@
   // pets
   it('f_cat', 'Evcil', 'Tekir Kedi', 800, 6, { pet: 'cat', fp: [0.5, 0.3], text: 1 });
   it('f_dog', 'Evcil', 'Golden Köpek', 900, 8, { pet: 'dog', fp: [0.7, 0.4], text: 1 });
+  // public room atmosphere pieces (user 2026-11-04), sold in the shop too
+  it('f_foosball', 'Hobi', 'Langırt', 600, 6, { fp: [1.3, 1.25] });
+  it('f_arcade', 'Hobi', 'Oyun Makinesi', 700, 7, { fp: [0.7, 0.66], tint: 1, text: 1, back: 1, light: 1 });
+  it('f_pool', 'Hobi', 'Bilardo Masası', 900, 9, { fp: [2.1, 1.1] });
+  it('f_bar', 'Mutfak', 'Kafe Tezgâhı', 650, 7, { fp: [2.3, 0.72] });
+  it('f_parasol', 'Dekor', 'Bahçe Şemsiyesi', 260, 4, { fp: [0.5, 0.5], tint: 1 });
+  it('f_planter', 'Bitki', 'Çiçek Kasası', 180, 3, { fp: [1.2, 0.45], back: 1 });
   // wall items
   const w = (id, name, price, lvl, extra = {}) => R.push(Object.assign({ id, cat: 'furn', sub: 'Duvar', name, price, lvl, wall: 1 }, extra));
   w('w_clock', 'Duvar Saati', 90, 1, { ww: 0.5, wy: 2.3 });
@@ -204,6 +211,9 @@
   w('w_frames', 'Fotoğraf Duvarı', 140, 2, { ww: 1.0, wy: 1.7 });
   w('w_cork', 'Mantar Pano', 110, 2, { ww: 1.0, wy: 1.6 });
   w('w_plantshelf', 'Bitkili Raf', 200, 4, { ww: 0.9, wy: 1.9 });
+  w('w_dart', 'Dart Tahtası', 220, 3, { ww: 0.62, wy: 1.6 });
+  w('w_poster_game', 'Oyun Posteri', 140, 2, { ww: 0.66, wy: 1.75, vars: 6 });
+  w('w_menu', 'Menü Panosu', 160, 3, { ww: 1.06, wy: 1.85 });
 
   // ---------- Themes / views / sizes ----------
   const T = [
@@ -306,18 +316,75 @@
     xs.forEach((x) => { items.push(['f_chair_wood', x, -0.95, 0]); items.push(['f_chair_wood', x, 0.95, 2]); });
     return items;
   }
+  // Each place its own atmosphere (user 2026-11-04): its own walls and floor, lots to look at.
+  // Floor items: [id, x, z, quarter turns, {extras}]; wall items: [id, wall, x, 0, {extras}] (t = words, c = colour, v = design).
+  // Walls: w0 back, w1 left (x along it = -z), w2 front, w3 right (x = z); the camera mostly sees w0 and w1.
+  const N = (w, x, t, c) => ['w_neon_text', w, x, 0, { t, c }], P = (w, x, v) => ['w_poster_game', w, x, 0, { v }];
   PW.PUBLIC_ROOMS = [
     {
       id: 'meydan', kind: 'social', name: 'Meydan Kafe', desc: 'Moladayken uğra, sohbet et, tanış.', theme: 'th_wood', view: 'v_city_day', mood: 'golden', size: 11, npc: 6,
-      items: [['f_sofa', -3, -4.6, 0], ['f_sofa', 2.6, -4.6, 0], ['f_sofa_l', -3.4, 2.8, 0], ['f_armchair', 0, -2.4, 0], ['f_table_round', 2.8, 1.2, 0], ['f_chair_wood', 2.8, 0.4, 0], ['f_chair_wood', 2.8, 2.0, 2], ['f_coffee', 4.8, -4.7, 0], ['f_fridge', 4.0, -4.75, 0], ['f_record', -5, -1, 1], ['f_piano', 5, 3.4, 3], ['f_monstera', -5, -4.8, 0], ['f_olive', 5, 5, 0], ['f_rug_round', 0, 0, 0], ['f_cat', 0.6, 0.8, 1], ['w_neon', 'w1', 0, 0], ['w_fairy', 'w0', 0, 0], ['w_painting', 'w3', 0, 0]],
+      wall: '#B5654A', wallPat: 'brick', floorT: 'herring', floorC: '#7A5236', trim: '#3A2A20', curtain: '#2F5D45',
+      items: [
+        // the counter, the coffee corner and three bar stools
+        ['f_bar', 2.0, -5.14, 0], ['f_coffee', 3.75, -5.22, 0], ['f_fridge', 4.85, -5.18, 0],
+        ['f_stool', 1.2, -4.2, 2], ['f_stool', 2.0, -4.2, 2], ['f_stool', 2.8, -4.2, 2],
+        // window sofa with its table
+        ['f_sofa', -3.4, -5.03, 0, { c: '#2F5D45' }], ['f_table_round', -3.4, -3.65, 0], ['f_chair_wood', -4.5, -3.65, 1], ['f_chair_wood', -2.3, -3.65, 3], ['f_pendant', -3.4, -3.65, 0, { c: '#C9A35A' }], ['d_plant', -3.4, -3.65, 0],
+        // tables in the middle
+        ['f_table_round', -0.4, -1.5, 0], ['f_chair_wood', -0.4, -2.35, 0], ['f_chair_wood', -0.4, -0.65, 2], ['f_chair_wood', -1.25, -1.5, 1], ['f_chair_wood', 0.45, -1.5, 3], ['f_pendant', -0.4, -1.5, 0, { c: '#2F7D5B' }], ['d_mug', -0.25, -1.4, 0],
+        ['f_table_round', 2.8, 0.9, 0], ['f_chair_wood', 2.8, 0.05, 0], ['f_chair_wood', 2.8, 1.75, 2], ['f_chair_wood', 3.65, 0.9, 3], ['f_pendant', 2.8, 0.9, 0, { c: '#C7432F' }], ['d_mug', 2.7, 0.8, 0], ['d_books', 2.95, 1.0, 1],
+        // the lounge
+        ['f_sofa_l', -3.6, 2.8, 0], ['f_armchair', -1.0, 3.9, 3], ['f_rug_round', -3.0, 4.1, 0], ['f_cat', -2.6, 4.3, 1, { t: 'Fıstık' }], ['f_lamp_floor', -5.0, 4.9, 0],
+        ['f_bookshelf', -5.28, -1.2, 1], ['f_record', -5.22, 0.6, 1], ['f_piano', 5.3, 3.4, 3],
+        ['f_monstera', -5.0, -4.95, 0], ['f_olive', 5.0, 5.0, 0], ['f_bird_paradise', 5.0, -3.4, 0], ['f_flower_vase', 4.9, 1.6, 0],
+        ['w_menu', 'w0', 2.4], N('w0', -0.9, 'MEYDAN KAFE', '#FFB347'), ['w_fairy', 'w0', -3.4], ['w_clock', 'w0', 4.6],
+        ['w_painting', 'w1', 3.4], ['w_frames', 'w1', -0.6], ['w_plantshelf', 'w1', -3.0],
+        ['w_polaroid', 'w3', -2.0], ['w_ivy', 'w3', 1.2], ['w_neon', 'w3', 3.4], ['w_garland', 'w2', 0, 0, { t: 'HOŞ GELDİN' }],
+      ],
     },
     {
-      id: 'teras', kind: 'social', name: 'Çatı Terası', desc: 'Gün batımında sohbet köşesi.', theme: 'th_sage', view: 'v_beach', size: 11, npc: 5,
-      items: [['f_beanbag', -2, 1.5, 0], ['f_beanbag', -1, 2.4, 2], ['f_beanbag', 1.2, 2.0, 3], ['f_sofa', 0, -4.6, 0], ['f_armchair', -4.4, -3.6, 1], ['f_table_round', 3, -1.5, 0], ['f_stool', 3, -2.3, 0], ['f_stool', 3.8, -1.5, 3], ['f_stool', 2.2, -1.5, 1], ['f_olive', -5, 5, 0], ['f_olive', 5, -5, 0], ['f_bonsai', 5, 5, 0], ['f_rug_kilim', -0.6, 1.8, 0], ['f_guitar', -4.8, 0.5, 1], ['f_dog', 1.4, 0.2, 2], ['w_fairy', 'w0', 0, 0], ['w_fairy', 'w1', 0, 0]],
+      id: 'teras', kind: 'social', name: 'Çatı Terası', desc: 'Gün batımında sohbet köşesi.', theme: 'th_sage', view: 'v_beach', mood: 'golden', size: 11, npc: 5, fx: 'fireflies',
+      wall: '#D8C3A5', wallPat: 'brick', floorT: 'plank', floorC: '#9C7650', trim: '#6B4630', curtain: '#E8803A',
+      items: [
+        // flower boxes along the edges, a sofa looking at the sunset
+        ['f_planter', -3.4, -5.27, 0], ['f_planter', -2.0, -5.27, 0], ['f_planter', 2.0, -5.27, 0], ['f_planter', 3.4, -5.27, 0],
+        ['f_planter', -5.27, -2.4, 1], ['f_planter', -5.27, -1.0, 1], ['f_sofa', 0, -5.05, 0, { c: '#E8803A' }], ['f_telescope', 4.75, -4.7, 0],
+        // a table under a parasol
+        ['f_table_round', -2.6, -2.2, 0], ['f_parasol', -2.6, -2.2, 0, { c: '#E8553D' }], ['f_stool', -2.6, -3.05, 0], ['f_stool', -3.45, -2.2, 1], ['f_stool', -1.75, -2.2, 3], ['f_stool', -2.6, -1.35, 2], ['d_mug', -2.45, -2.1, 0],
+        // bean bags in the shade
+        ['f_parasol', 3.6, -1.6, 0, { c: '#3E7CB1' }], ['f_beanbag', 2.9, -0.8, 2], ['f_beanbag', 4.3, -0.8, 2],
+        // floor cushions round a kilim with candles
+        ['f_rug_kilim', 1.2, 1.8, 0], ['f_cushion', 0.1, 1.8, 1], ['f_cushion', 2.3, 1.8, 3], ['f_cushion', 1.2, 0.95, 0], ['f_cushion', 1.2, 2.65, 2], ['f_candles', 1.2, 1.8, 0],
+        ['f_hammock', -4.4, 3.9, 1], ['f_armchair', -1.4, 4.2, 2], ['f_guitar', 4.9, 2.3, 3], ['f_dog', 0.6, 3.9, 2, { t: 'Karamel' }],
+        ['f_lantern', -4.9, 1.0, 0], ['f_lantern', 4.9, 1.0, 0], ['f_lantern', -0.2, 4.9, 0],
+        ['f_olive', 5.0, 5.0, 0], ['f_olive', -5.0, -4.9, 0], ['f_bird_paradise', 5.0, 3.4, 0], ['f_succulents', -2.6, 4.9, 0],
+        ['w_fairy', 'w0', -2.7], ['w_fairy', 'w0', 2.7], ['w_garland', 'w0', 0, 0, { t: 'GÜN BATIMI' }],
+        ['w_fairy', 'w1', 1.7], ['w_ivy', 'w1', -1.0], ['w_moon', 'w1', -3.6],
+        ['w_fairy', 'w3', 0], ['w_ivy', 'w3', 2.6], ['w_star_lights', 'w2', 0],
+      ],
     },
     {
-      id: 'oyun', kind: 'social', name: 'Oyun Salonu', desc: 'Neonlar, pikap ve dans pisti.', theme: 'th_navy', view: 'v_aurora', mood: 'neon', size: 11, npc: 4,
-      items: [['f_sofa_l', 3, 3, 3], ['f_beanbag', -3, 3, 1], ['f_beanbag', -2, 4, 2], ['f_desk_gaming', -3.5, -4.4, 0], ['f_chair_gaming', -3.5, -3.6, 2], ['f_desk_gaming', 0, -4.4, 0], ['f_chair_gaming', 0, -3.6, 2], ['f_record', 4.8, -4.5, 0], ['f_lava', 5, -3, 0], ['f_lava', -5, -1, 0], ['f_rug_round', 0, 0.5, 0], ['f_aquarium', -5, 0.5, 1], ['d_monitor', -3.5, -4.45, 0], ['d_monitor', 0, -4.45, 0], ['w_neon', 'w1', 0, 0], ['w_tv', 'w3', 0, 0], ['f_console', 0.6, 3.0, 1]],
+      id: 'oyun', kind: 'social', name: 'Oyun Salonu', desc: 'Neonlar, oyun makineleri, langırt ve bilardo.', theme: 'th_navy', view: 'v_city_night', mood: 'neon', size: 11, npc: 4,
+      // black walls, a dark checker floor and a pink neon line along the walls
+      wall: '#15151C', wallPat: 'plain', floorT: 'checker', floorC: '#2B2B36', trim: '#FF3FA4', curtain: '#3A1F5D',
+      items: [
+        // two gaming desks and three arcade cabinets along the back
+        ['f_desk_gaming', -3.6, -5.12, 0], ['d_monitor', -3.6, -5.15, 0], ['f_chair_gaming', -3.6, -4.35, 2],
+        ['f_desk_gaming', -1.5, -5.12, 0], ['d_monitor', -1.5, -5.15, 0], ['f_chair_gaming', -1.5, -4.35, 2],
+        ['f_arcade', 0.6, -5.17, 0, { t: 'UZAY', c: '#5B2BB5' }], ['f_arcade', 1.4, -5.17, 0, { t: 'YARIŞ', c: '#B8323A' }], ['f_arcade', 2.2, -5.17, 0, { t: 'PİKSEL', c: '#1F6FA0' }],
+        ['f_lava', 3.9, -5.2, 0], ['f_record', 4.9, -5.22, 0], ['f_fridge', 5.18, -3.6, 3],
+        // the game tables
+        ['f_pool', -2.4, -1.4, 0], ['f_foosball', 2.2, -2.3, 0],
+        ['f_aquarium', -5.22, -3.6, 1], ['f_lava', -5.1, -1.5, 0],
+        // the L sofa in front of the console TV, with bean bags round it
+        ['f_sofa_l', 3, 3, 3], ['f_console', 0.6, 3.0, 1], ['f_rug_round', 1.8, 3.0, 0], ['f_beanbag', 1.0, 1.5, 1, { c: '#8E6CC1' }], ['f_beanbag', 1.0, 4.5, 1, { c: '#26A6C9' }],
+        ['f_monstera', -5.0, 4.95, 0], ['f_beanbag', -3.6, 3.4, 1], ['f_beanbag', -2.6, 4.3, 2, { c: '#FF3FA4' }],
+        // neon words and game posters on every wall
+        N('w0', -2.55, 'GAME ON', '#FF3FA4'), P('w0', 3.3, 2), P('w0', 4.15, 0),
+        P('w1', 4.6, 1), N('w1', 2.4, 'LEVEL UP', '#7CFF6B'), N('w1', 0, 'PRESS START', '#FFD24F'), ['w_dart', 'w1', -1.6], P('w1', -2.7, 3), P('w1', -3.55, 5), N('w1', -4.6, 'GG', '#26E0FF'),
+        N('w3', 3.0, 'PLAYER 1', '#FF3FA4'), P('w3', -0.6, 4), N('w3', -2.0, 'HIGH SCORE', '#26E0FF'),
+        N('w2', -1.0, 'HIGH SCORE', '#FFD24F'), P('w2', 2.6, 2),
+      ],
     },
   ];
 

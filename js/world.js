@@ -22,8 +22,10 @@
 
   PW.normItems = (items) => (items || []).map((it) => {
     if (Array.isArray(it)) {
-      if (typeof it[1] === 'string') return { id: it[0], w: it[1], x: it[2] || 0, r: 0 };
-      return { id: it[0], x: it[1], z: it[2], r: it[3] || 0, c: it[4] || undefined, wd: it[5] || undefined };
+      // an object after the position holds the piece's own touches (words, colour, design)
+      const ex = it.find((v, i) => i >= 3 && v && typeof v === 'object') || {};
+      if (typeof it[1] === 'string') return Object.assign({ id: it[0], w: it[1], x: it[2] || 0, r: 0 }, ex);
+      return Object.assign({ id: it[0], x: it[1], z: it[2], r: it[3] || 0, c: typeof it[4] === 'string' ? it[4] : undefined, wd: it[5] || undefined }, ex);
     }
     return Object.assign({}, it);
   });
