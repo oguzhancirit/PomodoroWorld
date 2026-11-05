@@ -1,6 +1,6 @@
 import { FlipClock } from './FlipClock';
 import { useEffect, useRef, useState } from 'react';
-import { isChatAllowed, isPaused, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, ECON, type Phase } from '@pw/shared';
+import { chatOpenFor, isPaused, presetById, remainingMs, CHAT_MAX, CATEGORIES, activityFor, ECON, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
 import { leaveRoom, sendChat, sendEmote, sendActivity, sendTimer } from '../net';
 import { WalletChip, ShopModal, RewardToast } from './Wallet';
@@ -66,8 +66,8 @@ export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; t
   const left = idle ? chosen.focusMin * 60_000 : remainingMs({ ...timer, pausedLeft: timer.pausedLeft ?? 0 }, serverNow());
   const total = (timer.phase === 'focus' ? preset.focusMin : timer.phase === 'long_break' ? preset.longMin : preset.shortMin) * 60_000;
   const k = idle || !total ? 0 : 1 - left / total;
-  useEffect(() => { if (flashing) return; document.title = idle ? 'Pomodoro World' : `${fmt(left)} · ${paused ? 'Duraklatıldı' : PHASE[timer.phase]} · Pomodoro World`; });
-  const label = idle ? PHASE.idle : paused ? 'Duraklatıldı' : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`;
+  useEffect(() => { if (flashing) return; document.title = idle ? 'Pomodoro World' : `${fmt(left)} · ${paused ? 'Bekliyor' : PHASE[timer.phase]} · Pomodoro World`; });
+  const label = idle ? PHASE.idle : paused ? 'Bekliyor · duraklattın' : `${PHASE[timer.phase]} · ${timer.phase === 'focus' ? timer.round + 1 : Math.max(1, timer.round)}. tur`;
   return (
     <section className={`timer-card ${timer.phase} ${paused ? 'paused' : ''}`}>
       <div className="t-head"><span className="ph"><i />{label}</span><small className={`t-goal ${today >= ECON.dailyGoal ? 'done' : ''}`} title={`Günlük hedef: ${ECON.dailyGoal} pomodoro (+${ECON.dailyGoalCoin} jeton)`}>Bugün {Math.min(today, ECON.dailyGoal)}/{ECON.dailyGoal}{today >= ECON.dailyGoal ? ' ✓' : ''}</small></div>
@@ -81,7 +81,7 @@ export function TimerCard({ onOpen, together = false }: { onOpen?: () => void; t
 
 export function ChatPanel() {
   const chat = useStore((s) => s.chat);
-  const phase = useStore((s) => s.timer.phase);
+  const timer = useStore((s) => s.timer);
   const [text, setText] = useState('');
   // the chat starts folded; the player opens it when they want (user, 2026-11-03)
   const [open, setOpen] = useState(false);
@@ -89,7 +89,7 @@ export function ChatPanel() {
   useEffect(() => { log.current?.scrollTo({ top: 1e9 }); }, [chat.length, open]);
   // social spaces are the place to talk: chat stays open there
   const social = useStore((s) => s.place?.kind === 'social');
-  const allowed = social || isChatAllowed(phase);
+  const allowed = social || chatOpenFor({ ...timer, pausedLeft: timer.pausedLeft ?? 0 });
   return (
     <aside className={`chat ${open ? '' : 'closed'}`}>
       <header onClick={() => setOpen(!open)}><b>Sohbet</b><span>{allowed ? 'açık' : 'odakta kapalı'}</span></header>

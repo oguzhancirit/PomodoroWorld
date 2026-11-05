@@ -3,7 +3,7 @@
 // the shared timer rules, the chat rules and the animations can be tried from a plain link.
 import { HOSTS } from './demoHosts';
 import {
-  presetById, startTimer, settle, isChatAllowed, pauseTimer, resumeTimer, skipPhase, type Phase, type TimerState, type Preset,
+  presetById, startTimer, settle, chatOpenFor, canSkip, pauseTimer, resumeTimer, skipPhase, type Phase, type TimerState, type Preset,
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter, STUDY_ROOM, firstFreeSeat, isSeatFree,
   PARTS, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, encodeAvatar, activityFor, ACTIVITIES, type Activity, type Gender,
 } from '@pw/shared';
@@ -151,7 +151,7 @@ export class LocalRoom {
     todoProgress(this.baseFocusMin, true);
   }
 
-  private isChatOpen() { return this.kind === 'social' || isChatAllowed(this.timer.phase as Phase); }
+  private isChatOpen() { return this.kind === 'social' || chatOpenFor(this.timer); }
 
   private botSay(id: string | undefined, text: string, force = false) {
     const st = useStore.getState(); const p = id && st.players[id];
@@ -206,10 +206,12 @@ export class LocalRoom {
       this.syncMe();
       return;
     }
-    if (action === 'skip' && this.timer.phase !== 'idle') {
+    if (action === 'skip') {
+      // a started focus is only paused, never skipped (user 2026-11-05)
+      if (!canSkip(this.timer)) return;
       this.timer = skipPhase(this.timer, this.preset, Date.now());
       this.syncMe();
-      st.addChat({ id: 'sys', name: '', text: this.timer.phase === 'idle' ? 'Mola atlandı, sayaç durdu.' : 'Odak atlandı, mola başladı.', at: Date.now(), system: true });
+      st.addChat({ id: 'sys', name: '', text: 'Mola bitti, sayaç durdu.', at: Date.now(), system: true });
       return;
     }
     if (action === 'start' && this.timer.phase === 'idle') {

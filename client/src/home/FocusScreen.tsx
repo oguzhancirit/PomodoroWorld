@@ -2,7 +2,7 @@
 // "Özel"), one main button (Başlat / Duraklat / Devam et), and tools: to-dos, sounds, reset, skip, back to the room.
 // Alone it is your own timer; with a friend in the room the same timer is shared ("Birlikte").
 import { useEffect, useRef, useState } from 'react';
-import { PRESETS, CATEGORIES, presetById, customPresetId, remainingMs, activityFor, isPaused, type Phase } from '@pw/shared';
+import { PRESETS, CATEGORIES, presetById, customPresetId, remainingMs, activityFor, isPaused, canSkip, type Phase } from '@pw/shared';
 import { useStore, serverNow } from '../store';
 import { sendTimer, sendActivity, sendFollow } from '../net';
 import { usePanel, CAT_COLOR } from '../ui/Panels';
@@ -82,7 +82,7 @@ export function FocusScreen({ onClose }: { onClose(): void }) {
     <div className={`focus-screen ${timer.phase}`} role="dialog" aria-modal="true" aria-label="Odak ekranı">
       <button className="fx-icon fx-close" onClick={onClose} title="Odaya dön" aria-label="Odaya dön"><Svg d='<path d="M6 6l12 12M18 6L6 18"/>' /></button>
       <div className="fx-center">
-        <div className="fx-phase"><span>{paused ? 'Duraklatıldı' : PHASE[timer.phase]}{shared}</span><span className="fx-dots">{[0, 1, 2, 3].map((i) => <i key={i} className={i < dots ? 'on' : ''} />)}</span></div>
+        <div className="fx-phase"><span>{paused ? 'Bekliyor · sohbet açık' : PHASE[timer.phase]}{shared}</span><span className="fx-dots">{[0, 1, 2, 3].map((i) => <i key={i} className={i < dots ? 'on' : ''} />)}</span></div>
         {/* the plain ring clock: calm in the close-up focus view (user, 2026-11-03: flip cards only in the room) */}
         <div className="fx-ring">
           <svg viewBox="0 0 300 300" aria-hidden="true"><circle className="trk" cx="150" cy="150" r="136" /><circle className="bar" cx="150" cy="150" r="136" pathLength={100} strokeDasharray="100" strokeDashoffset={100 - k * 100} /></svg>
@@ -114,7 +114,7 @@ export function FocusScreen({ onClose }: { onClose(): void }) {
               <div className="fx-sec"><span className="fx-h">Birlikte odaklan</span>
                 <div className="fx-join">{joinable.map((p) => (
                   <button key={p.id} type="button" onClick={() => sendFollow(p.id)}>
-                    <b>{p.name}</b><span>{p.phase === 'focus' ? 'odakta' : 'molada'} · {fmt(remainingMs({ phase: p.phase as never, phaseEndsAt: p.phaseEndsAt ?? 0, round: 0 }, serverNow()))} kaldı</span><em>Sayacına katıl</em>
+                    <b>{p.name}</b><span>{p.pausedLeft ? 'bekliyor' : p.phase === 'focus' ? 'odakta' : 'molada'} · {fmt(remainingMs({ phase: p.phase as never, phaseEndsAt: p.phaseEndsAt ?? 0, round: 0 }, serverNow()))} kaldı</span><em>Sayacına katıl</em>
                   </button>))}</div>
               </div>
             )}
@@ -128,7 +128,8 @@ export function FocusScreen({ onClose }: { onClose(): void }) {
           <button className="fx-icon" title="Yapılacaklar" aria-label="Yapılacaklar" onClick={() => usePanel.getState().set('todo')}><Svg d='<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>' /></button>
           <button className="fx-icon" title="Ortam sesleri" aria-label="Ortam sesleri" onClick={() => usePanel.getState().set('sound')}><Svg d='<path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>' /></button>
           {!idle && <button className="fx-icon" title="Sıfırla" aria-label="Sıfırla" onClick={() => sendTimer('stop')}><Svg d='<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/>' /></button>}
-          {!idle && <button className="fx-icon" title="Bu aşamayı atla" aria-label="Atla" onClick={() => sendTimer('skip')}><Svg d='<path d="M5 5l9 7-9 7zM17 5v14"/>' /></button>}
+          {/* a started focus is only paused, never skipped (user 2026-11-05); a break can be ended early */}
+          {canSkip({ ...timer, pausedLeft: timer.pausedLeft ?? 0 }) && <button className="fx-icon" title="Molayı bitir" aria-label="Molayı bitir" onClick={() => sendTimer('skip')}><Svg d='<path d="M5 5l9 7-9 7zM17 5v14"/>' /></button>}
           <button className="fx-icon" title="Odayı göster" aria-label="Odayı göster" onClick={onClose}><Svg d='<path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z"/>' /></button>
         </div>
       </div>

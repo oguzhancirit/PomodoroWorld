@@ -121,7 +121,7 @@ function Friends({ go }: { go(code: string): void }) {
   const where = (f: FriendView) => {
     const w = f.where;
     if (!w) return ago(f.seen);
-    const st = w.phase === 'focus' ? ' · odakta' : w.phase === 'short_break' || w.phase === 'long_break' ? ' · molada' : '';
+    const st = w.phase === 'focus' ? ' · odakta' : w.phase === 'paused' ? ' · bekliyor' : w.phase === 'short_break' || w.phase === 'long_break' ? ' · molada' : '';
     if (w.kind === 'social') return (place?.owner === 'social:' + w.space && w.roomId === libraryId ? 'Yanında' : SOCIAL_AT[w.space ?? ''] ?? 'Sosyal alanda') + st;
     if (w.kind === 'library') return (place?.kind === 'library' && w.roomId === libraryId ? 'Yanında' : 'Kütüphanede') + st;
     if (place && w.owner === place.owner) return 'Yanında' + st;
