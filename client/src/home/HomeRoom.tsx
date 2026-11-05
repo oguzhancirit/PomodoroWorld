@@ -22,6 +22,7 @@ import { Tour } from './Tour';
 import { WorldButton, WorldPanel } from '../ui/World';
 import { openHome, leaveRoom, openProfile, sendSit } from '../net';
 import { WakeCurtain } from '../wake';
+import { attachPower } from './power';
 
 type Ghost = { id: string; r: number; extra: Record<string, unknown> } | null;
 
@@ -71,6 +72,15 @@ export function HomeRoom() {
     else if (focusCamOn.current) { focusCamOn.current = false; w.setFocusCam(null); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusOpen, live, editing]);
+
+  /* ---------- battery: draw fewer frames when nobody is looking (power.ts) ---------- */
+  const power = useRef<ReturnType<typeof attachPower> | null>(null);
+  useEffect(() => {
+    const w = engine.world; if (!ready || !w) return;
+    const pw = attachPower(w as never, () => !!engine.film); power.current = pw;
+    return () => { pw.stop(); power.current = null; };
+  }, [ready]);
+  useEffect(() => { power.current?.setFocus(focusOpen); }, [focusOpen, ready]);
 
   /* ---------- engine lifetime ---------- */
   useEffect(() => {
