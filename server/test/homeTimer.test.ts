@@ -63,17 +63,23 @@ describe('HomeRoom timer controls', () => {
     expect(mine(room, c.sessionId).phase).toBe('focus');
   });
 
-  it('skip focus: the break starts now and the minutes so far count, but not as a full pomodoro', async () => {
+  it('a started focus cannot be skipped (only paused): no reward, still focusing; a break can be ended', async () => {
     const me = await player('Ada'); const c = await join(me); await wait(50);
     const room = await roomOf(me.pid);
-    let reward: { completed: boolean; minutes: number } | null = null; c.onMessage('reward', (m) => { reward = m; });
+    let reward: unknown = null; c.onMessage('reward', (m) => { reward = m; });
     c.send('timer', { action: 'start' }); await wait(60);
     (room as any).track.get(c.sessionId).accMs = 10 * 60_000;
     c.send('timer', { action: 'skip' }); await wait(120);
+    expect(mine(room, c.sessionId).phase).toBe('focus');
+    expect(reward).toBeNull();
+    c.send('timer', { action: 'pause' }); await wait(60);
+    c.send('timer', { action: 'skip' }); await wait(80);
+    expect(mine(room, c.sessionId)).toMatchObject({ phase: 'focus' });
+    expect(mine(room, c.sessionId).pausedLeft).toBeGreaterThan(0);
+    // the break: ending it early stops the timer (v1)
+    c.send('timer', { action: 'resume' }); await wait(60);
+    room.endPlayerPhaseIn(c.sessionId, 30); await wait(400);
     expect(mine(room, c.sessionId).phase).toBe('short_break');
-    expect(reward!.completed).toBe(false);
-    expect(reward!.minutes).toBe(10);
-    // skipping the break stops the timer (v1)
     c.send('timer', { action: 'skip' }); await wait(80);
     expect(mine(room, c.sessionId).phase).toBe('idle');
   });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { presetById, customPresetId, startTimer, remainingMs, settle, pauseTimer, resumeTimer, skipPhase, isPaused } from '../src/timer';
+import { presetById, customPresetId, startTimer, remainingMs, settle, pauseTimer, resumeTimer, skipPhase, isPaused, canSkip, chatOpenFor, timerStatus, STATUS_LABEL } from '../src/timer';
 
 const p25 = presetById('p25');
 const MIN = 60_000;
@@ -47,12 +47,34 @@ describe('pause / resume / skip', () => {
     const p = pauseTimer(run, t0 + MIN);
     expect(pauseTimer(p, t0 + 2 * MIN)).toEqual(p);
   });
-  it('skipping focus goes to the break counting from now; the round still counts', () => {
-    const s = skipPhase(startTimer(t0, p25), p25, t0 + 3 * MIN);
-    expect(s).toMatchObject({ phase: 'short_break', round: 1, phaseEndsAt: t0 + 8 * MIN });
+  it('a started focus cannot be skipped, running or paused (user 2026-11-05: only pause)', () => {
+    const f = startTimer(t0, p25);
+    expect(skipPhase(f, p25, t0 + 3 * MIN)).toEqual(f);
+    const paused = pauseTimer(f, t0 + MIN);
+    expect(skipPhase(paused, p25, t0 + 2 * MIN)).toEqual(paused);
+    expect(canSkip(f)).toBe(false); expect(canSkip(paused)).toBe(false);
   });
   it('skipping a break stops the timer, like v1 (even when paused)', () => {
-    const b = skipPhase(startTimer(t0, p25), p25, t0);
-    expect(skipPhase(pauseTimer(b, t0 + MIN), p25, t0 + 2 * MIN)).toEqual({ phase: 'idle', phaseEndsAt: 0, round: 0 });
+    const b = settle(startTimer(t0, p25), p25, t0 + 25 * MIN);
+    expect(b.phase).toBe('short_break'); expect(canSkip(b)).toBe(true);
+    expect(skipPhase(pauseTimer(b, t0 + 26 * MIN), p25, t0 + 27 * MIN)).toEqual({ phase: 'idle', phaseEndsAt: 0, round: 0 });
+    expect(canSkip({ phase: 'idle', phaseEndsAt: 0, round: 0 })).toBe(false);
+  });
+  it('chat: closed while a focus runs, open when it is paused, in breaks and when idle', () => {
+    const f = startTimer(t0, p25);
+    expect(chatOpenFor(f)).toBe(false);
+    expect(chatOpenFor(pauseTimer(f, t0 + MIN))).toBe(true);
+    expect(chatOpenFor(settle(f, p25, t0 + 25 * MIN))).toBe(true);
+    expect(chatOpenFor({ phase: 'idle', phaseEndsAt: 0, round: 0 })).toBe(true);
+  });
+  it('status shown to others: Odakta / Bekliyor (paused) / Molada / Boşta', () => {
+    const f = startTimer(t0, p25);
+    expect(timerStatus(f)).toBe('focus');
+    expect(timerStatus(pauseTimer(f, t0 + MIN))).toBe('paused');
+    const b = settle(f, p25, t0 + 25 * MIN);
+    expect(timerStatus(b)).toBe('break');
+    expect(timerStatus(pauseTimer(b, t0 + 26 * MIN))).toBe('paused');
+    expect(timerStatus({ phase: 'idle', phaseEndsAt: 0, round: 0 })).toBe('idle');
+    expect(STATUS_LABEL).toEqual({ idle: 'Boşta', focus: 'Odakta', paused: 'Bekliyor', break: 'Molada' });
   });
 });

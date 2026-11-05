@@ -103,17 +103,25 @@ export function resumeTimer(t: TimerState, now: number): TimerState {
   return { phase: t.phase, phaseEndsAt: now + (t.pausedLeft as number), round: t.round };
 }
 
-/** v1 "Atla": skipping focus starts the break now; skipping a break stops the timer */
-export function skipPhase(t: TimerState, p: Preset, now: number): TimerState {
-  if (t.phase === 'idle') return t;
-  if (t.phase !== 'focus') return { phase: 'idle', phaseEndsAt: 0, round: 0 };
-  return advance({ phase: t.phase, phaseEndsAt: now, round: t.round }, p);
+/** a started focus is never skipped (user 2026-11-05: "sadece duraklatılabilir"); a break can be ended early */
+export const canSkip = (t: TimerState) => t.phase === 'short_break' || t.phase === 'long_break';
+
+/** v1 "Atla", break only: skipping a break stops the timer. A focus stays as it is. */
+export function skipPhase(t: TimerState, _p: Preset, _now: number): TimerState {
+  return canSkip(t) ? { phase: 'idle', phaseEndsAt: 0, round: 0 } : t;
 }
 
 /** Odakoo-style rule: chat is closed while the room focuses, open in breaks. */
 export function isChatAllowed(phase: Phase): boolean {
   return phase !== 'focus';
 }
+/** the same rule for one person's timer: a paused focus is a wait, so chat opens (user 2026-11-05) */
+export const chatOpenFor = (t: TimerState) => isChatAllowed(t.phase) || isPaused(t);
+
+/** what others see next to your name */
+export type TimerStatus = 'idle' | 'focus' | 'paused' | 'break';
+export const timerStatus = (t: TimerState): TimerStatus => t.phase === 'idle' ? 'idle' : isPaused(t) ? 'paused' : t.phase === 'focus' ? 'focus' : 'break';
+export const STATUS_LABEL: Record<TimerStatus, string> = { idle: 'Boşta', focus: 'Odakta', paused: 'Bekliyor', break: 'Molada' };
 
 /** what the browser should do when your own timer changes phase (v1 js/app.js notify/requestWake/flashTitle) */
 export interface PhaseAlert { sound?: 'start' | 'done'; wake: boolean; ask?: boolean; title?: string; note?: { t: string; b: string } }

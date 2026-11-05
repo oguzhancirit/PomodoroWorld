@@ -75,6 +75,19 @@ describe('personal timers', () => {
     expect(lines).toEqual(['merhaba']);
   });
 
+  it('a paused focus is a wait: chat opens while paused and closes again on resume', async () => {
+    const { ca, cb } = await duo();
+    const notes: string[] = []; ca.onMessage('notice', (m) => notes.push(m.code));
+    const lines: string[] = []; cb.onMessage('chat', (m) => lines.push(m.text));
+    ca.send('timer', { action: 'start' }); await wait(60);
+    ca.send('timer', { action: 'pause' }); await wait(60);
+    ca.send('chat', { text: 'bekliyorum' }); await wait(120);
+    expect(lines).toEqual(['bekliyorum']); expect(notes).toEqual([]);
+    ca.send('timer', { action: 'resume' }); await wait(60);
+    ca.send('chat', { text: 'tekrar' }); await wait(120);
+    expect(notes).toContain('chat_closed'); expect(lines).toEqual(['bekliyorum']);
+  });
+
   it('"Birlikte": I join a friend\'s running timer (same length, same end)', async () => {
     const { ca, cb, room } = await duo();
     ca.send('timer', { action: 'start', preset: 'p50' }); await wait(80);

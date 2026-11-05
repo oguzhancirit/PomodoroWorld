@@ -3,7 +3,7 @@
 import { Room, validate, type Client } from '@colyseus/core';
 import { z } from 'zod';
 import {
-  presetById, startTimer, settle, isChatAllowed, isPaused, type Phase, type TimerState,
+  presetById, startTimer, settle, chatOpenFor, isPaused, type Phase, type TimerState,
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter,
   decodeAvatar, encodeAvatar, firstFreeSeat, isSeatFree, STUDY_ROOM,
   ChatMsg, EmoteMsg, SitMsg, ActivityMsg, parseJoin,
@@ -160,7 +160,7 @@ export class StudyRoom extends Room {
   onDispose() { this.phaseTimer?.clear(); }
 
   /** may this player chat now? (the shared hall: the room's phase; personal rooms: their own) */
-  protected chatOpen(_id: string) { return isChatAllowed(this.state.timer.phase as Phase); }
+  protected chatOpen(_id: string) { return chatOpenFor(this.current()); }
   /** is this player's focus time running right now? */
   protected focusingNow(_id: string) { return this.state.timer.phase === 'focus' && !isPaused(this.current()); }
 

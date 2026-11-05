@@ -5,7 +5,7 @@
 import { validate, type Client } from '@colyseus/core';
 import { z } from 'zod';
 import {
-  presetById, startTimer, settle, pauseTimer, resumeTimer, skipPhase, isPaused, isChatAllowed, durationOf, parseJoin,
+  presetById, startTimer, settle, pauseTimer, resumeTimer, skipPhase, isPaused, canSkip, chatOpenFor, durationOf, parseJoin,
   type Phase, type Preset, type TimerState,
 } from '@pw/shared';
 import { StudyRoom } from './StudyRoom';
@@ -66,7 +66,7 @@ export class PersonalRoom extends StudyRoom {
     }
   }
 
-  protected chatOpen(id: string) { return isChatAllowed(this.timerOf(id).phase); }
+  protected chatOpen(id: string) { return chatOpenFor(this.timerOf(id)); }
   protected focusingNow(id: string) { const t = this.timerOf(id); return t.phase === 'focus' && !isPaused(t); }
 
   /* ---------- one person's timer ---------- */
@@ -113,9 +113,8 @@ export class PersonalRoom extends StudyRoom {
       }
       this.setPlayerTimer(id, next);
     } else if (action === 'skip') {
-      if (cur.phase === 'idle') return;
-      // skipped focus: the minutes so far count, but not as a full pomodoro
-      if (cur.phase === 'focus') this.payFocusOf(id, cur, false, now);
+      // a started focus is never skipped, only paused (user 2026-11-05); a break can be ended early
+      if (!canSkip(cur)) return;
       const next = skipPhase(cur, this.presetOf(id), now);
       this.setPlayerTimer(id, next); this.tell(id, next);
     }
