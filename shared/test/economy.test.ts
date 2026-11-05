@@ -1,6 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { ECON, levelFromXP, xpStep, newWallet, rewardFocus, buy, CATALOG, itemById, isFree, avatarAllowed, titleFor, ACHIEVEMENTS } from '../src/economy';
-import { defaultAvatar, PARTS } from '../src/avatar';
+import { unlocksAt, ECON, levelFromXP, xpStep, newWallet, rewardFocus, buy, CATALOG, itemById, isFree, avatarAllowed, titleFor, ACHIEVEMENTS, BUNDLES, bundlePrice, bundleLevel } from '../src/economy';
+import { defaultAvatar, PARTS, ACCESSORIES } from '../src/avatar';
+
+describe('level pace (user, 2026-11-03: XP should take some effort, not too much)', () => {
+  // a 25-minute pomodoro pays 25 + 10 XP; a 4-pomodoro day with the set bonus pays 165 XP
+  const pomo = 25 + ECON.pomoXP, day = 4 * pomo + ECON.setBonusXP;
+  const toLevel = (L: number) => { let x = 0; for (let i = 1; i < L; i++) x += xpStep(i); return x; };
+  it('level 2 takes about a day (3 pomodoros, not 2)', () => {
+    expect(levelFromXP(2 * pomo).level).toBe(1);
+    expect(levelFromXP(day).level).toBe(2);
+  });
+  it('level 5 takes one to three weeks of 4-pomodoro days', () => {
+    const days = toLevel(5) / day;
+    expect(days).toBeGreaterThan(7); expect(days).toBeLessThan(21);
+  });
+  it('level 10 takes one to three months', () => {
+    const days = toLevel(10) / day;
+    expect(days).toBeGreaterThan(30); expect(days).toBeLessThan(90);
+  });
+});
 
 describe('levels', () => {
   it('level 1 at 0 xp, steps grow', () => {
@@ -71,6 +89,29 @@ describe('shop', () => {
     expect(CATALOG.some((i) => i.cat === 'furn')).toBe(true);
     for (const i of CATALOG) { expect(i.price).toBeGreaterThanOrEqual(0); expect(i.lvl).toBeGreaterThanOrEqual(1); }
   });
+  it('everyday clothes are free; hats, helmets and costumes stay in the shop (user, 2026-11-04)', () => {
+    const free = (id: string) => isFree(itemById(id)!);
+    for (const id of ['av.m.Beach_Body', 'av.m.Beach_Legs', 'av.m.Beach_Feet', 'av.m.Suit_Body', 'av.m.Punk_Body', 'av.m.Punk_Legs', 'av.m.Adventurer_Head',
+      'av.f.Formal_Body', 'av.f.Formal_Legs', 'av.f.Suit_Legs', 'av.f.Punk_Body', 'av.f.Soldier_Head']) expect(free(id), id).toBe(true);
+    for (const id of ['av.m.King_Head', 'av.m.Worker_Head', 'av.m.Farmer_Body', 'av.f.Witch_Head', 'av.f.Worker_Body']) expect(free(id), id).toBe(false);
+    // every slot still has something to buy, and one of them needs no level
+    for (const g of ['f', 'm'] as const) for (const slot of ['head', 'body', 'legs', 'feet'] as const) {
+      const paid = CATALOG.filter((i) => i.g === g && i.slot === slot && i.price > 0);
+      expect(paid.length, g + slot).toBeGreaterThan(0);
+      expect(paid.some((i) => i.lvl === 1), g + slot).toBe(true);
+    }
+  });
+  it('a part is named for what it is in its own slot, not after its outfit', () => {
+    expect(itemById('av.m.Beach_Feet')!.name).toBe('Terlik');
+    expect(itemById('av.m.Casual_Hoodie_Body')!.name).toBe('Kapüşonlu');
+    expect(itemById('av.m.Casual_Hoodie_Legs')!.name).toBe('Şort');
+    expect(itemById('av.f.Formal_Legs')!.name).toBe('Etek');
+    // inside one slot no two parts share a name
+    for (const g of ['f', 'm'] as const) for (const slot of ['head', 'body', 'legs', 'feet'] as const) {
+      const names = CATALOG.filter((i) => i.g === g && i.slot === slot).map((i) => i.name);
+      expect(new Set(names).size, g + slot + names.join()).toBe(names.length);
+    }
+  });
   it('default avatars are free to wear', () => {
     expect(avatarAllowed(newWallet(), defaultAvatar('f'))).toBe(true);
     expect(avatarAllowed(newWallet(), defaultAvatar('m'))).toBe(true);
@@ -114,5 +155,63 @@ describe('sanitizeWallet', () => {
     expect(sanitizeWallet(null).coins).toBe(150);
     const w = sanitizeWallet({ xp: -4, coins: 'x', owned: { f_cactus: 2, 'hack': 9, f_sofa: -1 }, stats: { pomos: 3.7 } });
     expect(w.xp).toBe(0); expect(w.coins).toBe(150); expect(w.owned).toEqual({ ...STARTER, f_cactus: 2 }); expect(w.stats.pomos).toBe(3);
+  });
+});
+
+describe('unlocksAt (level-up window, v1 ui.levelUp)', () => {
+  it('lists at most 8 items that open exactly at that level', () => {
+    const u = unlocksAt(3);
+    expect(u.length).toBeGreaterThan(0);
+    expect(u.length).toBeLessThanOrEqual(8);
+    expect(u.every((i) => i.lvl === 3)).toBe(true);
+  });
+  it('shows room items first and each outfit part once (not once per gender)', () => {
+    for (let lv = 2; lv <= 12; lv++) {
+      const u = unlocksAt(lv), keys = u.map((i) => i.name + '/' + (i.slot ?? i.cat));
+      expect(new Set(keys).size).toBe(keys.length);
+      const firstAv = u.findIndex((i) => i.cat === 'avatar');
+      if (firstAv >= 0) expect(u.slice(firstAv).every((i) => i.cat === 'avatar')).toBe(true);
+    }
+  });
+  it('is empty for a level nothing opens at', () => {
+    expect(unlocksAt(999)).toEqual([]);
+  });
+});
+
+describe('corner sets (user 2026-11-03: a richer shop)', () => {
+  it('every set lists real room things and costs less than buying them one by one', () => {
+    for (const b of BUNDLES) {
+      const items = b.items.map((id) => itemById(id));
+      expect(items.every((i) => i && i.cat === 'furn')).toBe(true);
+      const full = items.reduce((a, i) => a + i!.price, 0);
+      expect(bundlePrice(b)).toBeLessThan(full);
+      expect(bundleLevel(b)).toBe(Math.max(...items.map((i) => i!.lvl)));
+    }
+  });
+  it('buying a set adds one of each thing and takes the set price', () => {
+    const b = BUNDLES[0];
+    const w0 = { ...newWallet(), coins: 99999, xp: 10_000_000 };
+    const r = buy(w0, b.id);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.wallet.coins).toBe(w0.coins - bundlePrice(b));
+    for (const id of b.items) expect(r.wallet.owned[id] ?? 0).toBe((w0.owned[id] ?? 0) + b.items.filter((x) => x === id).length);
+  });
+  it('needs the level and the coins like a single thing', () => {
+    const b = BUNDLES.find((x) => bundleLevel(x) > 1)!;
+    expect(buy({ ...newWallet(), coins: 99999 }, b.id)).toMatchObject({ ok: false, reason: 'level' });
+    expect(buy({ ...newWallet(), coins: 1, xp: 10_000_000 }, b.id)).toMatchObject({ ok: false, reason: 'coins' });
+    expect(buy(newWallet(), 'set.nope')).toMatchObject({ ok: false, reason: 'unknown' });
+  });
+});
+
+describe('accessories in the shop', () => {
+  it('every accessory is sold once and must be owned to wear', () => {
+    for (const acc of ACCESSORIES.slice(1)) expect(itemById(`av.acc.${acc}`)?.cat).toBe('avatar');
+    const w = newWallet();
+    const withAcc = { ...defaultAvatar('f'), acc: 1 };
+    expect(avatarAllowed(w, withAcc)).toBe(false);
+    const r = buy({ ...w, coins: 99999, xp: 10_000_000 }, `av.acc.${ACCESSORIES[1]}`);
+    expect(r.ok && avatarAllowed(r.wallet, withAcc)).toBe(true);
   });
 });

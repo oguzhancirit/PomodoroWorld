@@ -8,7 +8,7 @@ const tags = [...html.matchAll(/<(script|link)[^>]*(src|href)="\.\/assets\/[^"]+
 const page = `<title>Pomodoro World</title>
 <meta name="theme-color" content="#16141f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@500;600;700;800&family=Oswald:wght@600;700&display=swap">
 <style>:root{color-scheme:dark;background:#16141f}body{background:#16141f;color:#f4f1ec}</style>
 ${tags.join('\n')}
 <div id="root"></div>

@@ -4,19 +4,28 @@ import { create } from 'zustand';
 import { defaultAvatar, type Avatar, type Activity, type Phase, type Wallet, type Room } from '@pw/shared';
 
 export interface PlayerView {
-  id: string; name: string; level?: number; avatar: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
+  /** code: friend code (player id), '' for bots and guests */
+  id: string; name: string; level?: number; avatar: string; code?: string;
+  /** this person's own timer (home rooms and the library: everyone keeps their own time) */
+  phase?: Phase; phaseEndsAt?: number; pausedLeft?: number; round?: number; preset?: string; seatIndex: number; pose: string; activity: Activity; bubble: string; connected: boolean;
 }
 export interface ChatLine { id: string; name: string; text: string; at: number; system?: boolean }
-export interface Profile { name: string; avatar: Avatar; preset: string; category: string; fast: boolean }
+/** task: what I work on (v1 focus screen field) · recent: last tasks · custom: v1 "Özel" focus / break minutes */
+/** introSeen: the first-run film was shown (v1 S.introSeen); toured: the guided tour ran once (v1 S.toured); notify: desktop notices at phase ends (v1 settings.notify);
+ *  made: the character was created once (after that "Karakterim" is a wardrobe) */
+export interface Profile { name: string; avatar: Avatar; preset: string; category: string; fast: boolean; task: string; recent: string[]; custom: { f: number; b: number }; introSeen: boolean; toured: boolean; notify: boolean; made: boolean }
 
 const PROFILE_KEY = 'pw2.profile';
 function loadProfile(): Profile {
-  const d: Profile = { name: '', avatar: defaultAvatar('f'), preset: 'p25', category: 'Ders', fast: true };
-  try { const raw = localStorage.getItem(PROFILE_KEY); if (raw) return { ...d, ...JSON.parse(raw) }; } catch { /* private mode */ }
+  const d: Profile = { name: '', avatar: defaultAvatar('f'), preset: 'p25', category: 'Ders', fast: true, task: '', recent: [], custom: { f: 40, b: 8 }, introSeen: false, toured: false, notify: true, made: false };
+  try { const raw = localStorage.getItem(PROFILE_KEY); if (raw) { const v = JSON.parse(raw); return { ...d, made: !!v.name, ...v }; } /* older saves: a name means the character exists */ } catch { /* private mode */ }
   return d;
 }
 
-export type Screen = 'lobby' | 'room' | 'home';
+export type Screen = 'login' | 'lobby' | 'room' | 'home';
+/** the live room you are in on the "home" screen: yours, or a friend's (step 4) */
+/** kind: 'library' = the public 10-seat library (step 4f); otherwise someone's own room */
+export interface Place { kind?: 'home' | 'library' | 'social'; owner: string; mine: boolean; name: string; ownerName?: string; layout: string; cap: number }
 export type NetStatus = 'idle' | 'connecting' | 'online' | 'reconnecting' | 'offline';
 
 interface State {
@@ -28,7 +37,7 @@ interface State {
   error: string;
   me: string;
   players: Record<string, PlayerView>;
-  timer: { phase: Phase; phaseEndsAt: number; round: number };
+  timer: { phase: Phase; phaseEndsAt: number; round: number; pausedLeft?: number };
   preset: string;
   clockOffset: number; // server time − local time (ms)
   chat: ChatLine[];
@@ -41,6 +50,7 @@ interface State {
   shopTab: string;
   /** my personal room (old game format) */
   room: Room | null;
+  place: Place | null;
   setProfile(p: Partial<Profile>): void;
   set(partial: Partial<State>): void;
   upsertPlayer(id: string, p: Partial<PlayerView>): void;
@@ -68,6 +78,7 @@ export const useStore = create<State>((set, get) => ({
   shop: false,
   shopTab: 'avatar',
   room: null,
+  place: null,
   setProfile(p) {
     const profile = { ...get().profile, ...p };
     try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch { /* ignore */ }
@@ -82,3 +93,6 @@ export const useStore = create<State>((set, get) => ({
 
 /** server-corrected "now" */
 export const serverNow = () => Date.now() + useStore.getState().clockOffset;
+
+// dev server only: lets browser checks poke the store (never in builds)
+if (import.meta.env.DEV) (window as unknown as { __store: unknown }).__store = useStore;

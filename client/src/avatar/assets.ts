@@ -6,6 +6,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 import { decodeAvatar, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, type Avatar, type Gender } from '@pw/shared';
 // @ts-ignore plain JS module shared with the build tool
 import { decodeClip } from './clipCodec.js';
+import { addAccessory } from './accessories';
 
 const BASE = import.meta.env.BASE_URL;
 // the artifact build ships each model as base64 inside a .json file (artifacts do not serve .glb files)
@@ -66,6 +67,7 @@ export function buildAvatar(rig: Rig, code: string) {
     });
     mesh.material = Array.isArray(mesh.material) ? mats : mats[0];
   });
+  addAccessory(root, a.acc); // glasses, hats… drawn on the Head bone
   root.scale.setScalar(rig.meta.scale || 1);
   return { root, avatar: a };
 }

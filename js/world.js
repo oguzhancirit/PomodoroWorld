@@ -12,8 +12,8 @@
     neon: { env: 0.3, name: 'Neon', sun: '#7A4CFF', sunI: 0.35, hemi: 0.22, hemiC: '#B48AFF', hemiG: '#201640', amb: 0.1, exp: 1.12, lamp: 1.3, bloom: 1.05, bg: '#120D24', shafts: 0.08, dust: 0.3, neon: ['#FF3FA4', '#26D8FF'] },
     candle: { env: 0.2, name: 'Mum ışığı', sun: '#FF8A3A', sunI: 0.2, hemi: 0.16, hemiC: '#FFB070', hemiG: '#2A1610', amb: 0.06, exp: 1.18, lamp: 2.0, bloom: 0.75, bg: '#180F0C', shafts: 0, dust: 0.5, flicker: true },
   };
-  PW.FLOOR_TYPES = [['plank', 'Parke'], ['herring', 'Balıksırtı'], ['tile', 'Karo'], ['checker', 'Dama'], ['tatami', 'Tatami'], ['carpet', 'Halıfleks'], ['concrete', 'Beton'], ['panel', 'Panel']];
-  PW.WALL_PATTERNS = [['plain', 'Düz'], ['stripe', 'Çizgili'], ['dots', 'Puantiye'], ['floral', 'Çiçekli'], ['wave', 'Dalga'], ['brick', 'Tuğla'], ['wainscot', 'Lambri'], ['cini', 'Çini'], ['shoji', 'Shoji'], ['logs', 'Kütük'], ['panel', 'Panel']];
+  PW.FLOOR_TYPES = [['plank', 'Parke'], ['herring', 'Balıksırtı'], ['tile', 'Karo'], ['checker', 'Dama'], ['tatami', 'Tatami'], ['carpet', 'Halıfleks'], ['concrete', 'Beton'], ['panel', 'Panel'], ['terrazzo', 'Terrazzo'], ['hex', 'Altıgen Karo'], ['marble', 'Mermer']];
+  PW.WALL_PATTERNS = [['plain', 'Düz'], ['stripe', 'Çizgili'], ['dots', 'Puantiye'], ['floral', 'Çiçekli'], ['wave', 'Dalga'], ['brick', 'Tuğla'], ['wainscot', 'Lambri'], ['cini', 'Çini'], ['shoji', 'Shoji'], ['logs', 'Kütük'], ['panel', 'Panel'], ['stars', 'Yıldızlı'], ['clouds', 'Bulutlu'], ['plaid', 'Ekose'], ['geo', 'Geometrik']];
   PW.WALL_COLORS = ['#F2EDE4', '#E9DCC8', '#F4D9E2', '#D8E7D0', '#B9C9AE', '#CFE0EE', '#A9C2DE', '#2D3E63', '#33513F', '#A8553E', '#E8C99A', '#C9B3E0', '#F5E6B8', '#3A3A44', '#E7B9A0', '#8FB7B0'];
   PW.FLOOR_COLORS = ['#B07D52', '#8F6140', '#D9B98E', '#6E4F3A', '#5A3A26', '#D9D2C7', '#B65B3E', '#C8C08A', '#5D5550', '#9AA3AD', '#E8DCCB', '#7A8F6E'];
   const DARK = { night: 1, neon: 1, candle: 1 };
@@ -22,8 +22,10 @@
 
   PW.normItems = (items) => (items || []).map((it) => {
     if (Array.isArray(it)) {
-      if (typeof it[1] === 'string') return { id: it[0], w: it[1], x: it[2] || 0, r: 0 };
-      return { id: it[0], x: it[1], z: it[2], r: it[3] || 0, c: it[4] || undefined, wd: it[5] || undefined };
+      // an object after the position holds the piece's own touches (words, colour, design)
+      const ex = it.find((v, i) => i >= 3 && v && typeof v === 'object') || {};
+      if (typeof it[1] === 'string') return Object.assign({ id: it[0], w: it[1], x: it[2] || 0, r: 0 }, ex);
+      return Object.assign({ id: it[0], x: it[1], z: it[2], r: it[3] || 0, c: typeof it[4] === 'string' ? it[4] : undefined, wd: it[5] || undefined }, ex);
     }
     return Object.assign({}, it);
   });
@@ -129,6 +131,20 @@
       } catch (e) { console.warn('post fx off', e); this.post = null; }
     }
     setQuality(q) { if (q === this.quality) return; this.quality = q; this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q === 'high' ? 2 : 1.25)); this.setupPost(); this.resize(); if (this.def) this.applyMood(); }
+    /* adaptive quality (2026-11-04, user: "kasılmaları azalt"): every 2 s look at how many frames were slow. When more
+       than a third took over 26 ms, render with fewer pixels (2 → 1.5 → 1.25 → 1); at 1 drop the bloom pass. Never goes back
+       up, so the picture does not keep changing. The first 1.5 s after a room loads are skipped (shaders compiling). */
+    adapt(dt) {
+      const now = performance.now(), q = (this.q = this.q || { t0: now + 1500, n: 0, slow: 0 });
+      if (now < q.t0) return;
+      q.n++; if (dt > 0.026) q.slow++;
+      if (now - q.t0 < 2000 || q.n < 8) return;
+      const bad = q.slow / q.n > 0.34; this.q = { t0: now + (bad ? 1000 : 0), n: 0, slow: 0 };
+      if (!bad) return;
+      const r = this.renderer, pr = r.getPixelRatio();
+      if (pr > 1.01) { r.setPixelRatio(Math.max(1, pr > 1.6 ? 1.5 : pr - 0.25)); this.resize(); }
+      else if (this.post) { this.post = null; }
+    }
     resize() {
       const w = this.host.clientWidth || window.innerWidth, h = this.host.clientHeight || window.innerHeight;
       this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
@@ -245,7 +261,7 @@
       this.surfaceAt = surfaceAt;
       items.forEach((it, i) => {
         const d = PW.ITEM[it.id]; if (!d) return;
-        const g = PW.buildItem(it.id, { seed: i * 13 + 5, c: it.c, wd: it.wd }); g.userData.itemIndex = i;
+        const g = PW.buildItem(it.id, { seed: i * 13 + 5, c: it.c, wd: it.wd, t: it.t, v: it.v }); g.userData.itemIndex = i;
         if (d.wall) { const wg = this.wallGroups[it.w] || this.wallGroups.w0; g.position.set(it.x || 0, d.wy || 1.6, WALL_T / 2 + 0.005); wg.userData.tall.add(g); }
         else { g.position.set(it.x, d.top ? surfaceAt(it.x, it.z) : 0, it.z); g.rotation.y = (it.r || 0) * Math.PI / 2; G.add(g); }
         g.traverse((o) => { if (o.isMesh) { if (!o.material.transparent && !d.rug) o.castShadow = true; o.receiveShadow = true; } });
@@ -273,6 +289,10 @@
       for (const [id, a] of this.avatars) { if (a.seatIdx != null) { const s = a.seatIdx; a.seatIdx = null; this.sitAvatar(id, s < this.seats.length ? s : null); } }
       this.applyWallCut(true);
       if (this.edit.on) this.select(this.edit.sel);
+      // get the new room's shaders compiling in the background now (the GPU does it in parallel where it can), so the
+      // first frames of the room do not stall; and do not judge the frame rate while that happens
+      this.q = null;
+      try { this.renderer.compileAsync && this.renderer.compileAsync(this.scene, this.camera).catch(() => {}); } catch (e) { /* older three */ }
     }
     buildAtmosphere() {
       const half = this.half, F = this.fxGroup;
@@ -449,7 +469,7 @@
       if (this.half) this.applyWallCut(false);
       for (const g of this.animated) g.userData.update(this.time, dt);
       for (const p of this.pointLights) if (p.userData.flicker && p.intensity > 0) p.intensity = p.userData.base * (0.85 + Math.sin(this.time * 11 + p.id) * 0.08 + Math.sin(this.time * 23) * 0.05);
-      if (this.viewAnimated && this.viewTex) { this.viewT += dt; if (this.viewT > 0.11) { this.viewT = 0; PW.paintView(PW.viewFor(this.def), this.viewTex.userData.ctx, 1024, 512, this.time); this.viewTex.needsUpdate = true; } }
+      if (this.viewAnimated && this.viewTex) { this.viewT += dt; if (this.viewT > 0.25) { this.viewT = 0; PW.paintView(PW.viewFor(this.def), this.viewTex.userData.ctx, 1024, 512, this.time); this.viewTex.needsUpdate = true; } }
       if (this.shaft) this.shaft.material.uniforms.uTime.value = this.time;
       if (this.dust) { const a = this.dust.geometry.attributes.position; for (let i = 0; i < this.dustSeed.length; i++) { const s = this.dustSeed[i]; a.setXYZ(i, s[0] + Math.sin(this.time * 0.2 + s[3]) * 0.25, ((s[1] + this.time * 0.04 + s[3]) % 2.8) + 0.1, s[2] + Math.cos(this.time * 0.17 + s[3]) * 0.25); } a.needsUpdate = true; }
       for (const [, a] of this.avatars) {
@@ -466,6 +486,7 @@
         if (vis) { const x = (this.tmpV.x * 0.5 + 0.5) * this.w, y = (-this.tmpV.y * 0.5 + 0.5) * this.h; a.tag.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`; a.tag.style.zIndex = String(1000 - Math.round(this.tmpV.z * 500)); }
       }
       if (this.selBox) this.selBox.update();
+      this.adapt(dt);
       if (this.post) { if (this.post.tone) this.post.tone.uniforms.uExp.value = this.renderer.toneMappingExposure; this.post.comp.render(dt); } else this.renderer.render(this.scene, this.camera);
     }
   }

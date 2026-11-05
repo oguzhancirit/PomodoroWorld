@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PARTS, defaultAvatar, parseAvatar, encodeAvatar, decodeAvatar, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS } from '../src/avatar';
+import { PARTS, defaultAvatar, parseAvatar, encodeAvatar, decodeAvatar, SKIN_TONES, HAIR_COLORS, CLOTH_COLORS, ACCESSORIES } from '../src/avatar';
 
 describe('avatar parts catalog', () => {
   it('has heads, bodies, legs and feet for both genders', () => {
@@ -54,5 +54,21 @@ describe('activities', () => {
   it('join options reject an unknown activity', () => {
     expect(JoinOptions.safeParse({ activity: 'hack' }).success).toBe(false);
     expect(JoinOptions.safeParse({ activity: 'read', name: 'x' }).success).toBe(true);
+  });
+});
+
+describe('accessories (user 2026-11-03: your own style)', () => {
+  it('an accessory rides at the end of the code; old codes stay the same', () => {
+    const a = { ...defaultAvatar('m'), acc: 3 };
+    const code = encodeAvatar(a);
+    expect(code.split('.')).toHaveLength(10);
+    expect(decodeAvatar(code).acc).toBe(3);
+    expect(encodeAvatar(defaultAvatar('f')).split('.')).toHaveLength(9);
+    expect(decodeAvatar('f.0.0.0.0.0.0.0.0').acc).toBeUndefined();
+  });
+  it('drops an unknown accessory', () => {
+    expect(parseAvatar({ ...defaultAvatar('f'), acc: 99 }).acc).toBeUndefined();
+    expect(parseAvatar({ ...defaultAvatar('f'), acc: 0 }).acc).toBeUndefined();
+    expect(ACCESSORIES[0]).toBe('none');
   });
 });
