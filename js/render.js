@@ -61,7 +61,8 @@
     return [m.type, m.color && m.color.getHexString(), m.emissive && m.emissive.getHexString(), r3(m.emissiveIntensity), r3(m.roughness), r3(m.metalness), m.map ? m.map.uuid : '', m.emissiveMap ? m.emissiveMap.uuid : '', m.transparent, r3(m.opacity), m.side, m.vertexColors, m.flatShading, r3(m.envMapIntensity), m.alphaTest, m.depthWrite].join(':');
   }
   PW.mergeStatic = function (g) {
-    if (g.userData.update || g.userData.noMerge) return 0;
+    // an animated item may still merge its still parts when it says so (mergeKeep) and marks its moving meshes `keep`
+    if ((g.userData.update && !g.userData.mergeKeep) || g.userData.noMerge) return 0;
     g.updateMatrixWorld(true);
     const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
     const buckets = new Map();

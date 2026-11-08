@@ -195,6 +195,7 @@
 
     /* ---------------- rooms ---------------- */
     loadRoom(def) {
+      this.viewExtra = null;
       this.def = def;
       const size = def.size || 7, half = (this.half = size / 2);
       const S = PW.surfaceOf(def);
@@ -233,14 +234,18 @@
             const n = 5; for (let i = 1; i < n; i++) { const x = -ww / 2 + (ww * i) / n; const p = PW.box(tall, 0.09, y1 - y0 + 0.05, 0.16, fr, x, (y0 + y1) / 2, 0.02); p.rotation.z = (i - n / 2) * -0.06; }
             for (const sx of [-1, 1]) { const br = PW.box(tall, 0.6, 0.1, 0.16, fr, sx * (ww / 2 - 0.26), y1 - 0.18, 0.02); br.rotation.z = sx * 0.5; }
             PW.rbox(tall, ww + 0.3, 0.12, 0.5, 0.03, PW.mat('#1C1F24', { rough: 0.7 }), 0, y0 - 0.02, 0.2);
+            // the lamp row is one painted strip (one draw call instead of eighteen little boxes)
             const lamps = ['#F2C14E', '#2BE07A', '#4FB7FF', '#2BE07A', '#E8553D', '#F2C14E'];
-            for (let i = 0; i < 18; i++) PW.box(tall, 0.07, 0.025, 0.02, PW.mat(lamps[i % lamps.length], { emissive: lamps[i % lamps.length], ei: 1.5 }), -ww / 2 + 0.4 + i * ((ww - 0.8) / 17), y0 + 0.045, 0.44);
+            const lt = PW.canvasTex(512, 8, (c) => { c.clearRect(0, 0, 512, 8); for (let i = 0; i < 18; i++) { c.fillStyle = lamps[i % lamps.length]; c.fillRect(i * (512 / 18) + 4, 1, 16, 6); } });
+            const strip = new THREE.Mesh(new THREE.PlaneGeometry(ww - 0.7, 0.04), new THREE.MeshBasicMaterial({ map: lt, transparent: true, toneMapped: false }));
+            strip.position.set(0, y0 - 0.02, 0.456); tall.add(strip);
           }
           const glass = new THREE.Mesh(new THREE.PlaneGeometry(ww, y1 - y0), new THREE.MeshStandardMaterial({ color: '#CFE8FF', transparent: true, opacity: 0.1, roughness: 0.05, metalness: 0.3, envMapIntensity: 1 })); glass.position.set(0, (y0 + y1) / 2, 0.0); tall.add(glass);
           const vt = (this.viewTex = PW.canvasTex(cockpit ? 1536 : 1024, 512, (c, w, h) => PW.paintView(PW.viewFor(def), c, w, h, 0)));
           const vp = new THREE.Mesh(new THREE.PlaneGeometry(cockpit ? ww + 1.8 : 4.2, cockpit ? 2.4 : 2.2), new THREE.MeshBasicMaterial({ map: vt, toneMapped: false }));
           vp.position.set(0, 1.75, -0.36); tall.add(vp); this.viewPlane = vp;
           this.viewAnimated = !!PW.ANIMATED_VIEWS[def.view]; this.viewT = 0;
+          const vx = PW.VIEW_EXTRAS && PW.VIEW_EXTRAS[PW.viewFor(def)]; this.viewExtra = vx ? vx(vp, cockpit ? ww + 1.8 : 4.2, cockpit ? 2.4 : 2.2, vt.image.width) : null;
           // curtains: soft folds
           if (!cockpit) for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) { const c = PW.cyl(tall, 0.06, 0.085, 1.95, cm, sx * (ww / 2 + 0.2 + i * 0.085), 1.62, 0.2, 12); c.scale.z = 0.7; }
           if (!cockpit) for (const sx of [-1, 1]) { const tie = PW.tor(tall, 0.17, 0.012, PW.mat('#C9A15A', { metal: 0.8, rough: 0.3 }), sx * (ww / 2 + 0.33), 1.3, 0.2); tie.rotation.x = Math.PI / 2; tie.scale.set(1, 0.55, 1); }
@@ -479,6 +484,7 @@
       if (this.half) this.applyWallCut(false);
       for (const g of this.animated) g.userData.update(this.time, dt);
       for (const p of this.pointLights) if (p.userData.flicker && p.intensity > 0) p.intensity = p.userData.base * (0.85 + Math.sin(this.time * 11 + p.id) * 0.08 + Math.sin(this.time * 23) * 0.05);
+      if (this.viewExtra) this.viewExtra(this.time);
       if (this.viewAnimated && this.viewTex) { this.viewT += dt; if (this.viewT > 0.25) { this.viewT = 0; PW.paintView(PW.viewFor(this.def), this.viewTex.userData.ctx, this.viewTex.image.width, this.viewTex.image.height, this.time); this.viewTex.needsUpdate = true; } }
       if (this.shaft) this.shaft.material.uniforms.uTime.value = this.time;
       if (this.dust) { const a = this.dust.geometry.attributes.position; for (let i = 0; i < this.dustSeed.length; i++) { const s = this.dustSeed[i]; a.setXYZ(i, s[0] + Math.sin(this.time * 0.2 + s[3]) * 0.25, ((s[1] + this.time * 0.04 + s[3]) % 2.8) + 0.1, s[2] + Math.cos(this.time * 0.17 + s[3]) * 0.25); } a.needsUpdate = true; }

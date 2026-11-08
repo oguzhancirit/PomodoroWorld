@@ -732,6 +732,16 @@
       }
     });
   }
+  // the three desk screens side by side in one texture, made once and shared by every cockpit desk
+  let deskScreenMat = null;
+  function deskScreens() {
+    if (deskScreenMat) return deskScreenMat;
+    const parts = ['pfd', 'eicas', 'nd'].map(avScreen);
+    // bottom 16 px: the annunciator lamp strip above the screens (same texture, so the whole panel is one draw call)
+    const tex = PW.canvasTex(768, 208, (c) => { c.fillStyle = '#0B0D11'; c.fillRect(0, 0, 768, 208); parts.forEach((t, i) => c.drawImage(t.image, i * 256, 0)); ['#F2C14E', '#2BE07A', '#4FB7FF', '#F2C14E', '#2BE07A', '#4FB7FF'].forEach((col, i) => { c.fillStyle = col; c.fillRect(4 + i * 31, 195, 26, 10); }); });
+    parts.forEach((t) => t.dispose());
+    return (deskScreenMat = screenGlow(tex));
+  }
   // a desk with a sloped instrument panel, glareshield, side-stick, throttle quadrant and rudder pedals
   B.f_desk_cockpit = (g) => {
     rbox(g, 1.5, 0.05, 0.8, 0.02, AV_PANEL, 0, 0.735, 0);
@@ -741,24 +751,25 @@
     const p = new THREE.Group(); p.position.set(0, 0.76, -0.3); p.rotation.x = -0.38; g.add(p);
     box(p, 1.42, 0.34, 0.07, AV_DARK, 0, 0.17, 0);
     rbox(p, 1.48, 0.05, 0.2, 0.02, '#15181D', 0, 0.36, 0.04);
-    [['pfd', -0.47], ['eicas', 0], ['nd', 0.47]].forEach(([k, x]) => {
-      box(p, 0.39, 0.29, 0.01, '#0B0D11', x, 0.17, 0.036);
-      const s = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.27), screenGlow(avScreen(k))); s.position.set(x, 0.17, 0.043); p.add(s);
+    const sm = deskScreens();
+    [['pfd', -0.47, 0], ['eicas', 0, 1], ['nd', 0.47, 2]].forEach(([k, x, i]) => {
+      box(p, 0.39, 0.29, 0.01, AV_DARK, x, 0.17, 0.036);
+      const geo = new THREE.PlaneGeometry(0.36, 0.27); const uv = geo.attributes.uv; for (let v = 0; v < uv.count; v++) uv.setXY(v, (i + uv.getX(v)) / 3, 16 / 208 + uv.getY(v) * (192 / 208));
+      const s = new THREE.Mesh(geo, sm); s.position.set(x, 0.17, 0.043); p.add(s);
     });
-    for (let i = 0; i < 6; i++) box(p, 0.035, 0.018, 0.012, glow(['#F2C14E', '#2BE07A', '#4FB7FF'][i % 3], 1.6), -0.6 + i * 0.03, 0.335, 0.04);
+    { const geo = new THREE.PlaneGeometry(0.19, 0.016); const uv = geo.attributes.uv; for (let v = 0; v < uv.count; v++) uv.setXY(v, uv.getX(v) * (192 / 768), uv.getY(v) * (16 / 208)); const l = new THREE.Mesh(geo, sm); l.position.set(-0.52, 0.335, 0.047); p.add(l); }
     // side-stick on the left (captain), throttle quadrant on the right
     cyl(g, 0.035, 0.045, 0.03, '#15181D', -0.6, 0.775, 0.12, 14);
-    const st = PW.capsule(g, 0.018, 0.11, '#1C1F24', -0.6, 0.84, 0.12); st.rotation.x = -0.15;
-    sph(g, 0.012, mat('#C7432F'), -0.6, 0.9, 0.105, 8, 6);
-    rbox(g, 0.18, 0.07, 0.26, 0.015, '#1C1F24', 0.56, 0.79, 0.0);
+    const st = PW.capsule(g, 0.018, 0.11, '#15181D', -0.6, 0.84, 0.12); st.rotation.x = -0.15;
+    rbox(g, 0.18, 0.07, 0.26, 0.015, '#15181D', 0.56, 0.79, 0.0);
     for (const sx of [-1, 1]) { const l = box(g, 0.012, 0.13, 0.012, metal('#AEB4BD'), 0.56 + sx * 0.04, 0.88, 0.02); l.rotation.x = -0.35; box(g, 0.05, 0.03, 0.04, mat('#15181D'), 0.56 + sx * 0.04, 0.94, 0.0); }
     // rudder pedals under the desk
-    for (const sx of [-1, 1]) { const pd = rbox(g, 0.12, 0.2, 0.03, 0.01, '#3A3F47', sx * 0.18, 0.12, 0.05); pd.rotation.x = -0.5; }
+    for (const sx of [-1, 1]) { const pd = rbox(g, 0.12, 0.2, 0.03, 0.01, AV_DARK, sx * 0.18, 0.12, 0.05); pd.rotation.x = -0.5; }
   };
   // pilot seat: tall back with headrest, armrests and harness straps
   B.f_chair_pilot = (g) => {
     cyl(g, 0.24, 0.26, 0.05, AV_DARK, 0, 0.025, 0, 20); cyl(g, 0.05, 0.05, 0.36, metal('#8A9099'), 0, 0.22, 0, 12);
-    for (const sz of [-1, 1]) box(g, 0.5, 0.03, 0.04, metal('#3A3F47'), 0, 0.06, sz * 0.18);
+    for (const sz of [-1, 1]) box(g, 0.5, 0.03, 0.04, metal('#8A9099'), 0, 0.06, sz * 0.18);
     rbox(g, 0.5, 0.1, 0.5, 0.04, '#3B3F46', 0, 0.45, 0.02);
     rbox(g, 0.44, 0.03, 0.42, 0.02, mat('#E9E2D6', { rough: 1 }), 0, 0.51, 0.03);
     const back = new THREE.Group(); back.position.set(0, 0.5, -0.22); back.rotation.x = -0.12; g.add(back);
@@ -766,8 +777,8 @@
     rbox(back, 0.5, 0.4, 0.1, 0.04, '#3B3F46', 0, 0.2, 0);
     rbox(back, 0.42, 0.32, 0.02, 0.02, mat('#E9E2D6', { rough: 1 }), 0, 0.2, 0.05);
     for (const sx of [-1, 1]) box(back, 0.05, 0.32, 0.012, '#2F5FA8', sx * 0.1, 0.2, 0.066);
-    box(back, 0.08, 0.06, 0.02, metal('#C9CED6'), 0, 0.12, 0.07);
-    for (const sx of [-1, 1]) { rbox(g, 0.07, 0.05, 0.36, 0.02, '#2A2E34', sx * 0.27, 0.68, -0.01); box(g, 0.03, 0.18, 0.03, '#2A2E34', sx * 0.27, 0.58, -0.12); }
+    box(back, 0.08, 0.06, 0.02, metal('#8A9099'), 0, 0.12, 0.07);
+    for (const sx of [-1, 1]) { rbox(g, 0.07, 0.05, 0.36, 0.02, '#3B3F46', sx * 0.27, 0.68, -0.01); box(g, 0.03, 0.18, 0.03, '#3B3F46', sx * 0.27, 0.58, -0.12); }
   };
   // turbofan engine on a display stand; the fan turns slowly (intake faces the front)
   B.f_jet_engine = (g) => {
@@ -782,8 +793,10 @@
     const fan = new THREE.Group(); fan.position.set(0.38, 0, 0); e.add(fan);
     const sp = cone(fan, 0.1, 0.2, metal('#ECEFF3'), 0.1, 0, 0, 24); sp.rotation.z = -Math.PI / 2;
     const bm = metal('#9EA5AF');
-    for (let i = 0; i < 18; i++) { const b = new THREE.Group(); b.rotation.x = (i / 18) * Math.PI * 2; fan.add(b); const bl = box(b, 0.012, 0.25, 0.07, bm, 0, 0.2, 0); bl.rotation.y = 0.55; }
+    // blades straight on the fan (not one group each) so they merge into a single mesh that turns
+    for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; const bl = box(fan, 0.012, 0.25, 0.07, bm, 0, 0.2 * Math.cos(a), 0.2 * Math.sin(a)); bl.rotation.set(a, 0.55, 0); }
     const ring = tor(e, 0.4, 0.012, '#E8553D', -0.02, 0, 0); ring.rotation.y = Math.PI / 2;
+    if (PW.mergeShallow) PW.mergeShallow(fan); fan.traverse((m) => (m.userData.keep = true)); g.userData.mergeKeep = true;
     g.userData.update = (t) => (fan.rotation.x = t * 0.9);
   };
   // departures board; the "BİNİŞ" line blinks
@@ -793,9 +806,13 @@
     const tex = PW.canvasTex(512, 280, () => {});
     const draw = (on) => { const c = tex.userData.ctx, w = 512, h = 280; c.fillStyle = '#0A0C10'; c.fillRect(0, 0, w, h); c.fillStyle = '#F2C14E'; c.font = 'bold 22px monospace'; c.textAlign = 'left'; c.fillText('KALKIŞ  ·  DEPARTURES', 14, 30); c.fillStyle = '#2B3038'; c.fillRect(10, 40, w - 20, 2);
       rows.forEach((r, i) => { const y = 70 + i * 34; c.fillStyle = i % 2 ? '#11141A' : '#0D1015'; c.fillRect(10, y - 22, w - 20, 30); c.font = 'bold 17px monospace'; c.fillStyle = '#FFD27A'; c.fillText(r[0], 16, y); c.fillText(r[1], 86, y); c.fillStyle = '#F6F0E8'; c.fillText(r[2], 182, y); c.fillStyle = '#FFD27A'; c.fillText(r[3], 342, y); const st = r[4]; c.fillStyle = st === 'BİNİŞ' ? '#2BE07A' : st === 'ERTELENDİ' ? '#E8553D' : '#9FD0FF'; if (st !== 'BİNİŞ' || on) c.fillText(st, 384, y); }); tex.needsUpdate = true; };
-    draw(true);
+    draw(false);
     const s = new THREE.Mesh(new THREE.PlaneGeometry(1.42, 0.76), screenGlow(tex, 1.0)); s.position.z = 0.062; g.add(s);
-    let last = -1; g.userData.update = (t) => { const k = Math.floor(t * 1.4) % 2; if (k !== last) { last = k; draw(k === 0); } };
+    const lt = PW.canvasTex(128, 32, (c) => { c.clearRect(0, 0, 128, 32); c.fillStyle = '#2BE07A'; c.font = 'bold 25px monospace'; c.fillText('BİNİŞ', 2, 25); });
+    const label = new THREE.Mesh(new THREE.PlaneGeometry(0.2385, 0.0706), new THREE.MeshBasicMaterial({ map: lt, transparent: true, toneMapped: false, depthWrite: false }));
+    label.position.set(0.474, 0.209, 0.064); label.userData.keep = true; g.add(label);
+    g.userData.mergeKeep = true;
+    g.userData.update = (t) => { label.visible = Math.floor(t * 1.4) % 2 === 0; };
     g.userData.lightAt = [0, 0, 0.4]; g.userData.lightColor = '#FFD27A'; g.userData.lightPower = 0.3;
   };
   // the classic "six pack" of flight instruments; needles move
@@ -816,6 +833,7 @@
       if (n !== 'UFUK') { const nd = new THREE.Group(); nd.position.set(x, y, 0.092); g.add(nd); box(nd, 0.012, 0.11, 0.006, mat('#F6F0E8', { emissive: '#F6F0E8', ei: 0.6 }), 0, 0.045, 0); needles.push([nd, i]); }
       tor(g, 0.135, 0.008, metal('#8A9099'), x, y, 0.09);
     });
+    needles.forEach(([nd]) => nd.traverse((m) => (m.userData.keep = true))); g.userData.mergeKeep = true;
     g.userData.update = (t) => { for (const [nd, i] of needles) nd.rotation.z = i === 2 ? -t * 0.2 : i === 4 ? t * 0.05 : -1.2 + Math.sin(t * 0.6 + i) * 0.35; };
   };
   // approach chart for runway 25
@@ -903,6 +921,7 @@
     const sw = new THREE.Group(); sw.position.set(0, 2.0, 0); g.add(sw);
     tor(sw, 0.13, 0.01, metal('#C9CED6'), 0.02, 0, 0).rotation.y = Math.PI / 2;
     for (let k = 0; k < 5; k++) { const r0 = 0.13 - k * 0.018, r1 = r0 - 0.018; const s = cyl(sw, r1, r0, 0.16, mat(k % 2 ? '#F6F4EF' : '#F07B2A', { double: true, rough: 0.8 }), 0.1 + k * 0.16, -k * 0.012, 0, 16); s.rotation.z = -Math.PI / 2; }
+    sw.traverse((m) => (m.userData.keep = true)); g.userData.mergeKeep = true;
     g.userData.update = (t) => { sw.rotation.y = Math.sin(t * 0.5) * 0.35; sw.rotation.z = -0.1 + Math.sin(t * 1.7) * 0.05; };
   };
   // nose landing gear on a display base
@@ -1070,8 +1089,8 @@
       const rw = U.seeded(11); for (let x = w * 0.07; x < w * 0.29; x += 9) for (let y = hz - 30; y < hz - 4; y += 9) if (rw() < 0.55) { c.fillStyle = rw() < 0.8 ? '#FFD58A' : '#BDE4FF'; c.fillRect(x, y, 5, 4); }
       const tx = w * 0.83; c.fillStyle = '#262330'; c.fillRect(tx - 7, hz - 110, 14, 112); c.beginPath(); c.moveTo(tx - 26, hz - 112); c.lineTo(tx + 26, hz - 112); c.lineTo(tx + 20, hz - 132); c.lineTo(tx - 20, hz - 132); c.fill();
       c.fillStyle = 'rgba(160,230,255,.85)'; c.fillRect(tx - 19, hz - 129, 38, 12); c.fillStyle = '#262330'; c.fillRect(tx - 22, hz - 140, 44, 8); c.fillRect(tx - 1, hz - 156, 2, 16);
-      const beacon = Math.floor(tt * 1.2) % 2; c.fillStyle = beacon ? '#7CFFB2' : '#FFFFFF'; c.beginPath(); c.arc(tx, hz - 158, 4, 0, 7); c.fill();
-      c.fillStyle = Math.floor(tt * 0.8) % 2 ? '#FF3B30' : '#6A1A16'; c.beginPath(); c.arc(w * 0.18, hz - 49, 3, 0, 7); c.fill();
+      c.fillStyle = '#9FD8C0'; c.beginPath(); c.arc(tx, hz - 158, 3, 0, 7); c.fill();
+      c.fillStyle = '#6A1A16'; c.beginPath(); c.arc(w * 0.18, hz - 49, 3, 0, 7); c.fill();
       // the runway in perspective: asphalt, edge lights, threshold bars, "25", centreline
       const nearW = w * 0.62, farW = w * 0.03;
       c.fillStyle = '#2E3038'; c.beginPath(); c.moveTo(cx - farW, hz + 6); c.lineTo(cx + farW, hz + 6); c.lineTo(cx + nearW, h); c.lineTo(cx - nearW, h); c.fill();
@@ -1085,25 +1104,34 @@
       for (let i = 0; i <= 22; i++) { const a = at(i / 22); const s = 1 + a.half / 140; for (const sx of [-1, 1]) { c.fillStyle = i > 18 ? '#FFD27A' : '#F6F4EF'; c.beginPath(); c.arc(cx + sx * a.half * 1.01, a.y, s, 0, 7); c.fill(); } }
       // taxiway with blue edge lights
       for (let i = 0; i < 16; i++) { const x = w * 0.02 + i * w * 0.018, y = hz + 14 + i * 3.2; c.fillStyle = '#4FA3FF'; c.beginPath(); c.arc(x, y, 1.4 + i * 0.08, 0, 7); c.fill(); }
-      // a plane every 22 s: rolls at the far end, lifts off and climbs away to the left
-      const cyc = (tt % 22) / 22;
-      if (cyc < 0.7) {
-        const u = cyc / 0.7, px = cx - u * w * 0.42, py = hz + 2 - Math.max(0, u - 0.25) * h * 0.55, sc = 0.55 + u * 0.9, ang = u > 0.25 ? 0.16 : 0;
-        c.save(); c.translate(px, py); c.rotate(ang); c.scale(sc, sc);
-        c.fillStyle = '#E9ECF2'; c.beginPath(); c.ellipse(0, 0, 30, 4.2, 0, 0, 7); c.fill();
-        c.beginPath(); c.moveTo(22, -3); c.lineTo(34, -15); c.lineTo(38, -15); c.lineTo(32, -2); c.fill();
-        c.fillStyle = '#C9CED6'; c.beginPath(); c.moveTo(-4, 1); c.lineTo(10, 8); c.lineTo(16, 8); c.lineTo(8, 1); c.fill();
-        c.fillStyle = '#C7432F'; c.fillRect(30, -15, 6, 4);
-        c.fillStyle = '#9FD0FF'; for (let k = -18; k < 16; k += 4) c.fillRect(k, -1.5, 2, 1.4);
-        if (Math.floor(tt * 3) % 2) { c.fillStyle = '#FF3B30'; c.beginPath(); c.arc(-6, 2, 2, 0, 7); c.fill(); }
-        c.fillStyle = 'rgba(255,250,220,.9)'; c.beginPath(); c.arc(-30, 1, 2.6, 0, 7); c.fill();
-        c.restore();
-      }
       // a soft cockpit glass sheen
       const gl = c.createLinearGradient(0, 0, w, h); gl.addColorStop(0, 'rgba(255,255,255,.05)'); gl.addColorStop(0.5, 'rgba(255,255,255,0)'); gl.addColorStop(1, 'rgba(255,255,255,.03)'); c.fillStyle = gl; c.fillRect(0, 0, w, h);
     },
   };
-  PW.ANIMATED_VIEWS = { v_rain: 1, v_clouds: 1, v_aurora: 1, v_runway: 1 };
+  PW.ANIMATED_VIEWS = { v_rain: 1, v_clouds: 1, v_aurora: 1 };
+  // Views whose motion is a few small meshes in front of a still picture (no canvas re-upload every frame: a 1536x512
+  // repaint 4 times a second sent ~12 MB/s to the GPU and made Pist 25 stutter). fx(x, y) = canvas fraction -> plane local.
+  PW.VIEW_EXTRAS = {
+    v_runway(vp, Wp, Hp, cw = 1536) {
+      const at = (fx, fy) => [(fx - 0.5) * Wp, (0.5 - fy) * Hp];
+      const dot = (fx, fy, r, col) => { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 12), new THREE.MeshBasicMaterial({ color: col, toneMapped: false, transparent: true })); const [x, y] = at(fx, fy); m.position.set(x, y, 0.01); vp.add(m); return m; };
+      const beacon = dot(0.83, 0.2514, Hp * 0.012, '#FFFFFF'), red = dot(0.18, 0.4643, Hp * 0.008, '#FF3B30');
+      const tex = PW.canvasTex(256, 64, (c) => { c.clearRect(0, 0, 256, 64); c.save(); c.translate(128, 34); c.scale(2.6, 2.6);
+        c.fillStyle = '#E9ECF2'; c.beginPath(); c.ellipse(0, 0, 30, 4.2, 0, 0, 7); c.fill(); c.beginPath(); c.moveTo(22, -3); c.lineTo(34, -11); c.lineTo(38, -11); c.lineTo(32, -2); c.fill();
+        c.fillStyle = '#C9CED6'; c.beginPath(); c.moveTo(-4, 1); c.lineTo(10, 7); c.lineTo(16, 7); c.lineTo(8, 1); c.fill(); c.fillStyle = '#C7432F'; c.fillRect(30, -11, 6, 3);
+        c.fillStyle = '#9FD0FF'; for (let k = -18; k < 16; k += 4) c.fillRect(k, -1.5, 2, 1.4); c.fillStyle = 'rgba(255,250,220,.95)'; c.beginPath(); c.arc(-30, 1, 2.4, 0, 7); c.fill(); c.restore(); });
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.25), new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false, depthWrite: false })); plane.position.z = 0.01; vp.add(plane);
+      const strobe = dot(0, 0, Hp * 0.006, '#FF3B30'); vp.remove(strobe); plane.add(strobe); strobe.position.set(-0.05, -0.02, 0.001);
+      const len = (98.5 / cw) * Wp; // the sprite (256 px = 98.5 picture px at 2.6x) at scale 1
+      return (t) => {
+        beacon.material.color.set(Math.floor(t * 1.2) % 2 ? '#7CFFB2' : '#FFFFFF'); red.visible = Math.floor(t * 0.8) % 2 === 0;
+        const cyc = (t % 22) / 22; plane.visible = cyc < 0.7; if (!plane.visible) return;
+        const u = cyc / 0.7, sc = 0.55 + u * 0.9, [x, y] = at(0.5 - u * 0.42, 0.56 + 2 / 512 - Math.max(0, u - 0.25) * 0.55);
+        plane.position.set(x, y, 0.01); plane.scale.set(len * sc, len * sc, 1); plane.rotation.z = u > 0.25 ? 0.16 : 0;
+        strobe.visible = Math.floor(t * 3) % 2 === 1;
+      };
+    },
+  };
   PW.paintView = function (id, ctx, w, h, t) { const f = VIEWS[id] || VIEWS.v_city_day; ctx.clearRect(0, 0, w, h); f(ctx, w, h, U.seeded(U.hashStr(id)), t); };
   PW.viewSunColor = { v_runway: '#FFA866', v_city_night: '#6F7BD9', v_rain: '#7C8FB8', v_aurora: '#7FE0C2', v_space: '#9DB7FF', v_beach: '#FF9F6B', v_bosphorus: '#FFB070', v_snow: '#E6F0FF' };
   PW.viewIsNight = { v_city_night: 1, v_rain: 1, v_aurora: 1, v_space: 1 };
