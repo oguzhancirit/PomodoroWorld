@@ -845,6 +845,92 @@
   // pilot logbook
   B.d_logbook = (g) => { rbox(g, 0.22, 0.03, 0.16, 0.006, '#1F3A5F', 0, 0.015, 0); box(g, 0.2, 0.022, 0.003, '#F6F0E8', 0.002, 0.016, 0.0805); box(g, 0.08, 0.002, 0.03, mat('#E8B04A', { metal: 0.6, rough: 0.3 }), 0, 0.031, -0.02); };
 
+  // small airliner model (for display cases): fuselage, wings, tail in an airline-ish colour
+  function miniPlane(p, x, y, z, col, s = 1) {
+    const m = new THREE.Group(); m.position.set(x, y, z); m.scale.setScalar(s); m.rotation.y = 0.5; p.add(m);
+    const f = PW.capsule(m, 0.028, 0.34, '#F4F5F7', 0, 0, 0); f.rotation.z = Math.PI / 2;
+    box(m, 0.09, 0.006, 0.36, '#DDE1E6', 0.0, -0.004, 0); box(m, 0.05, 0.005, 0.13, '#DDE1E6', -0.17, 0.0, 0);
+    const fin = box(m, 0.07, 0.08, 0.006, col, -0.18, 0.045, 0); fin.rotation.z = 0.35;
+    box(m, 0.24, 0.008, 0.058, col, 0.02, 0.0, 0).position.y = -0.012;
+    for (const sz of [-1, 1]) { const e = cyl(m, 0.014, 0.014, 0.06, '#9AA0AA', 0.03, -0.022, sz * 0.09, 10); e.rotation.z = Math.PI / 2; }
+    cyl(m, 0.004, 0.004, 0.06, metal('#9AA0AA'), 0, -0.05, 0, 6);
+    return m;
+  }
+  // glass display case of airliner and fighter models, lit by an LED strip
+  B.f_model_case = (g) => {
+    const fr = mat('#2A2E35', { rough: 0.5, metal: 0.3 });
+    box(g, 1.4, 0.08, 0.45, fr, 0, 0.04, 0); box(g, 1.4, 0.06, 0.45, fr, 0, 1.87, 0); box(g, 1.4, 1.8, 0.03, '#1C1F24', 0, 0.95, -0.21);
+    for (const sx of [-1, 1]) box(g, 0.05, 1.8, 0.45, fr, sx * 0.675, 0.95, 0);
+    const cols = ['#C7432F', '#22406E', '#2F7D5B', '#E8B04A', '#8E6CC1', '#3E7CB1'];
+    [0.42, 0.86, 1.3].forEach((y, row) => {
+      box(g, 1.3, 0.015, 0.38, mat('#CFE8FF', { opacity: 0.35, rough: 0.05 }), 0, y, 0.01);
+      box(g, 1.3, 0.01, 0.01, glow('#FFE7B0', 1.3), 0, y + 0.4, 0.17);
+      for (let k = 0; k < 2; k++) miniPlane(g, -0.32 + k * 0.62, y + 0.12, 0.02, cols[(row * 2 + k) % cols.length], 1.05);
+    });
+    const gl = box(g, 1.3, 1.76, 0.01, mat('#CFE8FF', { opacity: 0.12, rough: 0.05 }), 0, 0.95, 0.22); gl.castShadow = false;
+    box(g, 0.5, 0.06, 0.01, mat('#E8B04A', { metal: 0.6, rough: 0.3 }), 0, 0.17, 0.23);
+    g.userData.lightAt = [0, 1.2, 0.4]; g.userData.lightColor = '#FFE7B0'; g.userData.lightPower = 0.25;
+  };
+  // crew lockers with name plates; a pilot's cap on top
+  B.f_crew_locker = (g) => {
+    const steel = mat('#7E8792', { metal: 0.5, rough: 0.45 });
+    for (let i = 0; i < 3; i++) {
+      const x = -0.4 + i * 0.4; box(g, 0.39, 1.8, 0.48, steel, x, 0.9, 0);
+      for (let v = 0; v < 4; v++) box(g, 0.2, 0.012, 0.01, '#4A515C', x, 1.55 + v * 0.04, 0.245);
+      box(g, 0.02, 0.12, 0.03, metal('#C9CED6'), x + 0.14, 0.95, 0.25);
+      box(g, 0.16, 0.05, 0.005, ['#E8B04A', '#F6F4EF', '#E8B04A'][i], x, 1.35, 0.243);
+    }
+    box(g, 1.22, 0.04, 0.5, '#5A616B', 0, 1.82, 0);
+    // captain's cap: crown, band, peak and wings badge
+    const cap = new THREE.Group(); cap.position.set(0.25, 1.84, 0.02); cap.rotation.y = -0.4; g.add(cap);
+    cyl(cap, 0.12, 0.1, 0.07, '#1C2433', 0, 0.06, 0, 24); cyl(cap, 0.1, 0.1, 0.03, '#11151E', 0, 0.02, 0, 24);
+    const peak = cyl(cap, 0.08, 0.08, 0.01, '#0B0E14', 0, 0.01, 0.09, 20); peak.scale.z = 0.6;
+    box(cap, 0.08, 0.02, 0.005, mat('#E8B04A', { metal: 0.7, rough: 0.3 }), 0, 0.05, 0.106);
+  };
+  // a red rolling tool chest from the hangar, with spanners on top
+  B.f_tool_chest = (g) => {
+    const red = mat('#C7362B', { rough: 0.35, metal: 0.3 });
+    rbox(g, 0.9, 0.86, 0.5, 0.02, red, 0, 0.5, 0);
+    for (let i = 0; i < 6; i++) { const y = 0.16 + i * 0.13; box(g, 0.84, 0.005, 0.01, '#7A1F18', 0, y + 0.06, 0.252); box(g, 0.4, 0.02, 0.02, metal('#C9CED6'), 0, y, 0.262); }
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const w = cyl(g, 0.035, 0.035, 0.04, '#15181D', sx * 0.38, 0.04, sz * 0.19, 14); w.rotation.z = Math.PI / 2; }
+    rbox(g, 0.92, 0.03, 0.52, 0.01, '#2A2E35', 0, 0.945, 0);
+    for (const [x, r] of [[-0.2, 0.3], [0.05, -0.2], [0.25, 0.1]]) { const s = box(g, 0.26, 0.012, 0.03, metal('#C9CED6'), x, 0.966, 0.02); s.rotation.y = r; }
+  };
+  // windsock on a pole; the sock sways in the wind
+  B.f_windsock = (g) => {
+    cyl(g, 0.14, 0.16, 0.05, '#2A2E35', 0, 0.025, 0, 18);
+    for (let i = 0; i < 4; i++) cyl(g, 0.022, 0.022, 0.5, i % 2 ? '#F6F4EF' : '#E8553D', 0, 0.3 + i * 0.5, 0, 10);
+    const sw = new THREE.Group(); sw.position.set(0, 2.0, 0); g.add(sw);
+    tor(sw, 0.13, 0.01, metal('#C9CED6'), 0.02, 0, 0).rotation.y = Math.PI / 2;
+    for (let k = 0; k < 5; k++) { const r0 = 0.13 - k * 0.018, r1 = r0 - 0.018; const s = cyl(sw, r1, r0, 0.16, mat(k % 2 ? '#F6F4EF' : '#F07B2A', { double: true, rough: 0.8 }), 0.1 + k * 0.16, -k * 0.012, 0, 16); s.rotation.z = -Math.PI / 2; }
+    g.userData.update = (t) => { sw.rotation.y = Math.sin(t * 0.5) * 0.35; sw.rotation.z = -0.1 + Math.sin(t * 1.7) * 0.05; };
+  };
+  // nose landing gear on a display base
+  B.f_landing_gear = (g) => {
+    box(g, 0.7, 0.06, 0.6, '#2A2E35', 0, 0.03, 0);
+    box(g, 0.66, 0.012, 0.012, mat('#E8B04A'), 0, 0.066, 0.29);
+    const chrome = metal('#D7DBE0');
+    cyl(g, 0.05, 0.05, 0.75, '#BFC5CC', 0, 0.85, 0, 16); cyl(g, 0.035, 0.035, 0.4, chrome, 0, 0.46, 0, 14);
+    box(g, 0.06, 0.18, 0.03, '#9AA0AA', 0, 0.62, 0.07).rotation.x = 0.4;
+    const ax = cyl(g, 0.02, 0.02, 0.36, chrome, 0, 0.24, 0, 10); ax.rotation.z = Math.PI / 2;
+    for (const sx of [-1, 1]) { const t = tor(g, 0.14, 0.06, '#1A1C20', sx * 0.13, 0.24, 0); t.rotation.y = Math.PI / 2; const h = cyl(g, 0.1, 0.1, 0.1, metal('#AEB4BD'), sx * 0.13, 0.24, 0, 18); h.rotation.z = Math.PI / 2; }
+    sph(g, 0.03, glow('#FFF6D8', 1.6), 0, 0.98, 0.07, 10, 8);
+  };
+  // taxiway edge light: a small glowing blue dome
+  B.f_runway_light = (g, d = {}) => {
+    const col = d.c || '#4FA3FF';
+    cyl(g, 0.07, 0.08, 0.04, '#E8B04A', 0, 0.02, 0, 14); cyl(g, 0.02, 0.025, 0.18, '#2A2E35', 0, 0.13, 0, 10);
+    sph(g, 0.05, mat(col, { emissive: col, ei: 2.2, opacity: 0.9 }), 0, 0.25, 0, 14, 10);
+    g.userData.lightAt = [0, 0.3, 0]; g.userData.lightColor = col; g.userData.lightPower = 0.2;
+  };
+  // pilot's flight bag trolley
+  B.f_flight_bag = (g) => {
+    rbox(g, 0.42, 0.5, 0.24, 0.04, '#1C1F24', 0, 0.3, 0);
+    box(g, 0.36, 0.08, 0.01, '#2A2E35', 0, 0.42, 0.122); box(g, 0.12, 0.03, 0.012, mat('#E8B04A', { metal: 0.6 }), 0, 0.46, 0.13);
+    for (const sx of [-1, 1]) { cyl(g, 0.01, 0.01, 0.4, metal('#9AA0AA'), sx * 0.12, 0.74, -0.1, 8); const w = cyl(g, 0.03, 0.03, 0.03, '#15181D', sx * 0.17, 0.03, -0.08, 12); w.rotation.z = Math.PI / 2; }
+    const h = box(g, 0.28, 0.025, 0.03, '#15181D', 0, 0.94, -0.1);
+  };
+
   PW.buildItem = function (id, data = {}) {
     const g = new THREE.Group();
     const f = B[id];

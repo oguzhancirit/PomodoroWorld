@@ -187,9 +187,16 @@
   // aviation set ("Pist 25", user 2026-11-08: a place for people who love flying)
   it('f_desk_cockpit', 'Masa', 'Kokpit Çalışma Masası', 650, 7, { surface: 0.76, fp: [1.5, 0.8] });
   it('f_chair_pilot', 'Sandalye', 'Pilot Koltuğu', 380, 6, { seat: 1, fp: [0.62, 0.62] });
-  it('f_jet_engine', 'Dekor', 'Turbofan Motor', 1200, 12, { fp: [0.9, 1.3] });
+  it('f_jet_engine', 'Havacılık', 'Turbofan Motor', 1200, 12, { fp: [0.9, 1.3] });
   it('d_headset', 'Masaüstü', 'Pilot Kulaklığı', 120, 3, { top: 1, fp: [0.24, 0.2] });
   it('d_logbook', 'Masaüstü', 'Uçuş Defteri', 40, 1, { top: 1, fp: [0.22, 0.16] });
+  it('f_model_case', 'Havacılık', 'Maket Vitrini', 520, 6, { fp: [1.4, 0.45], back: 1, light: 1 });
+  it('f_crew_locker', 'Havacılık', 'Pilot Dolabı', 340, 5, { fp: [1.2, 0.5], back: 1 });
+  it('f_tool_chest', 'Havacılık', 'Hangar Alet Dolabı', 260, 4, { fp: [0.9, 0.5], back: 1 });
+  it('f_windsock', 'Havacılık', 'Rüzgâr Tulumu', 180, 3, { fp: [0.4, 0.4] });
+  it('f_landing_gear', 'Havacılık', 'Burun İniş Takımı', 700, 9, { fp: [0.7, 0.6] });
+  it('f_runway_light', 'Havacılık', 'Taksi Yolu Lambası', 60, 2, { tint: 1, fp: [0.2, 0.2], light: 1 });
+  it('f_flight_bag', 'Havacılık', 'Pilot Çantası', 150, 3, { fp: [0.45, 0.3] });
   // wall items
   const w = (id, name, price, lvl, extra = {}) => R.push(Object.assign({ id, cat: 'furn', sub: 'Duvar', name, price, lvl, wall: 1 }, extra));
   w('w_clock', 'Duvar Saati', 90, 1, { ww: 0.5, wy: 2.3 });

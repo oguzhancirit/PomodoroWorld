@@ -38,7 +38,7 @@ export function libraryRoom(): Room {
 
 /* ---------- "Pist 25" (user 2026-11-08): a study hall for people who love flying ----------
    A cockpit-like reading room: a wide windscreen onto runway 25 at dusk, rows of cockpit desks with pilot seats facing
-   the runway, a turbofan engine on a stand, a departures board, flight instruments and shelves of books. The name: the
+   the runway, a turbofan engine on a stand, a departures board, flight instruments, model airliners, crew lockers and a windsock. The name: the
    runway you line up on, and the 25-minute pomodoro. */
 export const PIST25_SEATS = 8;
 export const PIST25_NAME = 'Pist 25';
@@ -55,13 +55,17 @@ export function pist25Room(): Room {
     { id: 'f_rug_rect', x: 0, z: 2.6, r: 0 }, { id: 'f_jet_engine', x: 0, z: 2.6, r: 0 },
     { id: 'f_plane_model', x: -1.9, z: 2.0, r: 1 }, { id: 'f_plane_model', x: 1.9, z: 3.3, r: 3 }, { id: 'f_globe', x: -3.4, z: 4.7, r: 0 },
     { id: 'f_telescope', x: -4.3, z: 3.6, r: 1 },
-    // the library half: books along both side walls, warm floor lamps
-    { id: 'f_shelf_tall', x: -5.28, z: -0.3, r: 1 }, { id: 'f_bookshelf', x: -5.28, z: 1.2, r: 1 }, { id: 'f_shelf_tall', x: -5.28, z: 2.7, r: 1 }, { id: 'f_bookshelf', x: -5.28, z: 4.1, r: 1 },
-    // the right side stays low (that wall is cut away for the camera): a reading corner with a lamp and plants
-    { id: 'f_lamp_floor', x: -4.7, z: 5.0, r: 0 }, { id: 'f_lamp_floor', x: 4.9, z: -0.4, r: 0 }, { id: 'f_bird_paradise', x: 4.9, z: 1.6, r: 0 }, { id: 'f_cactus', x: 4.9, z: 3.0, r: 0 },
-    { id: 'f_monstera', x: -4.9, z: -4.9, r: 0 }, { id: 'f_olive', x: 4.9, z: -4.9, r: 0 },
+    // the hangar wall (user 2026-11-08: aviation things instead of bookshelves and pot plants): a lit case of model
+    // airliners, the crew's lockers with a captain's cap on top, and a red tool chest
+    { id: 'f_model_case', x: -5.25, z: 0.9, r: 1 }, { id: 'f_crew_locker', x: -5.22, z: 2.45, r: 1 }, { id: 'f_tool_chest', x: -5.22, z: 3.75, r: 1 },
+    { id: 'f_lamp_floor', x: -4.7, z: 5.0, r: 0 },
+    // corners by the windscreen: a nose landing gear and a windsock
+    { id: 'f_landing_gear', x: -4.75, z: -4.75, r: 1 }, { id: 'f_windsock', x: 4.9, z: -4.9, r: 2 },
+    // the right side stays low (that wall is cut away for the camera): a flight bag and a row of taxiway lights
+    { id: 'f_lamp_floor', x: 4.9, z: -0.4, r: 0 }, { id: 'f_flight_bag', x: 4.85, z: 1.3, r: 3 },
+    { id: 'f_runway_light', x: 5.0, z: 2.4, r: 0 }, { id: 'f_runway_light', x: 5.0, z: 3.3, r: 0 }, { id: 'f_runway_light', x: 5.0, z: 4.2, r: 0 },
     // walls: departures board and the six instruments on the left, propeller and approach chart by the windscreen
-    { id: 'w_fids', w: 'w1', x: 3.0 }, { id: 'w_gauges', w: 'w1', x: -3.6 }, { id: 'w_worldmap', w: 'w2', x: -2.2 }, { id: 'w_poster_plane', w: 'w2', x: 1.6 },
+    { id: 'w_fids', w: 'w1', x: 3.0 }, { id: 'w_gauges', w: 'w1', x: 1.0 }, { id: 'w_worldmap', w: 'w2', x: -2.2 }, { id: 'w_poster_plane', w: 'w2', x: 1.6 },
     { id: 'w_propeller', w: 'w0', x: -4.35 }, { id: 'w_chart', w: 'w0', x: 4.35 }, { id: 'w_clock', w: 'w3', x: 3.6 },
   );
   return {

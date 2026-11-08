@@ -35,6 +35,11 @@ describe('public study halls (library + "Pist 25", user 2026-11-08)', () => {
     }
     for (const id of ['th_cockpit', 'v_runway']) expect(itemById(id), id).toBeTruthy();
   });
+  it('everything around is aviation: no bookshelves or pot plants, a model case, crew lockers, a windsock instead', () => {
+    const ids = pist25Room().items.map((i) => i.id);
+    for (const no of ['f_bookshelf', 'f_shelf_tall', 'f_monstera', 'f_olive', 'f_bird_paradise', 'f_cactus']) expect(ids, no).not.toContain(no);
+    for (const yes of ['f_model_case', 'f_crew_locker', 'f_tool_chest', 'f_windsock', 'f_landing_gear', 'f_runway_light']) expect(ids, yes).toContain(yes);
+  });
   it('every seat faces the window (pilots look down the runway)', () => {
     for (const c of pist25Room().items) if (c.id === 'f_chair_pilot' && 'r' in c) expect(c.r).toBe(2);
   });
