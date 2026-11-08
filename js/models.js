@@ -688,6 +688,163 @@
     B[id] = (g, d = {}) => { f(g, d); if (d.t) nameSign(g, String(d.t).slice(0, 12), x, z); };
   }
 
+  /* -------------- aviation set ("Pist 25" hangar library, user 2026-11-08) -------------- */
+  const AV_DARK = '#23272E', AV_PANEL = '#2E333B', AV_EDGE = '#3B414B';
+  const screenGlow = (tex, k = 1.15) => new THREE.MeshStandardMaterial({ map: tex, emissive: '#FFFFFF', emissiveMap: tex, emissiveIntensity: k, roughness: 0.35 });
+  function avScreen(kind) {
+    return PW.canvasTex(256, 192, (c, w, h) => {
+      c.fillStyle = '#05070B'; c.fillRect(0, 0, w, h);
+      if (kind === 'pfd') {
+        // attitude: sky over earth, a slightly banked horizon, pitch ladder, speed and altitude tapes
+        c.save(); c.beginPath(); c.rect(48, 22, 160, 150); c.clip(); c.translate(128, 100); c.rotate(-0.08);
+        c.fillStyle = '#1E73C8'; c.fillRect(-200, -200, 400, 200); c.fillStyle = '#8A5A2B'; c.fillRect(-200, 0, 400, 200);
+        c.strokeStyle = '#FFFFFF'; c.lineWidth = 2; c.beginPath(); c.moveTo(-200, 0); c.lineTo(200, 0); c.stroke();
+        c.lineWidth = 1.5; for (const p of [-30, -15, 15, 30]) { c.beginPath(); c.moveTo(-(p % 30 ? 14 : 24), p); c.lineTo(p % 30 ? 14 : 24, p); c.stroke(); }
+        c.restore();
+        c.strokeStyle = '#F2C14E'; c.lineWidth = 4; c.beginPath(); c.moveTo(92, 100); c.lineTo(116, 100); c.lineTo(122, 108); c.moveTo(164, 100); c.lineTo(140, 100); c.lineTo(134, 108); c.stroke();
+        c.fillStyle = '#3A3F47'; c.fillRect(6, 22, 38, 150); c.fillRect(212, 22, 38, 150);
+        c.fillStyle = '#FFFFFF'; c.font = 'bold 13px monospace'; c.textAlign = 'center';
+        for (let i = -2; i <= 2; i++) { c.fillText(String(150 - i * 10), 25, 104 + i * 26); c.fillText(String(3500 - i * 100), 231, 104 + i * 26); }
+        c.strokeStyle = '#2BE07A'; c.lineWidth = 2; c.strokeRect(6, 88, 38, 22); c.strokeRect(212, 88, 38, 22);
+        c.fillStyle = '#D24BD2'; c.fillRect(44, 60, 4, 10);
+        c.fillStyle = '#2BE07A'; c.font = 'bold 12px monospace'; c.fillText('SPEED   ALT   LOC  G/S', 128, 14);
+      } else if (kind === 'nd') {
+        // navigation display: compass arc, magenta route to the runway, a few green fixes
+        c.strokeStyle = '#FFFFFF'; c.lineWidth = 2; c.beginPath(); c.arc(128, 176, 150, Math.PI * 1.18, Math.PI * 1.82); c.stroke();
+        c.lineWidth = 1; for (let a = 0; a <= 12; a++) { const t = Math.PI * 1.18 + a * (Math.PI * 0.64 / 12); c.beginPath(); c.moveTo(128 + Math.cos(t) * 150, 176 + Math.sin(t) * 150); c.lineTo(128 + Math.cos(t) * 140, 176 + Math.sin(t) * 140); c.stroke(); }
+        c.fillStyle = '#FFFFFF'; c.font = 'bold 12px monospace'; c.textAlign = 'center'; c.fillText('25', 128, 20); c.fillText('22', 60, 40); c.fillText('28', 196, 40);
+        c.strokeStyle = '#D24BD2'; c.lineWidth = 3; c.beginPath(); c.moveTo(128, 176); c.lineTo(128, 120); c.lineTo(170, 70); c.lineTo(160, 34); c.stroke();
+        c.fillStyle = '#2BE07A'; for (const [x, y, n] of [[170, 70, 'ODAK'], [160, 34, 'HEDEF'], [80, 96, 'MOLA']]) { c.beginPath(); c.moveTo(x, y - 5); c.lineTo(x + 5, y); c.lineTo(x, y + 5); c.lineTo(x - 5, y); c.closePath(); c.fill(); c.fillText(n, x + (x > 128 ? 26 : -24), y + 4); }
+        c.strokeStyle = '#2BE07A'; c.beginPath(); c.arc(128, 176, 70, Math.PI * 1.25, Math.PI * 1.75); c.stroke();
+        c.fillStyle = '#F2C14E'; c.beginPath(); c.moveTo(128, 162); c.lineTo(136, 180); c.lineTo(120, 180); c.closePath(); c.fill();
+        c.fillStyle = '#2BE07A'; c.textAlign = 'left'; c.fillText('GS 0  TAS 0', 8, 186); c.textAlign = 'right'; c.fillText('ESB 25 NM', 248, 186);
+      } else {
+        // engine display: two N1 dials and a status list
+        for (const x of [70, 186]) {
+          c.strokeStyle = '#FFFFFF'; c.lineWidth = 3; c.beginPath(); c.arc(x, 72, 40, Math.PI * 0.8, Math.PI * 2.2); c.stroke();
+          c.strokeStyle = '#E8553D'; c.beginPath(); c.arc(x, 72, 40, Math.PI * 2.05, Math.PI * 2.2); c.stroke();
+          c.strokeStyle = '#2BE07A'; c.lineWidth = 3; c.beginPath(); c.moveTo(x, 72); c.lineTo(x + Math.cos(Math.PI * 1.55) * 36, 72 + Math.sin(Math.PI * 1.55) * 36); c.stroke();
+          c.fillStyle = '#FFFFFF'; c.font = 'bold 14px monospace'; c.textAlign = 'center'; c.fillText('25.0', x, 104); c.font = '11px monospace'; c.fillText('N1', x, 126);
+        }
+        c.fillStyle = '#2BE07A'; c.font = 'bold 12px monospace'; c.textAlign = 'left';
+        ['DOORS CLOSED', 'APU AVAIL', 'FOCUS  ARMED'].forEach((s, i) => c.fillText(s, 20, 150 + i * 15));
+        c.fillStyle = '#4FB7FF'; c.fillText('T.O CONFIG OK', 150, 165);
+      }
+    });
+  }
+  // a desk with a sloped instrument panel, glareshield, side-stick, throttle quadrant and rudder pedals
+  B.f_desk_cockpit = (g) => {
+    rbox(g, 1.5, 0.05, 0.8, 0.02, AV_PANEL, 0, 0.735, 0);
+    box(g, 1.46, 0.012, 0.012, mat('#E8B04A', { rough: 0.4, metal: 0.3 }), 0, 0.718, 0.4);
+    for (const sx of [-1, 1]) box(g, 0.06, 0.71, 0.76, AV_DARK, sx * 0.71, 0.355, 0);
+    box(g, 1.36, 0.42, 0.04, AV_DARK, 0, 0.5, -0.36);
+    const p = new THREE.Group(); p.position.set(0, 0.76, -0.3); p.rotation.x = -0.38; g.add(p);
+    box(p, 1.42, 0.34, 0.07, AV_DARK, 0, 0.17, 0);
+    rbox(p, 1.48, 0.05, 0.2, 0.02, '#15181D', 0, 0.36, 0.04);
+    [['pfd', -0.47], ['eicas', 0], ['nd', 0.47]].forEach(([k, x]) => {
+      box(p, 0.39, 0.29, 0.01, '#0B0D11', x, 0.17, 0.036);
+      const s = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.27), screenGlow(avScreen(k))); s.position.set(x, 0.17, 0.043); p.add(s);
+    });
+    for (let i = 0; i < 6; i++) box(p, 0.035, 0.018, 0.012, glow(['#F2C14E', '#2BE07A', '#4FB7FF'][i % 3], 1.6), -0.6 + i * 0.03, 0.335, 0.04);
+    // side-stick on the left (captain), throttle quadrant on the right
+    cyl(g, 0.035, 0.045, 0.03, '#15181D', -0.6, 0.775, 0.12, 14);
+    const st = PW.capsule(g, 0.018, 0.11, '#1C1F24', -0.6, 0.84, 0.12); st.rotation.x = -0.15;
+    sph(g, 0.012, mat('#C7432F'), -0.6, 0.9, 0.105, 8, 6);
+    rbox(g, 0.18, 0.07, 0.26, 0.015, '#1C1F24', 0.56, 0.79, 0.0);
+    for (const sx of [-1, 1]) { const l = box(g, 0.012, 0.13, 0.012, metal('#AEB4BD'), 0.56 + sx * 0.04, 0.88, 0.02); l.rotation.x = -0.35; box(g, 0.05, 0.03, 0.04, mat('#15181D'), 0.56 + sx * 0.04, 0.94, 0.0); }
+    // rudder pedals under the desk
+    for (const sx of [-1, 1]) { const pd = rbox(g, 0.12, 0.2, 0.03, 0.01, '#3A3F47', sx * 0.18, 0.12, 0.05); pd.rotation.x = -0.5; }
+  };
+  // pilot seat: tall back with headrest, armrests and harness straps
+  B.f_chair_pilot = (g) => {
+    cyl(g, 0.24, 0.26, 0.05, AV_DARK, 0, 0.025, 0, 20); cyl(g, 0.05, 0.05, 0.36, metal('#8A9099'), 0, 0.22, 0, 12);
+    for (const sz of [-1, 1]) box(g, 0.5, 0.03, 0.04, metal('#3A3F47'), 0, 0.06, sz * 0.18);
+    rbox(g, 0.5, 0.1, 0.5, 0.04, '#3B3F46', 0, 0.45, 0.02);
+    rbox(g, 0.44, 0.03, 0.42, 0.02, mat('#E9E2D6', { rough: 1 }), 0, 0.51, 0.03);
+    const back = new THREE.Group(); back.position.set(0, 0.5, -0.22); back.rotation.x = -0.12; g.add(back);
+    // a low sporty back, so the person in it still shows from behind (the room is seen from the back)
+    rbox(back, 0.5, 0.4, 0.1, 0.04, '#3B3F46', 0, 0.2, 0);
+    rbox(back, 0.42, 0.32, 0.02, 0.02, mat('#E9E2D6', { rough: 1 }), 0, 0.2, 0.05);
+    for (const sx of [-1, 1]) box(back, 0.05, 0.32, 0.012, '#2F5FA8', sx * 0.1, 0.2, 0.066);
+    box(back, 0.08, 0.06, 0.02, metal('#C9CED6'), 0, 0.12, 0.07);
+    for (const sx of [-1, 1]) { rbox(g, 0.07, 0.05, 0.36, 0.02, '#2A2E34', sx * 0.27, 0.68, -0.01); box(g, 0.03, 0.18, 0.03, '#2A2E34', sx * 0.27, 0.58, -0.12); }
+  };
+  // turbofan engine on a display stand; the fan turns slowly (intake faces the front)
+  B.f_jet_engine = (g) => {
+    for (const sx of [-1, 1]) { box(g, 0.08, 0.06, 1.2, mat('#F2C14E', { rough: 0.5 }), sx * 0.34, 0.03, 0); for (const sz of [-1, 1]) box(g, 0.07, 0.44, 0.07, '#3A3F47', sx * 0.3, 0.25, sz * 0.32); }
+    for (const sz of [-1, 1]) box(g, 0.68, 0.06, 0.08, '#3A3F47', 0, 0.46, sz * 0.32);
+    const e = new THREE.Group(); e.position.set(0, 0.88, 0); e.rotation.y = -Math.PI / 2; g.add(e);
+    const skin = mat('#C9CED6', { metal: 0.65, rough: 0.3, double: true });
+    const nac = lathe(e, [[0.36, -0.5], [0.4, -0.35], [0.41, 0.1], [0.37, 0.48], [0.33, 0.5]], skin, 0, 0, 0, 40); nac.rotation.z = Math.PI / 2;
+    const lip = tor(e, 0.355, 0.03, metal('#E6E9EE'), 0.5, 0, 0); lip.rotation.y = Math.PI / 2;
+    const core = cyl(e, 0.2, 0.15, 0.9, metal('#7A808A'), -0.15, 0, 0, 28); core.rotation.z = Math.PI / 2;
+    const nozzle = cone(e, 0.15, 0.32, metal('#5A5F68'), -0.72, 0, 0, 24); nozzle.rotation.z = Math.PI / 2;
+    const fan = new THREE.Group(); fan.position.set(0.38, 0, 0); e.add(fan);
+    const sp = cone(fan, 0.1, 0.2, metal('#ECEFF3'), 0.1, 0, 0, 24); sp.rotation.z = -Math.PI / 2;
+    const bm = metal('#9EA5AF');
+    for (let i = 0; i < 18; i++) { const b = new THREE.Group(); b.rotation.x = (i / 18) * Math.PI * 2; fan.add(b); const bl = box(b, 0.012, 0.25, 0.07, bm, 0, 0.2, 0); bl.rotation.y = 0.55; }
+    const ring = tor(e, 0.4, 0.012, '#E8553D', -0.02, 0, 0); ring.rotation.y = Math.PI / 2;
+    g.userData.update = (t) => (fan.rotation.x = t * 0.9);
+  };
+  // departures board; the "BİNİŞ" line blinks
+  B.w_fids = (g) => {
+    rbox(g, 1.5, 0.82, 0.06, 0.015, '#15181D', 0, 0, 0.03);
+    const rows = [['07:25', 'PW 025', 'HAYALLERİN', 'A1', 'BİNİŞ'], ['08:10', 'TK 2124', 'ANKARA', 'B4', 'ZAMANINDA'], ['08:45', 'PW 050', 'DERİN ODAK', 'C2', 'ZAMANINDA'], ['09:30', 'TK 1985', 'LONDRA', 'D7', 'ZAMANINDA'], ['10:05', 'PW 090', 'MARATON', 'E3', 'ERTELENDİ'], ['11:20', 'TK 0001', 'NEW YORK', 'F1', 'ZAMANINDA']];
+    const tex = PW.canvasTex(512, 280, () => {});
+    const draw = (on) => { const c = tex.userData.ctx, w = 512, h = 280; c.fillStyle = '#0A0C10'; c.fillRect(0, 0, w, h); c.fillStyle = '#F2C14E'; c.font = 'bold 22px monospace'; c.textAlign = 'left'; c.fillText('KALKIŞ  ·  DEPARTURES', 14, 30); c.fillStyle = '#2B3038'; c.fillRect(10, 40, w - 20, 2);
+      rows.forEach((r, i) => { const y = 70 + i * 34; c.fillStyle = i % 2 ? '#11141A' : '#0D1015'; c.fillRect(10, y - 22, w - 20, 30); c.font = 'bold 17px monospace'; c.fillStyle = '#FFD27A'; c.fillText(r[0], 16, y); c.fillText(r[1], 86, y); c.fillStyle = '#F6F0E8'; c.fillText(r[2], 182, y); c.fillStyle = '#FFD27A'; c.fillText(r[3], 342, y); const st = r[4]; c.fillStyle = st === 'BİNİŞ' ? '#2BE07A' : st === 'ERTELENDİ' ? '#E8553D' : '#9FD0FF'; if (st !== 'BİNİŞ' || on) c.fillText(st, 384, y); }); tex.needsUpdate = true; };
+    draw(true);
+    const s = new THREE.Mesh(new THREE.PlaneGeometry(1.42, 0.76), screenGlow(tex, 1.0)); s.position.z = 0.062; g.add(s);
+    let last = -1; g.userData.update = (t) => { const k = Math.floor(t * 1.4) % 2; if (k !== last) { last = k; draw(k === 0); } };
+    g.userData.lightAt = [0, 0, 0.4]; g.userData.lightColor = '#FFD27A'; g.userData.lightPower = 0.3;
+  };
+  // the classic "six pack" of flight instruments; needles move
+  B.w_gauges = (g) => {
+    rbox(g, 1.1, 0.74, 0.06, 0.02, '#1C1F24', 0, 0, 0.03);
+    const names = ['HIZ', 'UFUK', 'İRTİFA', 'DÖNÜŞ', 'PUSULA', 'DİKEY'];
+    const needles = [];
+    names.forEach((n, i) => {
+      const x = -0.34 + (i % 3) * 0.34, y = i < 3 ? 0.17 : -0.17;
+      cyl(g, 0.15, 0.15, 0.03, metal('#3A3F47'), x, y, 0.07, 28).rotation.x = Math.PI / 2;
+      const face = PW.canvasTex(128, 128, (c, w, h) => {
+        c.fillStyle = '#0C0E12'; c.beginPath(); c.arc(64, 64, 62, 0, 7); c.fill();
+        if (n === 'UFUK') { c.save(); c.beginPath(); c.arc(64, 64, 56, 0, 7); c.clip(); c.fillStyle = '#1E73C8'; c.fillRect(0, 0, 128, 64); c.fillStyle = '#8A5A2B'; c.fillRect(0, 64, 128, 64); c.strokeStyle = '#FFF'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, 64); c.lineTo(128, 64); c.stroke(); c.restore(); c.strokeStyle = '#F2C14E'; c.lineWidth = 4; c.beginPath(); c.moveTo(34, 66); c.lineTo(56, 66); c.moveTo(72, 66); c.lineTo(94, 66); c.stroke(); }
+        else { c.strokeStyle = '#F6F0E8'; c.lineWidth = 2; for (let k = 0; k < 36; k++) { const a = (k / 36) * Math.PI * 2; const r1 = k % 3 ? 52 : 46; c.beginPath(); c.moveTo(64 + Math.cos(a) * r1, 64 + Math.sin(a) * r1); c.lineTo(64 + Math.cos(a) * 58, 64 + Math.sin(a) * 58); c.stroke(); } if (n === 'HIZ') { c.strokeStyle = '#2BE07A'; c.lineWidth = 5; c.beginPath(); c.arc(64, 64, 55, 2.6, 4.6); c.stroke(); c.strokeStyle = '#E8553D'; c.beginPath(); c.arc(64, 64, 55, 5.6, 5.75); c.stroke(); } }
+        c.fillStyle = '#F6F0E8'; c.font = 'bold 13px sans-serif'; c.textAlign = 'center'; c.fillText(n, 64, 96);
+      });
+      const fm = new THREE.Mesh(new THREE.CircleGeometry(0.13, 32), screenGlow(face, 0.55)); fm.position.set(x, y, 0.087); g.add(fm);
+      if (n !== 'UFUK') { const nd = new THREE.Group(); nd.position.set(x, y, 0.092); g.add(nd); box(nd, 0.012, 0.11, 0.006, mat('#F6F0E8', { emissive: '#F6F0E8', ei: 0.6 }), 0, 0.045, 0); needles.push([nd, i]); }
+      tor(g, 0.135, 0.008, metal('#8A9099'), x, y, 0.09);
+    });
+    g.userData.update = (t) => { for (const [nd, i] of needles) nd.rotation.z = i === 2 ? -t * 0.2 : i === 4 ? t * 0.05 : -1.2 + Math.sin(t * 0.6 + i) * 0.35; };
+  };
+  // approach chart for runway 25
+  B.w_chart = (g) => framed(g, 0.62, 0.86, PW.canvasTex(256, 356, (c, w, h) => {
+    c.fillStyle = '#FBF8F0'; c.fillRect(0, 0, w, h); c.fillStyle = '#1C2A44'; c.font = 'bold 18px sans-serif'; c.textAlign = 'center'; c.fillText('ILS  PİST 25', w / 2, 26); c.font = '11px sans-serif'; c.fillText('POMODORO WORLD · YAKLAŞMA KARTI', w / 2, 42);
+    c.strokeStyle = '#1C2A44'; c.lineWidth = 1; c.strokeRect(12, 52, w - 24, 190);
+    c.strokeStyle = '#B8C7D6'; for (let r = 30; r < 100; r += 22) { c.beginPath(); c.arc(w / 2, 150, r, 0, 7); c.stroke(); }
+    c.fillStyle = '#2A2B33'; c.save(); c.translate(w / 2, 150); c.rotate(0.35); c.fillRect(-5, -34, 10, 68); c.restore();
+    c.strokeStyle = '#C7432F'; c.lineWidth = 2; c.setLineDash([6, 4]); c.beginPath(); c.moveTo(w / 2 + 24, 85); c.lineTo(w / 2 - 50, 230); c.stroke(); c.setLineDash([]);
+    c.fillStyle = '#1C2A44'; c.font = 'bold 11px sans-serif'; c.fillText('245°', w / 2 + 52, 96); c.fillText('ODAK', w / 2 - 54, 214);
+    c.strokeStyle = '#1C2A44'; c.strokeRect(12, 252, w - 24, 90); c.beginPath(); c.moveTo(24, 268); c.lineTo(w - 30, 330); c.stroke(); c.fillRect(w - 40, 330, 24, 4);
+    c.font = '10px sans-serif'; c.textAlign = 'left'; c.fillText('3° süzülüş', 30, 300); c.fillText('KARAR: HEDEF', 140, 280);
+  }), '#2A2B33');
+  // a wooden two-blade propeller on the wall
+  B.w_propeller = (g) => {
+    const W = mat('#9C5B2E', { rough: 0.5 });
+    for (const s of [-1, 1]) { const bl = lathe(g, [[0, 0], [0.06, 0.05], [0.075, 0.3], [0.05, 0.7], [0, 0.76]], W, 0, 0, 0.05, 14); bl.scale.set(1, 1, 0.3); bl.rotation.z = s * Math.PI / 2; for (const yy of [0.68]) { const tip = cyl(g, 0.045, 0.04, 0.06, mat('#E6E9EE', { metal: 0.6, rough: 0.3 }), s * yy, 0, 0.05, 12); tip.rotation.z = Math.PI / 2; tip.scale.z = 0.4; } }
+    cyl(g, 0.09, 0.09, 0.08, metal('#C9CED6'), 0, 0, 0.06, 20).rotation.x = Math.PI / 2;
+    cone(g, 0.07, 0.1, metal('#E6E9EE'), 0, 0, 0.14, 20).rotation.x = Math.PI / 2;
+  };
+  // pilot headset on the desk
+  B.d_headset = (g) => {
+    const band = tor(g, 0.085, 0.01, '#2A2B33', 0, 0.09, 0, Math.PI); band.rotation.y = 0.3;
+    for (const s of [-1, 1]) { const cup = cyl(g, 0.045, 0.05, 0.04, '#3A3F47', s * 0.08, 0.04, 0, 18); cup.rotation.z = Math.PI / 2; cup.position.x = s * 0.08 * Math.cos(0.3); cup.position.z = -s * 0.08 * Math.sin(0.3); }
+    const mic = cyl(g, 0.004, 0.004, 0.12, '#15181D', 0.05, 0.04, 0.07, 6); mic.rotation.set(Math.PI / 2, 0, 0.6); sph(g, 0.012, '#15181D', 0.02, 0.04, 0.12, 8, 6);
+  };
+  // pilot logbook
+  B.d_logbook = (g) => { rbox(g, 0.22, 0.03, 0.16, 0.006, '#1F3A5F', 0, 0.015, 0); box(g, 0.2, 0.022, 0.003, '#F6F0E8', 0.002, 0.016, 0.0805); box(g, 0.08, 0.002, 0.03, mat('#E8B04A', { metal: 0.6, rough: 0.3 }), 0, 0.031, -0.02); };
+
   PW.buildItem = function (id, data = {}) {
     const g = new THREE.Group();
     const f = B[id];
@@ -709,6 +866,7 @@
     if (id === 'f_stool') return [{ x: 0, z: 0, h: 0.48 }];
     if (id === 'f_chair_gaming') return [{ x: 0, z: 0.02, h: 0.51 }];
     if (id === 'f_chair_office') return [{ x: 0, z: 0.02, h: 0.49 }];
+    if (id === 'f_chair_pilot') return [{ x: 0, z: 0.04, h: 0.51 }];
     return [{ x: 0, z: 0.02, h: 0.5 }];
   };
 
@@ -773,6 +931,12 @@
       else if (p === 'logs') { for (let y = 0; y < 8; y++) { const gr = c.createLinearGradient(0, y * 64, 0, y * 64 + 64); gr.addColorStop(0, th.wall2); gr.addColorStop(0.5, th.wall); gr.addColorStop(1, th.wall2); c.fillStyle = gr; c.fillRect(0, y * 64, w, 62); } }
       else if (p === 'wainscot') { c.fillStyle = th.wall2; for (let i = 0; i < 8; i++) c.fillRect(i * 64 + 30, 0, 4, h * 0.62); c.fillStyle = '#5A3A26'; c.fillRect(0, h * 0.62, w, h * 0.38); c.fillStyle = th.trim; c.fillRect(0, h * 0.62, w, 8); c.fillStyle = '#47291A'; for (let i = 0; i < 4; i++) c.fillRect(i * 128 + 14, h * 0.68, 100, h * 0.26); }
       else if (p === 'cini') { for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const cx = x * 128 + 64, cy = y * 128 + 64; c.strokeStyle = '#B8C7D6'; c.strokeRect(x * 128, y * 128, 128, 128); c.fillStyle = '#1F5FA8'; for (let k = 0; k < 8; k++) { c.save(); c.translate(cx, cy); c.rotate(k * Math.PI / 4); c.beginPath(); c.ellipse(0, -30, 9, 24, 0, 0, 7); c.fill(); c.restore(); } c.fillStyle = '#C7432F'; c.beginPath(); c.arc(cx, cy, 12, 0, 7); c.fill(); c.fillStyle = '#2F9A8B'; for (let k = 0; k < 4; k++) { c.beginPath(); c.arc(x * 128 + (k % 2) * 128, y * 128 + (k > 1 ? 128 : 0), 14, 0, 7); c.fill(); } } }
+      else if (p === 'cockpit') {
+        // cockpit side panels: riveted plates, a few switch rows and small annunciator lamps
+        for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const px = x * 128 + 5, py = y * 128 + 5; c.fillStyle = (x + y) % 2 ? th.wall : th.wall2; c.fillRect(px, py, 118, 118); c.fillStyle = 'rgba(255,255,255,.18)'; for (const [rx, ry] of [[8, 8], [110, 8], [8, 110], [110, 110]]) { c.beginPath(); c.arc(px + rx, py + ry, 3, 0, 7); c.fill(); }
+          if (r() < 0.45) { const n = 3 + Math.floor(r() * 4); for (let k = 0; k < n; k++) { c.fillStyle = '#15181D'; c.fillRect(px + 18 + k * 22, py + 40, 12, 26); c.fillStyle = '#C9CED6'; c.fillRect(px + 21 + k * 22, py + (r() < 0.5 ? 42 : 54), 6, 10); } }
+          if (r() < 0.35) { c.fillStyle = ['#F2C14E', '#2BE07A', '#4FB7FF', '#E8553D'][Math.floor(r() * 4)]; c.fillRect(px + 20, py + 84, 30, 12); c.fillStyle = 'rgba(0,0,0,.4)'; c.fillRect(px + 56, py + 84, 30, 12); } }
+        c.fillStyle = th.trim; c.fillRect(0, 252, w, 4); }
       else if (p === 'panel') { for (let y = 0; y < 4; y++) for (let x = 0; x < 2; x++) { c.fillStyle = r() < 0.5 ? th.wall : th.wall2; c.fillRect(x * 256 + 4, y * 128 + 4, 248, 120); } c.fillStyle = th.trim; c.fillRect(0, 250, w, 6); }
       else if (p === 'stripe') { for (let x = 0; x < w; x += 64) { c.fillStyle = th.wall2; c.fillRect(x, 0, 28, h); } }
       else if (p === 'dots') { c.fillStyle = th.wall2; for (let y = 16; y < h; y += 48) for (let x = (y / 48) % 2 ? 40 : 16; x < w; x += 48) { c.beginPath(); c.arc(x, y, 7, 0, 7); c.fill(); } }
@@ -806,9 +970,55 @@
     v_clouds(c, w, h, r, t) { sky(c, w, h, [[0, '#3E7CB1'], [0.55, '#9FC7EA'], [1, '#FCE6C8']]); c.fillStyle = '#FFF4DA'; c.beginPath(); c.arc(w * 0.75, h * 0.35, 40, 0, 7); c.fill(); const off = ((t || 0) * 8) % w; for (let layer = 0; layer < 3; layer++) { c.fillStyle = ['rgba(255,255,255,.7)', 'rgba(255,250,240,.9)', '#FFFFFF'][layer]; const rr = U.seeded(20 + layer); for (let i = 0; i < 26; i++) { const x = (rr() * w * 1.2 + off * (layer + 1) * 0.5) % (w * 1.2) - w * 0.1, y = h * (0.62 + layer * 0.12) + rr() * 30; c.beginPath(); c.arc(x, y, 40 + rr() * 40, 0, 7); c.fill(); } } c.fillStyle = '#C9CED6'; c.beginPath(); c.moveTo(0, h * 0.88); c.lineTo(w * 0.45, h * 0.72); c.lineTo(w * 0.47, h * 0.75); c.lineTo(0, h); c.fill(); c.fillStyle = '#C7432F'; c.beginPath(); c.moveTo(w * 0.43, h * 0.73); c.lineTo(w * 0.47, h * 0.66); c.lineTo(w * 0.48, h * 0.75); c.fill(); },
     v_aurora(c, w, h, r, t) { sky(c, w, h, [[0, '#050B1E'], [1, '#13284A']]); stars(c, w, h * 0.7, 160, U.seeded(3)); const tt = t || 0; for (let b = 0; b < 3; b++) { const g = c.createLinearGradient(0, h * 0.1, 0, h * 0.6); g.addColorStop(0, 'rgba(120,255,200,0)'); g.addColorStop(0.5, ['rgba(110,255,190,.45)', 'rgba(120,200,255,.35)', 'rgba(200,120,255,.25)'][b]); g.addColorStop(1, 'rgba(120,255,200,0)'); c.fillStyle = g; c.beginPath(); c.moveTo(0, h * 0.6); for (let x = 0; x <= w; x += 16) c.lineTo(x, h * (0.25 + b * 0.06) + Math.sin(x * 0.01 + tt * 0.6 + b) * 40 + Math.sin(x * 0.023 - tt * 0.4) * 20); c.lineTo(w, h * 0.6); c.fill(); } mountains(c, w, h * 0.78, 90, '#0B1730', U.seeded(4), 6); c.fillStyle = '#0A1426'; c.fillRect(0, h * 0.85, w, h); for (let i = 0; i < 40; i++) tree(c, U.seeded(i)() * w, h * 0.92, 40, '#08101F'); },
     v_space(c, w, h, r) { sky(c, w, h, [[0, '#02030A'], [1, '#0A0F24']]); stars(c, w, h, 300, r); const g = c.createRadialGradient(w * 0.5, h * 1.6, h * 0.8, w * 0.5, h * 1.6, h * 1.25); g.addColorStop(0, '#2E7BC9'); g.addColorStop(0.92, '#7FC1F0'); g.addColorStop(0.97, 'rgba(160,220,255,.6)'); g.addColorStop(1, 'rgba(160,220,255,0)'); c.fillStyle = g; c.beginPath(); c.arc(w * 0.5, h * 1.6, h * 1.25, 0, 7); c.fill(); c.fillStyle = 'rgba(127,176,105,.8)'; for (let i = 0; i < 8; i++) { c.beginPath(); c.ellipse(w * 0.2 + r() * w * 0.6, h * 0.75 + r() * h * 0.25, 40 + r() * 60, 15 + r() * 20, r(), 0, 7); c.fill(); } c.fillStyle = 'rgba(255,255,255,.6)'; for (let i = 0; i < 12; i++) { c.beginPath(); c.ellipse(r() * w, h * 0.7 + r() * h * 0.3, 50 + r() * 50, 6 + r() * 8, r() * 0.4, 0, 7); c.fill(); } c.fillStyle = '#E9E3D0'; c.beginPath(); c.arc(w * 0.82, h * 0.2, 22, 0, 7); c.fill(); },
+    // "Pist 25" at dusk, seen from the cockpit: the runway runs away from you, a tower beacon turns, planes take off
+    v_runway(c, w, h, r, t) {
+      const tt = t || 0, hz = h * 0.56, cx = w * 0.5;
+      sky(c, w, h, [[0, '#14193A'], [0.32, '#3B3570'], [0.48, '#C2617A'], [0.56, '#F6A35C'], [0.6, '#3A3340'], [1, '#22232B']]);
+      stars(c, w, h * 0.3, 70, U.seeded(9));
+      c.fillStyle = 'rgba(255,214,150,.9)'; c.beginPath(); c.arc(w * 0.72, hz - 6, 26, Math.PI, 0); c.fill();
+      // far hills and the airport skyline
+      mountains(c, w, hz + 2, 26, '#4A3D57', U.seeded(4), 9);
+      c.fillStyle = '#2C2836'; c.fillRect(0, hz - 2, w, 12);
+      // terminal with lit windows (left) and the control tower (right)
+      c.fillStyle = '#262330'; c.fillRect(w * 0.06, hz - 34, w * 0.24, 36); c.fillRect(w * 0.1, hz - 46, w * 0.12, 14);
+      const rw = U.seeded(11); for (let x = w * 0.07; x < w * 0.29; x += 9) for (let y = hz - 30; y < hz - 4; y += 9) if (rw() < 0.55) { c.fillStyle = rw() < 0.8 ? '#FFD58A' : '#BDE4FF'; c.fillRect(x, y, 5, 4); }
+      const tx = w * 0.83; c.fillStyle = '#262330'; c.fillRect(tx - 7, hz - 110, 14, 112); c.beginPath(); c.moveTo(tx - 26, hz - 112); c.lineTo(tx + 26, hz - 112); c.lineTo(tx + 20, hz - 132); c.lineTo(tx - 20, hz - 132); c.fill();
+      c.fillStyle = 'rgba(160,230,255,.85)'; c.fillRect(tx - 19, hz - 129, 38, 12); c.fillStyle = '#262330'; c.fillRect(tx - 22, hz - 140, 44, 8); c.fillRect(tx - 1, hz - 156, 2, 16);
+      const beacon = Math.floor(tt * 1.2) % 2; c.fillStyle = beacon ? '#7CFFB2' : '#FFFFFF'; c.beginPath(); c.arc(tx, hz - 158, 4, 0, 7); c.fill();
+      c.fillStyle = Math.floor(tt * 0.8) % 2 ? '#FF3B30' : '#6A1A16'; c.beginPath(); c.arc(w * 0.18, hz - 49, 3, 0, 7); c.fill();
+      // the runway in perspective: asphalt, edge lights, threshold bars, "25", centreline
+      const nearW = w * 0.62, farW = w * 0.03;
+      c.fillStyle = '#2E3038'; c.beginPath(); c.moveTo(cx - farW, hz + 6); c.lineTo(cx + farW, hz + 6); c.lineTo(cx + nearW, h); c.lineTo(cx - nearW, h); c.fill();
+      c.fillStyle = '#2A3A2C'; c.beginPath(); c.moveTo(0, hz + 6); c.lineTo(cx - farW, hz + 6); c.lineTo(cx - nearW, h); c.lineTo(0, h); c.fill(); c.beginPath(); c.moveTo(w, hz + 6); c.lineTo(cx + farW, hz + 6); c.lineTo(cx + nearW, h); c.lineTo(w, h); c.fill();
+      const at = (u) => { const k = Math.pow(u, 2.2); return { y: hz + 6 + (h - hz - 6) * k, half: farW + (nearW - farW) * k }; };
+      c.fillStyle = 'rgba(240,240,235,.85)';
+      for (let i = 0; i < 14; i++) { const a = at(i / 14 + 0.02), b = at(i / 14 + 0.045); c.beginPath(); c.moveTo(cx - a.half * 0.012 - 0.5, a.y); c.lineTo(cx + a.half * 0.012 + 0.5, a.y); c.lineTo(cx + b.half * 0.014 + 0.5, b.y); c.lineTo(cx - b.half * 0.014 - 0.5, b.y); c.fill(); }
+      const th0 = at(0.86), th1 = at(0.95);
+      for (let k = -4; k <= 4; k++) { if (!k) continue; const s = k / 4.6; c.beginPath(); c.moveTo(cx + th0.half * (s - 0.045), th0.y); c.lineTo(cx + th0.half * (s + 0.045), th0.y); c.lineTo(cx + th1.half * (s + 0.045), th1.y); c.lineTo(cx + th1.half * (s - 0.045), th1.y); c.fill(); }
+      const n0 = at(0.7); c.save(); c.translate(cx, n0.y); c.scale(1, 0.32); c.font = `bold ${Math.round(n0.half * 0.42)}px sans-serif`; c.textAlign = 'center'; c.fillText('25', 0, 0); c.restore();
+      for (let i = 0; i <= 22; i++) { const a = at(i / 22); const s = 1 + a.half / 140; for (const sx of [-1, 1]) { c.fillStyle = i > 18 ? '#FFD27A' : '#F6F4EF'; c.beginPath(); c.arc(cx + sx * a.half * 1.01, a.y, s, 0, 7); c.fill(); } }
+      // taxiway with blue edge lights
+      for (let i = 0; i < 16; i++) { const x = w * 0.02 + i * w * 0.018, y = hz + 14 + i * 3.2; c.fillStyle = '#4FA3FF'; c.beginPath(); c.arc(x, y, 1.4 + i * 0.08, 0, 7); c.fill(); }
+      // a plane every 22 s: rolls at the far end, lifts off and climbs away to the left
+      const cyc = (tt % 22) / 22;
+      if (cyc < 0.7) {
+        const u = cyc / 0.7, px = cx - u * w * 0.42, py = hz + 2 - Math.max(0, u - 0.25) * h * 0.55, sc = 0.55 + u * 0.9, ang = u > 0.25 ? 0.16 : 0;
+        c.save(); c.translate(px, py); c.rotate(ang); c.scale(sc, sc);
+        c.fillStyle = '#E9ECF2'; c.beginPath(); c.ellipse(0, 0, 30, 4.2, 0, 0, 7); c.fill();
+        c.beginPath(); c.moveTo(22, -3); c.lineTo(34, -15); c.lineTo(38, -15); c.lineTo(32, -2); c.fill();
+        c.fillStyle = '#C9CED6'; c.beginPath(); c.moveTo(-4, 1); c.lineTo(10, 8); c.lineTo(16, 8); c.lineTo(8, 1); c.fill();
+        c.fillStyle = '#C7432F'; c.fillRect(30, -15, 6, 4);
+        c.fillStyle = '#9FD0FF'; for (let k = -18; k < 16; k += 4) c.fillRect(k, -1.5, 2, 1.4);
+        if (Math.floor(tt * 3) % 2) { c.fillStyle = '#FF3B30'; c.beginPath(); c.arc(-6, 2, 2, 0, 7); c.fill(); }
+        c.fillStyle = 'rgba(255,250,220,.9)'; c.beginPath(); c.arc(-30, 1, 2.6, 0, 7); c.fill();
+        c.restore();
+      }
+      // a soft cockpit glass sheen
+      const gl = c.createLinearGradient(0, 0, w, h); gl.addColorStop(0, 'rgba(255,255,255,.05)'); gl.addColorStop(0.5, 'rgba(255,255,255,0)'); gl.addColorStop(1, 'rgba(255,255,255,.03)'); c.fillStyle = gl; c.fillRect(0, 0, w, h);
+    },
   };
-  PW.ANIMATED_VIEWS = { v_rain: 1, v_clouds: 1, v_aurora: 1 };
+  PW.ANIMATED_VIEWS = { v_rain: 1, v_clouds: 1, v_aurora: 1, v_runway: 1 };
   PW.paintView = function (id, ctx, w, h, t) { const f = VIEWS[id] || VIEWS.v_city_day; ctx.clearRect(0, 0, w, h); f(ctx, w, h, U.seeded(U.hashStr(id)), t); };
-  PW.viewSunColor = { v_city_night: '#6F7BD9', v_rain: '#7C8FB8', v_aurora: '#7FE0C2', v_space: '#9DB7FF', v_beach: '#FF9F6B', v_bosphorus: '#FFB070', v_snow: '#E6F0FF' };
+  PW.viewSunColor = { v_runway: '#FFA866', v_city_night: '#6F7BD9', v_rain: '#7C8FB8', v_aurora: '#7FE0C2', v_space: '#9DB7FF', v_beach: '#FF9F6B', v_bosphorus: '#FFB070', v_snow: '#E6F0FF' };
   PW.viewIsNight = { v_city_night: 1, v_rain: 1, v_aurora: 1, v_space: 1 };
 })();

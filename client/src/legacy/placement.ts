@@ -16,7 +16,7 @@ type Item = { id: string; x?: number; z?: number; r?: number; w?: string; [k: st
 type Def = { id: string; wall?: number; top?: number; rug?: number; surface?: number; seat?: number; sub?: string; fp?: number[]; ww?: number; wy?: number };
 
 /** pieces that belong against a wall */
-const BACKED = new Set(['f_piano', 'f_fireplace', 'f_aquarium', 'f_record', 'f_console', 'f_sofa', 'f_sofa_l', 'f_desk_wood', 'f_desk_white', 'f_desk_standing', 'f_desk_gaming']);
+const BACKED = new Set(['f_piano', 'f_fireplace', 'f_aquarium', 'f_record', 'f_console', 'f_sofa', 'f_sofa_l', 'f_desk_wood', 'f_desk_white', 'f_desk_standing', 'f_desk_gaming', 'f_desk_cockpit']);
 const backed = (d: Def) => BACKED.has(d.id) || ['Depolama', 'Yatak', 'Mutfak'].includes(d.sub ?? '') || (d as { back?: number }).back === 1;
 const isChair = (d: Def) => d.sub === 'Sandalye';
 const fpOf = (d: Def): [number, number] => [d.fp?.[0] ?? 0.5, d.fp?.[1] ?? 0.5];

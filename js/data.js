@@ -184,6 +184,12 @@
   it('f_bar', 'Mutfak', 'Kafe Tezgâhı', 650, 7, { fp: [2.3, 0.72] });
   it('f_parasol', 'Dekor', 'Bahçe Şemsiyesi', 260, 4, { fp: [0.5, 0.5], tint: 1 });
   it('f_planter', 'Bitki', 'Çiçek Kasası', 180, 3, { fp: [1.2, 0.45], back: 1 });
+  // aviation set ("Pist 25", user 2026-11-08: a place for people who love flying)
+  it('f_desk_cockpit', 'Masa', 'Kokpit Çalışma Masası', 650, 7, { surface: 0.76, fp: [1.5, 0.8] });
+  it('f_chair_pilot', 'Sandalye', 'Pilot Koltuğu', 380, 6, { seat: 1, fp: [0.62, 0.62] });
+  it('f_jet_engine', 'Dekor', 'Turbofan Motor', 1200, 12, { fp: [0.9, 1.3] });
+  it('d_headset', 'Masaüstü', 'Pilot Kulaklığı', 120, 3, { top: 1, fp: [0.24, 0.2] });
+  it('d_logbook', 'Masaüstü', 'Uçuş Defteri', 40, 1, { top: 1, fp: [0.22, 0.16] });
   // wall items
   const w = (id, name, price, lvl, extra = {}) => R.push(Object.assign({ id, cat: 'furn', sub: 'Duvar', name, price, lvl, wall: 1 }, extra));
   w('w_clock', 'Duvar Saati', 90, 1, { ww: 0.5, wy: 2.3 });
@@ -214,6 +220,10 @@
   w('w_dart', 'Dart Tahtası', 220, 3, { ww: 0.62, wy: 1.6 });
   w('w_poster_game', 'Oyun Posteri', 140, 2, { ww: 0.66, wy: 1.75, vars: 6 });
   w('w_menu', 'Menü Panosu', 160, 3, { ww: 1.06, wy: 1.85 });
+  w('w_fids', 'Kalkış Panosu', 450, 6, { ww: 1.5, wy: 2.0, light: 1 });
+  w('w_gauges', 'Uçuş Göstergeleri', 420, 6, { ww: 1.1, wy: 1.65 });
+  w('w_chart', 'Yaklaşma Kartı · Pist 25', 160, 3, { ww: 0.68, wy: 1.7 });
+  w('w_propeller', 'Ahşap Pervane', 300, 5, { ww: 1.6, wy: 2.15 });
 
   // ---------- Themes / views / sizes ----------
   const T = [
@@ -228,6 +238,7 @@
     { id: 'th_library', name: 'Eski Kütüphane', price: 650, lvl: 9, wall: '#33513F', wall2: '#2A4434', floor: '#5A3A26', floor2: '#47291A', pat: 'herring', trim: '#C9A35A', wallpat: 'wainscot' },
     { id: 'th_cini', name: 'İznik Çini', price: 800, lvl: 10, wall: '#F1F4F7', wall2: '#DCE5EE', floor: '#B65B3E', floor2: '#9B4A31', pat: 'tile', trim: '#1F5FA8', wallpat: 'cini' },
     { id: 'th_space', name: 'Uzay İstasyonu', price: 1200, lvl: 14, wall: '#C9CED6', wall2: '#AEB5C0', floor: '#4C5563', floor2: '#3B434F', pat: 'panel', trim: '#2BB3C9', wallpat: 'panel' },
+    { id: 'th_cockpit', name: 'Kokpit', price: 1100, lvl: 12, wall: '#3A4049', wall2: '#323840', floor: '#2C323B', floor2: '#252A31', pat: 'carpet', trim: '#E8B04A', wallpat: 'cockpit' },
   ].map((x) => Object.assign({ cat: 'theme' }, x));
 
   const V = [
@@ -242,6 +253,7 @@
     { id: 'v_clouds', name: 'Bulutların Üstü', price: 700, lvl: 9 },
     { id: 'v_aurora', name: 'Kuzey Işıkları', price: 900, lvl: 11 },
     { id: 'v_space', name: 'Yörüngeden Dünya', price: 1500, lvl: 15 },
+    { id: 'v_runway', name: 'Pist 25 — Gün Batımı', price: 800, lvl: 9 },
   ].map((x) => Object.assign({ cat: 'view' }, x));
 
   const S = [
@@ -419,7 +431,7 @@
   PW.PLEDGE_DAYS = [[3, 2, 60], [5, 4, 110], [7, 6, 175], [30, 30, 800]];
   PW.STARTER_OWNED = ['h_short', 'h_side', 'h_buzz', 'h_bald', 'h_long', 'h_pony', 'h_bob', 'fh_none', 'fh_stubble', 't_tee', 't_blouse', 't_hoodie', 'b_jeans', 'b_jogger', 'b_skirt', 's_sneaker', 'th_wood', 'v_city_day', 'sz_s'];
   // premium surfaces (level gates); everything else is free to recolor
-  PW.SURFACE_LVL = { brick: 3, wainscot: 4, shoji: 5, logs: 5, cini: 6, panel: 8, floral: 2, wave: 2, tatami: 5, checker: 3, concrete: 4, carpet: 2, herring: 2, stars: 3, clouds: 2, plaid: 3, geo: 4, terrazzo: 3, hex: 4, marble: 6 };
+  PW.SURFACE_LVL = { cockpit: 8, brick: 3, wainscot: 4, shoji: 5, logs: 5, cini: 6, panel: 8, floral: 2, wave: 2, tatami: 5, checker: 3, concrete: 4, carpet: 2, herring: 2, stars: 3, clouds: 2, plaid: 3, geo: 4, terrazzo: 3, hex: 4, marble: 6 };
   PW.MOOD_LVL = { day: 1, golden: 1, night: 1, candle: 3, neon: 5 };
 
   PW.NPC_NAMES = ['Ece', 'Mert', 'Zeynep', 'Kerem', 'Elif', 'Can', 'Defne', 'Arda', 'Selin', 'Emir', 'Nehir', 'Baran', 'Ada', 'Deniz', 'Lara', 'Yiğit', 'İpek', 'Kaan', 'Asya', 'Efe'];

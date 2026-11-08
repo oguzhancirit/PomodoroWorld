@@ -13,7 +13,7 @@
     candle: { env: 0.2, name: 'Mum ışığı', sun: '#FF8A3A', sunI: 0.2, hemi: 0.16, hemiC: '#FFB070', hemiG: '#2A1610', amb: 0.06, exp: 1.18, lamp: 2.0, bloom: 0.75, bg: '#180F0C', shafts: 0, dust: 0.5, flicker: true },
   };
   PW.FLOOR_TYPES = [['plank', 'Parke'], ['herring', 'Balıksırtı'], ['tile', 'Karo'], ['checker', 'Dama'], ['tatami', 'Tatami'], ['carpet', 'Halıfleks'], ['concrete', 'Beton'], ['panel', 'Panel'], ['terrazzo', 'Terrazzo'], ['hex', 'Altıgen Karo'], ['marble', 'Mermer']];
-  PW.WALL_PATTERNS = [['plain', 'Düz'], ['stripe', 'Çizgili'], ['dots', 'Puantiye'], ['floral', 'Çiçekli'], ['wave', 'Dalga'], ['brick', 'Tuğla'], ['wainscot', 'Lambri'], ['cini', 'Çini'], ['shoji', 'Shoji'], ['logs', 'Kütük'], ['panel', 'Panel'], ['stars', 'Yıldızlı'], ['clouds', 'Bulutlu'], ['plaid', 'Ekose'], ['geo', 'Geometrik']];
+  PW.WALL_PATTERNS = [['plain', 'Düz'], ['stripe', 'Çizgili'], ['dots', 'Puantiye'], ['floral', 'Çiçekli'], ['wave', 'Dalga'], ['brick', 'Tuğla'], ['wainscot', 'Lambri'], ['cini', 'Çini'], ['shoji', 'Shoji'], ['logs', 'Kütük'], ['panel', 'Panel'], ['stars', 'Yıldızlı'], ['clouds', 'Bulutlu'], ['plaid', 'Ekose'], ['geo', 'Geometrik'], ['cockpit', 'Kokpit']];
   PW.WALL_COLORS = ['#F2EDE4', '#E9DCC8', '#F4D9E2', '#D8E7D0', '#B9C9AE', '#CFE0EE', '#A9C2DE', '#2D3E63', '#33513F', '#A8553E', '#E8C99A', '#C9B3E0', '#F5E6B8', '#3A3A44', '#E7B9A0', '#8FB7B0'];
   PW.FLOOR_COLORS = ['#B07D52', '#8F6140', '#D9B98E', '#6E4F3A', '#5A3A26', '#D9D2C7', '#B65B3E', '#C8C08A', '#5D5550', '#9AA3AD', '#E8DCCB', '#7A8F6E'];
   const DARK = { night: 1, neon: 1, candle: 1 };
@@ -218,24 +218,34 @@
         const tall = new THREE.Group(); g.add(tall); g.userData.tall = tall;
         const low = new THREE.Group(); g.add(low); g.userData.low = low;
         if (key === 'w0') {
-          const ww = 2.6, y0 = 0.95, y1 = 2.55, side = (len - ww) / 2;
+          // th_cockpit: a wide windscreen with slanted posts and a glareshield instead of a curtained window
+          const cockpit = def.theme === 'th_cockpit';
+          const ww = cockpit ? Math.min(len - 1.6, 6.4) : 2.6, y0 = cockpit ? 1.0 : 0.95, y1 = cockpit ? 2.45 : 2.55, side = (len - ww) / 2;
           for (const sx of [-1, 1]) { const m = new THREE.Mesh(new THREE.BoxGeometry(side, WALL_H, WALL_T), wm); m.position.set(sx * (ww / 2 + side / 2), WALL_H / 2, 0); m.receiveShadow = true; m.castShadow = true; tall.add(m); }
           const bot = new THREE.Mesh(new THREE.BoxGeometry(ww, y0, WALL_T), wm); bot.position.set(0, y0 / 2, 0); bot.receiveShadow = true; tall.add(bot);
           const topw = new THREE.Mesh(new THREE.BoxGeometry(ww, WALL_H - y1, WALL_T), wm); topw.position.set(0, (WALL_H + y1) / 2, 0); topw.castShadow = true; tall.add(topw);
-          const fr = PW.mat('#F6F4EF', { rough: 0.45 });
+          const fr = cockpit ? PW.mat('#2B3038', { rough: 0.5, metal: 0.3 }) : PW.mat('#F6F4EF', { rough: 0.45 });
           PW.rbox(tall, ww + 0.18, 0.07, 0.34, 0.02, fr, 0, y0, 0.09); PW.box(tall, ww + 0.12, 0.08, 0.2, fr, 0, y1, 0.0);
           for (const sx of [-1, 1]) PW.box(tall, 0.08, y1 - y0, 0.2, fr, sx * (ww / 2), (y0 + y1) / 2, 0);
-          PW.box(tall, 0.05, y1 - y0, 0.07, fr, 0, (y0 + y1) / 2, 0); PW.box(tall, ww, 0.05, 0.07, fr, 0, (y0 + y1) / 2 + 0.2, 0);
+          if (!cockpit) { PW.box(tall, 0.05, y1 - y0, 0.07, fr, 0, (y0 + y1) / 2, 0); PW.box(tall, ww, 0.05, 0.07, fr, 0, (y0 + y1) / 2 + 0.2, 0); }
+          else {
+            // windscreen posts lean in like an airliner's, corner braces, a dark glareshield with annunciator lamps
+            const n = 5; for (let i = 1; i < n; i++) { const x = -ww / 2 + (ww * i) / n; const p = PW.box(tall, 0.09, y1 - y0 + 0.05, 0.16, fr, x, (y0 + y1) / 2, 0.02); p.rotation.z = (i - n / 2) * -0.06; }
+            for (const sx of [-1, 1]) { const br = PW.box(tall, 0.6, 0.1, 0.16, fr, sx * (ww / 2 - 0.26), y1 - 0.18, 0.02); br.rotation.z = sx * 0.5; }
+            PW.rbox(tall, ww + 0.3, 0.12, 0.5, 0.03, PW.mat('#1C1F24', { rough: 0.7 }), 0, y0 - 0.02, 0.2);
+            const lamps = ['#F2C14E', '#2BE07A', '#4FB7FF', '#2BE07A', '#E8553D', '#F2C14E'];
+            for (let i = 0; i < 18; i++) PW.box(tall, 0.07, 0.025, 0.02, PW.mat(lamps[i % lamps.length], { emissive: lamps[i % lamps.length], ei: 1.5 }), -ww / 2 + 0.4 + i * ((ww - 0.8) / 17), y0 + 0.045, 0.44);
+          }
           const glass = new THREE.Mesh(new THREE.PlaneGeometry(ww, y1 - y0), new THREE.MeshStandardMaterial({ color: '#CFE8FF', transparent: true, opacity: 0.1, roughness: 0.05, metalness: 0.3, envMapIntensity: 1 })); glass.position.set(0, (y0 + y1) / 2, 0.0); tall.add(glass);
-          const vt = (this.viewTex = PW.canvasTex(1024, 512, (c, w, h) => PW.paintView(PW.viewFor(def), c, w, h, 0)));
-          const vp = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.2), new THREE.MeshBasicMaterial({ map: vt, toneMapped: false }));
+          const vt = (this.viewTex = PW.canvasTex(cockpit ? 1536 : 1024, 512, (c, w, h) => PW.paintView(PW.viewFor(def), c, w, h, 0)));
+          const vp = new THREE.Mesh(new THREE.PlaneGeometry(cockpit ? ww + 1.8 : 4.2, cockpit ? 2.4 : 2.2), new THREE.MeshBasicMaterial({ map: vt, toneMapped: false }));
           vp.position.set(0, 1.75, -0.36); tall.add(vp); this.viewPlane = vp;
           this.viewAnimated = !!PW.ANIMATED_VIEWS[def.view]; this.viewT = 0;
           // curtains: soft folds
-          for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) { const c = PW.cyl(tall, 0.06, 0.085, 1.95, cm, sx * (ww / 2 + 0.2 + i * 0.085), 1.62, 0.2, 12); c.scale.z = 0.7; }
-          for (const sx of [-1, 1]) { const tie = PW.tor(tall, 0.17, 0.012, PW.mat('#C9A15A', { metal: 0.8, rough: 0.3 }), sx * (ww / 2 + 0.33), 1.3, 0.2); tie.rotation.x = Math.PI / 2; tie.scale.set(1, 0.55, 1); }
-          PW.cyl(tall, 0.018, 0.018, ww + 1.3, PW.mat('#2A2B33', { metal: 0.6, rough: 0.3 }), 0, 2.68, 0.2, 8).rotation.z = Math.PI / 2;
-          for (const sx of [-1, 1]) PW.sph(tall, 0.035, PW.mat('#C9A15A', { metal: 0.8, rough: 0.3 }), sx * (ww / 2 + 0.66), 2.68, 0.2, 10, 8);
+          if (!cockpit) for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) { const c = PW.cyl(tall, 0.06, 0.085, 1.95, cm, sx * (ww / 2 + 0.2 + i * 0.085), 1.62, 0.2, 12); c.scale.z = 0.7; }
+          if (!cockpit) for (const sx of [-1, 1]) { const tie = PW.tor(tall, 0.17, 0.012, PW.mat('#C9A15A', { metal: 0.8, rough: 0.3 }), sx * (ww / 2 + 0.33), 1.3, 0.2); tie.rotation.x = Math.PI / 2; tie.scale.set(1, 0.55, 1); }
+          if (!cockpit) PW.cyl(tall, 0.018, 0.018, ww + 1.3, PW.mat('#2A2B33', { metal: 0.6, rough: 0.3 }), 0, 2.68, 0.2, 8).rotation.z = Math.PI / 2;
+          if (!cockpit) for (const sx of [-1, 1]) PW.sph(tall, 0.035, PW.mat('#C9A15A', { metal: 0.8, rough: 0.3 }), sx * (ww / 2 + 0.66), 2.68, 0.2, 10, 8);
           // sill plant
           if (def.sill) { const sp = new THREE.Group(); sp.position.set(0.85, y0 + 0.04, 0.12); tall.add(sp); if (PW.hasModel('d_plant')) { const pl = PW.buildItem('d_plant'); sp.add(pl); } }
         } else {
@@ -469,7 +479,7 @@
       if (this.half) this.applyWallCut(false);
       for (const g of this.animated) g.userData.update(this.time, dt);
       for (const p of this.pointLights) if (p.userData.flicker && p.intensity > 0) p.intensity = p.userData.base * (0.85 + Math.sin(this.time * 11 + p.id) * 0.08 + Math.sin(this.time * 23) * 0.05);
-      if (this.viewAnimated && this.viewTex) { this.viewT += dt; if (this.viewT > 0.25) { this.viewT = 0; PW.paintView(PW.viewFor(this.def), this.viewTex.userData.ctx, 1024, 512, this.time); this.viewTex.needsUpdate = true; } }
+      if (this.viewAnimated && this.viewTex) { this.viewT += dt; if (this.viewT > 0.25) { this.viewT = 0; PW.paintView(PW.viewFor(this.def), this.viewTex.userData.ctx, this.viewTex.image.width, this.viewTex.image.height, this.time); this.viewTex.needsUpdate = true; } }
       if (this.shaft) this.shaft.material.uniforms.uTime.value = this.time;
       if (this.dust) { const a = this.dust.geometry.attributes.position; for (let i = 0; i < this.dustSeed.length; i++) { const s = this.dustSeed[i]; a.setXYZ(i, s[0] + Math.sin(this.time * 0.2 + s[3]) * 0.25, ((s[1] + this.time * 0.04 + s[3]) % 2.8) + 0.1, s[2] + Math.cos(this.time * 0.17 + s[3]) * 0.25); } a.needsUpdate = true; }
       for (const [, a] of this.avatars) {
