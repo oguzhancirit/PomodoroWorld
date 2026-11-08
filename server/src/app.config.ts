@@ -15,7 +15,9 @@ export const server = defineServer({
     // step 4: one live room per owner ("Odam"), friends join it
     home: defineRoom(HomeRoom).filterBy(['owner']),
     // step 4f: the 10-seat public library (everyone keeps their own timer, so any length fits)
-    library: defineRoom(LibraryRoom),
+    library: defineRoom(LibraryRoom, { hall: 'library' }),
+    // "Pist 25" (user 2026-11-08): the aviation study hall, same room type with its own layout and 8 cockpit seats
+    pist25: defineRoom(LibraryRoom, { hall: 'pist25' }),
     // step 4g: v1 social spaces, one set of salons per space
     social: defineRoom(SocialRoom).filterBy(['space']),
   },

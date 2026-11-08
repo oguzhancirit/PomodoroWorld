@@ -13,11 +13,13 @@ import { loadLocalWallet, saveLocalWallet, myClock } from './economy';
 import { noteChat } from '@pw/shared';
 import { todoProgress } from './net';
 import { DEMO_ONLY } from './config';
-import { homeCapacity, libraryRoom, LIBRARY_SEATS, LIBRARY_NAME, ROOM_KEYS, SOCIAL, socialRoom, roomSeats, SOCIAL_CAP } from '@pw/shared';
+import { homeCapacity, libraryRoom, hallOf, ROOM_KEYS, SOCIAL, socialRoom, roomSeats, SOCIAL_CAP } from '@pw/shared';
 
 /** what a visitor needs to draw the library (same keys the server sends for a room) */
 export function layoutOf(room: object) { const r = room as Record<string, unknown>; return JSON.stringify(Object.fromEntries(ROOM_KEYS.filter((k) => r[k] !== undefined).map((k) => [k, r[k]]))); }
 export const libraryLayout = () => layoutOf(libraryRoom());
+/** a public hall's drawing (library or Pist 25) */
+export const hallLayout = (hall: string) => layoutOf(hallOf(hall).room());
 
 /** the one bot of each social space: tells what the place is for (demo only) */
 const BOTS: [string, Gender][] = [['Elif', 'f'], ['Kerem', 'm'], ['Zeynep', 'f'], ['Deniz', 'm'], ['Ece', 'f']];
@@ -99,7 +101,7 @@ export class LocalRoom {
       // no bots here any more (user, 2026-11-03: only one host per social space, and Elif in your own room)
       this.later(50, () => Object.keys(players).filter((id) => id !== 'me').forEach((id) => this.botStart(id, Math.random() * 0.8)));
       st.set({ wallet, net: 'online', mode: 'demo', me: 'me', players, preset: base.id, clockOffset: 0, chat: [], emotes: {}, screen: 'home', timer: { ...this.timer },
-        place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
+        place: { kind: 'library', hall: hallOf(this.space).id, owner: 'library', mine: false, name: hallOf(this.space).name, layout: hallLayout(this.space), cap: hallOf(this.space).seats } });
       this.loop = window.setInterval(() => this.tick(), 250);
       return;
     }
@@ -195,7 +197,7 @@ export class LocalRoom {
     const st = useStore.getState();
     const taken = Object.values(st.players).filter((p) => p.id !== 'me').map((p) => p.seatIndex);
     // how many chairs this room has: the library 10, a home or a social space counts its furniture
-    const cap = this.kind === 'library' ? LIBRARY_SEATS : this.kind === 'study' ? STUDY_ROOM.seats.length
+    const cap = this.kind === 'library' ? hallOf(this.space).seats : this.kind === 'study' ? STUDY_ROOM.seats.length
       : this.kind === 'social' ? roomSeats(socialRoom(this.space) ?? { items: [] } as never) : roomSeats(st.room ?? ({ items: [] } as never));
     if (isSeatFree(seat, taken, cap)) st.upsertPlayer('me', { seatIndex: seat });
   }

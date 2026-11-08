@@ -31,3 +31,7 @@ A "Dünya" (world) button opens the rest: friends, open rooms, invite code, libr
 - Browser-checked: demo Odam (bot friend, start/stop), online two-player invite flow (owner + friend, same timer), phone 390 px.
 - Demo/offline fallback: `LocalRoom(speed, 'home')`. Study hall (R3F, 12 seats) is still reachable from Dünya until 4f.
 - Server tests run files one by one (`server/vitest.config.ts` fileParallelism false).
+
+## Pist 25 (user 2026-11-08)
+- Second public study hall for aviation lovers: `HALLS` in `shared/src/library.ts` (`library` 10 seats, `pist25` 8 cockpit seats); server room `pist25` = `LibraryRoom` with `{ hall: 'pist25' }`; `/api/world` returns `halls`; client `joinHall(id)`, card in Dünya.
+- New v1-engine content (also sold in the shop): `f_desk_cockpit`, `f_chair_pilot`, `f_jet_engine`, `d_headset`, `d_logbook`, `w_fids`, `w_gauges`, `w_chart`, `w_propeller`; theme `th_cockpit` (wall pattern `cockpit` + wide windscreen in `js/world.js`); animated view `v_runway`.

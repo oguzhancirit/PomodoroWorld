@@ -2,11 +2,11 @@
 // big place cards, friends as faces, and the invite tools tucked into one small row.
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
-import { inviteCode, homeCapacity, parseFriendCode, SOCIAL_AT } from '@pw/shared';
+import { inviteCode, homeCapacity, parseFriendCode, SOCIAL_AT, hallOf } from '@pw/shared';
 import { useStore } from '../store';
 import { identity } from '../identity';
 import { HTTP_BASE, DEMO_ONLY } from '../config';
-import { visitHome, joinLibrary, joinSocial, currentRoomId, leaveRoom } from '../net';
+import { visitHome, joinLibrary, joinHall, joinSocial, currentRoomId, leaveRoom } from '../net';
 import { useFriends, friendsCall, ago, type FriendView } from '../friends';
 
 const useWorld = create<{ open: boolean }>(() => ({ open: false }));
@@ -28,6 +28,8 @@ const ART: Record<string, string> = {
   library: '<rect x="8" y="14" width="10" height="38" rx="2" fill="#e8553d"/><rect x="19" y="10" width="9" height="42" rx="2" fill="#f2c14e"/><rect x="29" y="16" width="11" height="36" rx="2" fill="#6cbf6a"/><rect x="41" y="12" width="8" height="40" rx="2" fill="#8fb8ff" transform="rotate(8 45 32)"/><rect x="6" y="52" width="50" height="4" rx="2" fill="#c9a35a"/>',
   cafe: '<path d="M14 26h30v14a12 12 0 0 1-12 12h-6a12 12 0 0 1-12-12z" fill="#fff4e6"/><path d="M44 30h4a6 6 0 0 1 0 12h-5" fill="none" stroke="#fff4e6" stroke-width="4"/><path d="M22 10c-3 4 3 6 0 10M30 8c-3 4 3 6 0 10M38 10c-3 4 3 6 0 10" fill="none" stroke="#ffd8a8" stroke-width="3" stroke-linecap="round"/><rect x="10" y="54" width="40" height="4" rx="2" fill="#c98a5a"/>',
   terrace: '<circle cx="32" cy="34" r="14" fill="#ffb36b"/><rect x="4" y="34" width="56" height="26" fill="#2c2754"/><path d="M4 40h56M4 47h56" stroke="#ffb36b" stroke-opacity=".5" stroke-width="2"/><path d="M12 34V22M52 34V20" stroke="#6cbf6a" stroke-width="4" stroke-linecap="round"/><circle cx="12" cy="20" r="6" fill="#6cbf6a"/><circle cx="52" cy="18" r="7" fill="#6cbf6a"/>',
+  // Pist 25: a jet climbing off a runway at dusk
+  pist25: '<rect x="4" y="6" width="56" height="52" rx="10" fill="#2c2754"/><circle cx="44" cy="34" r="9" fill="#ffb36b"/><path d="M24 58 30 36h4l6 22z" fill="#3a3f47"/><path d="M32 40v4M32 47v4M32 54v3" stroke="#f6f4ef" stroke-width="1.6"/><path d="M10 30l34-14 6 1-3 4-31 12-5 2z" fill="#e9ecf2"/><path d="M26 24l-6-9h4l10 7zM24 28l-2 9h3l7-11z" fill="#c9ced6"/><path d="M45 17l4-7h3l-2 8z" fill="#e8553d"/>',
   arcade: '<rect x="12" y="20" width="40" height="26" rx="13" fill="#8a5bb0"/><path d="M22 28v10M17 33h10" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="41" cy="30" r="3" fill="#f2c14e"/><circle cx="46" cy="36" r="3" fill="#e8553d"/><path d="M14 12l4 5M50 12l-4 5M32 8v6" stroke="#ff8ad8" stroke-width="3" stroke-linecap="round"/>',
 };
 const Art = ({ id }: { id: string }) => <svg viewBox="0 0 64 64" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ART[id] }} />;
@@ -37,6 +39,7 @@ export function WorldPanel() {
   const room = useStore((s) => s.room), mode = useStore((s) => s.mode), place = useStore((s) => s.place), flash = useStore((s) => s.flash);
   const [rooms, setRooms] = useState<OpenRoom[] | null>(null);
   const [library, setLibrary] = useState(0);
+  const [halls, setHalls] = useState<Record<string, number>>({});
   const [social, setSocial] = useState<Record<string, number>>({});
   const [joinCode, setJoinCode] = useState('');
   const [showCode, setShowCode] = useState(false);
@@ -44,14 +47,14 @@ export function WorldPanel() {
   useEffect(() => {
     if (!open || demo) return;
     let live = true; setRooms(null);
-    fetch(`${HTTP_BASE}/api/world`).then((r) => r.json()).then((d) => { if (live) { setRooms((d.rooms as OpenRoom[]).filter((r) => r.owner !== identity().pid)); setLibrary(Number(d.library) || 0); setSocial(d.social && typeof d.social === 'object' ? d.social : {}); } }).catch(() => live && setRooms([]));
+    fetch(`${HTTP_BASE}/api/world`).then((r) => r.json()).then((d) => { if (live) { setRooms((d.rooms as OpenRoom[]).filter((r) => r.owner !== identity().pid)); setLibrary(Number(d.library) || 0); setHalls(d.halls && typeof d.halls === 'object' ? d.halls : {}); setSocial(d.social && typeof d.social === 'object' ? d.social : {}); } }).catch(() => live && setRooms([]));
     return () => { live = false; };
   }, [open, demo]);
   if (!open) return null;
   const link = room ? `${location.origin}${location.pathname}${location.search}#oda-${inviteCode(identity().pid, room.token)}` : '';
   // the trip screen covers everything: close the panel first
   const go = (c: string) => { close(); void visitHome(c); };
-  const atHome = !!place?.mine, inLibrary = place?.kind === 'library';
+  const atHome = !!place?.mine, inLibrary = place?.kind === 'library' && (place.hall ?? 'library') === 'library', inPist = place?.kind === 'library' && place.hall === 'pist25';
   const copy = (text: string, msg: string) => navigator.clipboard?.writeText(text).then(() => flash(msg, 2500)).catch(() => flash('Kopyalanamadı, elle seç.', 2500));
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label="Dünya" onClick={(e) => e.target === e.currentTarget && close()} onKeyDown={(e) => e.key === 'Escape' && close()}>
@@ -64,6 +67,9 @@ export function WorldPanel() {
           </button>
           <button className="place library" disabled={inLibrary} onClick={() => { close(); void joinLibrary(); }}>
             <Art id="library" /><b>Kütüphane</b><small>{inLibrary ? 'Buradasın' : demo ? '10 kişilik' : library ? `${library} kişi çalışıyor` : 'Boş, ilk sen gel'}</small>
+          </button>
+          <button className="place pist25" disabled={inPist} onClick={() => { close(); void joinHall('pist25'); }}>
+            <Art id="pist25" /><b>Pist 25</b><small>{inPist ? 'Buradasın' : demo ? 'Havacılar için' : halls.pist25 ? `${halls.pist25} kişi uçuşta` : 'Kokpit seni bekliyor'}</small>
           </button>
           {[['cafe', 'meydan', 'Meydan Kafe'], ['terrace', 'teras', 'Çatı Terası'], ['arcade', 'oyun', 'Oyun Salonu']].map(([art, id, n]) => {
             const here = place?.owner === 'social:' + id, count = social[id] ?? 0;
@@ -123,12 +129,12 @@ function Friends({ go }: { go(code: string): void }) {
     if (!w) return ago(f.seen);
     const st = w.phase === 'focus' ? ' · odakta' : w.phase === 'paused' ? ' · bekliyor' : w.phase === 'short_break' || w.phase === 'long_break' ? ' · molada' : '';
     if (w.kind === 'social') return (place?.owner === 'social:' + w.space && w.roomId === libraryId ? 'Yanında' : SOCIAL_AT[w.space ?? ''] ?? 'Sosyal alanda') + st;
-    if (w.kind === 'library') return (place?.kind === 'library' && w.roomId === libraryId ? 'Yanında' : 'Kütüphanede') + st;
+    if (w.kind === 'library') return (place?.kind === 'library' && w.roomId === libraryId ? 'Yanında' : hallOf(w.hall).at) + st;
     if (place && w.owner === place.owner) return 'Yanında' + st;
     return (w.owner === f.pid ? 'Kendi odasında' : `${w.ownerName} odasında`) + st;
   };
   const canGo = (f: FriendView) => !!f.where && f.where.open && f.where.n < f.where.cap && (f.where.kind === 'library' || f.where.kind === 'social' ? f.where.roomId !== libraryId : f.where.owner !== place?.owner);
-  const visit = (f: FriendView) => { if (!canGo(f)) return; const w = f.where!; if (w.kind === 'library' || w.kind === 'social') { useWorld.setState({ open: false }); void (w.kind === 'library' ? joinLibrary(w.roomId) : joinSocial(w.space ?? '', w.roomId)); } else go(w.owner); };
+  const visit = (f: FriendView) => { if (!canGo(f)) return; const w = f.where!; if (w.kind === 'library' || w.kind === 'social') { useWorld.setState({ open: false }); void (w.kind === 'library' ? joinHall(hallOf(w.hall).id, w.roomId) : joinSocial(w.space ?? '', w.roomId)); } else go(w.owner); };
   const online = friends.filter((f) => f.online).length;
   return (
     <section className="w-sec">

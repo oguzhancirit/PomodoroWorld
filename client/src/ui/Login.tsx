@@ -16,7 +16,7 @@ function useLiveCount() {
     const get = () => fetch(`${HTTP_BASE}/api/world`).then((r) => r.json()).then((d) => {
       const social = Object.values((d.social ?? {}) as Record<string, number>).reduce((a, b) => a + (Number(b) || 0), 0);
       const homes = ((d.rooms ?? []) as { n: number }[]).reduce((a, r) => a + (Number(r.n) || 0), 0);
-      if (live) setN(homes + (Number(d.library) || 0) + social);
+      if (live) setN(homes + (d.halls && typeof d.halls === 'object' ? Object.values(d.halls as Record<string, number>).reduce((a, b) => a + (Number(b) || 0), 0) : Number(d.library) || 0) + social);
     }).catch(() => live && setN(null));
     get(); const t = setInterval(get, 30_000);
     return () => { live = false; clearInterval(t); };

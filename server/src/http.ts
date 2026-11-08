@@ -89,9 +89,10 @@ export function routes(app: express.Application, json: express.RequestHandler) {
       .filter((m): m is NonNullable<typeof m> => !!m && m.open && m.n > 0 && m.n < m.cap)
       .sort((a, b) => b.n - a.n).slice(0, 60)
       .map(({ owner, ownerName, name, cat, n, cap }) => ({ owner, ownerName, name, cat, n, cap }));
-    let library = 0; for (const r of LibraryRoom.live) library += r.state.players.size;
+    const halls: Record<string, number> = {}; for (const r of LibraryRoom.live) halls[r.hall.id] = (halls[r.hall.id] ?? 0) + r.state.players.size;
+    const library = halls.library ?? 0;
     const social: Record<string, number> = {}; for (const r of SocialRoom.live) social[r.space] = (social[r.space] ?? 0) + r.state.players.size;
-    res.json({ rooms, library, social });
+    res.json({ rooms, library, halls, social });
   });
   app.post('/api/quest', (req, res) => {
     const b = QuestRequest.safeParse(req.body);

@@ -1,8 +1,8 @@
 // Talks to the Colyseus server and copies the room state into the store.
 import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
-import { encodeAvatar, activityFor, parseInvite, LIBRARY_NAME, LIBRARY_SEATS, SOCIAL, SOCIAL_CAP, SOCIAL_TO, socialRoom, type Activity, type Phase } from '@pw/shared';
+import { encodeAvatar, activityFor, parseInvite, hallOf, SOCIAL, SOCIAL_CAP, SOCIAL_TO, socialRoom, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
-import { LocalRoom, libraryLayout, layoutOf, type TimerAction } from './localRoom';
+import { LocalRoom, hallLayout, layoutOf, type TimerAction } from './localRoom';
 import { isFriend, isBlocked } from './friends';
 import { travel } from './ui/Travel';
 import { useTodos } from './todos';
@@ -30,29 +30,32 @@ const NOTICES: Record<string, string> = {
 
 /* ---------- step 4f: the 10-seat library (replaces the old study hall and its bot fallback) ---------- */
 /** enter a library (a friend's one when `roomId` is given); demo mode runs it in this browser with bot classmates */
-export const joinLibrary = (roomId?: string) => travel('Kütüphaneye gidiliyor', enterLibrary(roomId));
-async function enterLibrary(roomId?: string): Promise<boolean> {
+export const joinLibrary = (roomId?: string) => joinHall('library', roomId);
+/** a public study hall: the library or "Pist 25" (user 2026-11-08) */
+export const joinHall = (hallId: string, roomId?: string) => travel(`${hallOf(hallId).to} gidiliyor`, enterLibrary(roomId, hallOf(hallId).id));
+async function enterLibrary(roomId?: string, hallId = 'library'): Promise<boolean> {
+  const hall = hallOf(hallId);
   const st = useStore.getState(), job = ++homeJob;
-  if (DEMO_ONLY) { leaveQuiet(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'library'); return true; }
+  if (DEMO_ONLY) { leaveQuiet(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'library', true, hall.id); return true; }
   const { profile } = st;
   let r: Room;
   try {
     await wakeServer(); // a sleeping free server first wakes up (banner on top)
     const client = new Client(SERVER);
     const opts = { ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
-    r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate('library', opts);
+    r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate(hall.id, opts);
   } catch (e) {
     if (job !== homeJob) return false;
     console.warn('library join failed', e);
-    st.flash(roomId ? 'Bu kütüphane dolu ya da kapandı. Dünya’dan başka bir kütüphaneye gir.' : 'Kütüphaneye bağlanılamadı. İnternetini kontrol edip tekrar dene.', 5000);
+    st.flash(roomId ? `${hall.name} dolu ya da kapandı. Dünya’dan tekrar dene.` : `${hall.to} bağlanılamadı. İnternetini kontrol edip tekrar dene.`, 5000);
     return false;
   }
   if (job !== homeJob) { quit(r); return false; }
   leaveQuiet();
   room = r;
-  st.set({ players: {}, chat: [], emotes: {}, place: { kind: 'library', owner: 'library', mine: false, name: LIBRARY_NAME, layout: libraryLayout(), cap: LIBRARY_SEATS } });
+  st.set({ players: {}, chat: [], emotes: {}, place: { kind: 'library', hall: hall.id, owner: 'library', mine: false, name: hall.name, layout: hallLayout(hall.id), cap: hall.seats } });
   wire(r, 'home');
-  st.flash('Kütüphanedesin. Herkes kendi sayacıyla çalışır; istersen birinin sayacına katıl.', 4500);
+  st.flash(hall.id === 'pist25' ? 'Pist 25’e hoş geldin, kaptan. Kemerini bağla: herkes kendi sayacıyla uçar.' : 'Kütüphanedesin. Herkes kendi sayacıyla çalışır; istersen birinin sayacına katıl.', 4500);
   return true;
 }
 

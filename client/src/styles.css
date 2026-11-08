@@ -415,14 +415,15 @@ input:focus, select:focus { border-color: var(--acc2); }
 .world-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; }
 .sheet.world { width: min(680px, 100%); gap: 16px; }
 .sheet.world header h2 { font-size: 26px; }
-.places { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.place { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; min-height: clamp(118px, 15vw, 172px); padding: 12px 8px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, .08); overflow: hidden; color: #fff; text-align: center; transition: transform .15s ease, box-shadow .15s ease; }
+.places { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.place { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; min-height: clamp(104px, 11vw, 136px); padding: 12px 8px 12px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, .08); overflow: hidden; color: #fff; text-align: center; transition: transform .15s ease, box-shadow .15s ease; }
 .place svg { flex: none; height: clamp(38px, 6.4vw, 70px); width: auto; max-width: 80%; margin: 4px 0 auto; padding-bottom: 6px; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .25)); }
 .place b { font: 700 15px/1.15 var(--f-display); flex: none; } .place small { flex: none; } .place small { font-size: 11.5px; font-weight: 600; opacity: .8; }
 .place:not(:disabled):hover { transform: translateY(-3px); box-shadow: 0 12px 24px -10px rgba(0, 0, 0, .6); }
 .place:disabled { cursor: default; opacity: 1; color: #fff; }
 .place.home { background: linear-gradient(160deg, #ff9a6b, #c9553d); }
 .place.library { background: linear-gradient(160deg, #3f7a63, #22423a); }
+.place.pist25 { background: linear-gradient(160deg, #3b4a6b, #1b2034); }
 .place.cafe { background: linear-gradient(160deg, #b9774f, #6d3f2b); }
 .place.terrace { background: linear-gradient(160deg, #f08a5d, #5b3b7a); }
 .place.arcade { background: linear-gradient(160deg, #6b4bb5, #2a1f5c); }
