@@ -1,7 +1,7 @@
 // One account, one place (server-wide). Every room that pays rewards claims the player id here when someone joins.
 // If the same player already sits in another room (another tab, another timer length, the library, Odam…),
 // that older seat is kicked, so one focus is never paid twice. A seat frees the id only while it still owns it.
-export interface Seat { room: string; sessionId: string; kick(): void }
+export interface Seat { room: string; sessionId: string; kick(): void; /** a message to this player's open game (friend calls) */ send?(type: string, msg: unknown): void }
 
 export class SessionRegistry {
   private active = new Map<string, Seat>();
@@ -14,6 +14,10 @@ export class SessionRegistry {
     const s = this.active.get(pid);
     return !!s && s.room === room && s.sessionId === sessionId;
   }
+  /** is this player in a room right now, and which one */
+  roomOf(pid: string) { return this.active.get(pid)?.room ?? null; }
+  /** send to wherever this player is; false when they are not online */
+  sendTo(pid: string, type: string, msg: unknown) { const s = this.active.get(pid); if (!s?.send) return false; s.send(type, msg); return true; }
   release(pid: string, room: string, sessionId: string) {
     if (this.holds(pid, room, sessionId)) this.active.delete(pid);
   }

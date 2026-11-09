@@ -20,7 +20,8 @@ import { RewardToast } from '../ui/Wallet';
 import { LevelUp } from '../ui/LevelUp';
 import { Tour } from './Tour';
 import { WorldButton, WorldPanel } from '../ui/World';
-import { openHome, leaveRoom, openProfile, sendSit } from '../net';
+import { openHome, leaveRoom, openProfile, sendSit, sendRaw } from '../net';
+import { useCalls, CallPanel, IncomingCallCard, BonusCard, BoostBadge } from '../calls';
 import { WakeCurtain } from '../wake';
 import { attachPower } from './power';
 
@@ -298,6 +299,8 @@ export function HomeRoom() {
         <LikeChip owner={place && !library && place.kind !== 'social' ? place.owner : ''} mine={!!place?.mine} />
         {place && <button className="people-pill people-btn" title="Odadakiler: arkadaş ekle, sayacına katıl, odandan çıkar" onClick={() => usePeople.setState({ open: true })}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><circle cx="17" cy="9" r="2.5" /><path d="M15.5 13.7c2.9-.4 5.5 1.5 5.5 4.8" /></svg>{Object.keys(players).length} / {place.cap}</button>}
         <WalletChip />
+        <BoostBadge />
+        {!editing && !visiting && place?.mine && <button className="acc ico-btn call-btn" onClick={() => useCalls.setState({ panel: true })} title="Arkadaşını odana çağır"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5" /><path d="M19 8v6M16 11h6" /></svg><span className="lbl">Arkadaş çağır</span></button>}
         {!editing && <ToolButtons />}
         {!editing && !visiting && <button className="acc ico-btn" onClick={() => setEditing(true)} title="Odayı düzenle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13 7l4 4" /></svg><span className="lbl">Odayı düzenle</span></button>}
         {visiting && <button className="acc ico-btn" onClick={() => { leaveRoom(); }} title="Odama dön"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1z" /></svg><span className="lbl">Odama dön</span></button>}
@@ -311,6 +314,9 @@ export function HomeRoom() {
       <Tour run={live && !editing && !focusOpen && !visiting && !!place?.mine && profile.introSeen} />
       {!editing && focusOpen && <FocusScreen onClose={() => setFocus(false)} />}
       <WorldPanel />
+      <CallPanel send={sendRaw} here={Object.values(players).map((p) => p.code ?? '')} />
+      <IncomingCallCard send={sendRaw} />
+      <BonusCard />
       {editing && room && wallet && (
         <EditBar
           room={room} wallet={wallet} level={level} sel={sel} selItem={selItem} placing={placing} tick={tick}

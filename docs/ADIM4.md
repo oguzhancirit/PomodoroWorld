@@ -35,3 +35,8 @@ A "Dünya" (world) button opens the rest: friends, open rooms, invite code, libr
 ## Pist 25 (user 2026-11-08)
 - Second public study hall for aviation lovers: `HALLS` in `shared/src/library.ts` (`library` 10 seats, `pist25` 8 cockpit seats); server room `pist25` = `LibraryRoom` with `{ hall: 'pist25' }`; `/api/world` returns `halls`; client `joinHall(id)`, card in Dünya.
 - New v1-engine content (also sold in the shop): `f_desk_cockpit`, `f_chair_pilot`, `f_jet_engine`, `d_headset`, `d_logbook`, `w_fids`, `w_gauges`, `w_chart`, `w_propeller`; theme `th_cockpit` (wall pattern `cockpit` + wide windscreen in `js/world.js`); animated view `v_runway`.
+
+## Arkadaşını çağır + hoş geldin bonusu (user 2026-11-09)
+- Owner in Odam → "Arkadaş çağır" (calls.tsx CallPanel) → HomeRoom message `call {target}` → server checks friend list, block, online (sessions.roomOf), seats, 20 s per friend → `called` to the friend wherever they are (sessions.sendTo).
+- Friend's card "X seni odasına çağırıyor" → `call_reply {id, accept}` (any room, StudyRoom) → `call_go {code}` (invite code, works for invite-only rooms) → client visitHome. Caller gets `call_status` (sent/coming/declined/offline/full/wait…).
+- On arrival (HomeRoom.onJoin, calls.arrived) both get `grantCallBonus` (shared/src/invite.ts): 300 coins, Yer Minderi, 2 Kahve Kupası, Polaroid İpi, Harfli Flama + 7 days double focus XP (`wallet.boostUntil`, applied in rewardFocus with `now`). Once per player (`wallet.welcome`), so new guest accounts cannot farm it.

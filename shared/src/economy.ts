@@ -39,6 +39,9 @@ export interface Wallet {
   q: QuestState;
   /** the player's time zone (minutes east of UTC), so days and weeks follow their own clock */
   tz: number;
+  /** friend call bonus (invite.ts): when the welcome pack was given, and double XP until this time */
+  welcome?: number;
+  boostUntil?: number;
 }
 const LOG_MAX = 400;
 /** Like the original game: a desk, a chair, the wood theme, the city view and the small room. */
@@ -84,6 +87,8 @@ export interface FocusResult {
   startMin?: number;
   /** what they worked on (Ders, Kodlama…) */
   cat?: string;
+  /** when the focus was paid (for the double-XP week); without it no boost applies */
+  now?: number;
 }
 export function rewardFocus(w0: Wallet, r: FocusResult) {
   const w = clone(w0), lines: string[] = [];
@@ -103,6 +108,8 @@ export function rewardFocus(w0: Wallet, r: FocusResult) {
     if (r.round > 0 && r.round % 4 === 0) { xp += ECON.setBonusXP; coins += ECON.setBonusCoin; lines.push("4'lü set tamamlandı"); }
     if (w.stats.dayPomos[r.day] === ECON.dailyGoal) { coins += ECON.dailyGoalCoin; lines.push('Günlük hedef tamam'); }
   }
+  // friend call bonus: a week of double focus XP
+  if (xp && r.now != null && (w.boostUntil ?? 0) > r.now) { xp *= 2; lines.push('2x XP haftası (arkadaş bonusu)'); }
   w.xp += xp; w.coins += coins;
   const week = r.week ?? weekOf(r.day);
   if (xp) w.stats.weekXP[week] = (w.stats.weekXP[week] ?? 0) + xp;
@@ -254,6 +261,7 @@ export function sanitizeWallet(v: unknown): Wallet {
     },
     q: sanitizeQuests(o.q),
     tz: clampTz(o.tz),
+    welcome: n(o.welcome), boostUntil: n(o.boostUntil),
   };
 }
 

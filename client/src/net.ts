@@ -2,6 +2,7 @@
 import { Client, Callbacks, CloseCode, type Room } from '@colyseus/sdk';
 import { encodeAvatar, activityFor, parseInvite, hallOf, SOCIAL, SOCIAL_CAP, SOCIAL_TO, socialRoom, type Activity, type Phase } from '@pw/shared';
 import { useStore } from './store';
+import { wireCalls } from './calls';
 import { LocalRoom, hallLayout, layoutOf, type TimerAction } from './localRoom';
 import { isFriend, isBlocked } from './friends';
 import { travel } from './ui/Travel';
@@ -184,6 +185,8 @@ function wire(r: Room, screen: 'room' | 'home') {
     setTimeout(() => useStore.setState((s) => { if (s.emotes[m.id]?.until !== until) return s; const emotes = { ...s.emotes }; delete emotes[m.id]; return { emotes }; }), 2700);
   });
   r.onMessage('wallet', (m: { wallet: unknown }) => useStore.getState().set({ wallet: sanitizeWallet(m.wallet) }));
+  // friend calls (user 2026-11-09): incoming call card, answers, the walk over, the welcome bonus
+  wireCalls(r, visitHome);
   r.onMessage('reward', (m: { gained: { xp: number; coins: number }; lines: string[]; levelUp: number; wallet: unknown; completed?: boolean; minutes?: number }) => {
     useStore.getState().set({ wallet: sanitizeWallet(m.wallet), reward: { ...m.gained, lines: m.lines, levelUp: m.levelUp, at: Date.now() } });
     todoProgress(m.minutes ?? 0, !!m.completed);
@@ -278,3 +281,6 @@ export const sendKick = (id: string) => {
 export const currentRoomId = () => room?.roomId ?? '';
 /** "Birlikte": join someone's running timer (v1 followPeer) */
 export const sendFollow = (id: string) => (local ? local.follow(id) : room?.send('follow', { id }));
+
+/** a message to the live room (friend calls); nothing in demo mode */
+export const sendRaw = (type: string, msg: unknown) => room?.send(type, msg);

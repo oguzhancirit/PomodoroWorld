@@ -7,11 +7,14 @@ import {
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter,
   decodeAvatar, encodeAvatar, firstFreeSeat, isSeatFree, STUDY_ROOM,
   ChatMsg, EmoteMsg, SitMsg, ActivityMsg, parseJoin,
-  rewardFocus, avatarAllowed, levelFromXP, defaultAvatar, durationOf, clock, noteChat,
+  rewardFocus, avatarAllowed, levelFromXP, defaultAvatar, durationOf, clock, noteChat, inviteCode,
 } from '@pw/shared';
 import { StudyRoomState, Player } from './state';
 import { profiles, type Profile } from '../profiles';
 import { sessions } from '../sessions';
+import { calls } from '../calls';
+
+const CallReply = z.object({ id: z.string().max(40), accept: z.boolean() });
 
 // how long each player was really here during the current focus
 interface FocusTrack { since: number | null; accMs: number; fromStart: boolean; intact: boolean }
@@ -41,6 +44,21 @@ export class StudyRoom extends Room {
   private waiting = new Map<string, { reject(e?: unknown): void }>();
 
   messages = {
+    // "Arkadaşını çağır": the called friend answers from whatever room they are in (user 2026-11-09)
+    call_reply: validate(CallReply, (client: Client, { id, accept }) => {
+      const prof = this.profileOf.get(client.sessionId); if (!prof) return;
+      const c = calls.answer(id, prof.pid); if (!c) return;
+      const owner = profiles.get(c.owner);
+      if (!accept || !owner || !sessions.roomOf(c.owner)) {
+        calls.drop(c.id);
+        if (accept) client.send('call_gone', { name: c.ownerName });
+        else sessions.sendTo(c.owner, 'call_status', { status: 'declined', name: c.targetName });
+        return;
+      }
+      calls.accept(c);
+      client.send('call_go', { code: inviteCode(c.owner, owner.room.token), name: c.ownerName });
+      sessions.sendTo(c.owner, 'call_status', { status: 'coming', name: c.targetName });
+    }),
     chat: validate(ChatMsg, (client: Client, { text }) => {
       const p = this.state.players.get(client.sessionId);
       if (!p) return;
@@ -109,7 +127,7 @@ export class StudyRoom extends Room {
     let prof: Profile | null = null;
     if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.replaceTwins(prof.pid); this.profileOf.set(client.sessionId, prof); }
     // one account, one place across the whole server: another room (other timer length, library, Odam…) lets go of you
-    if (prof) { const sid = client.sessionId; sessions.claim(prof.pid, { room: this.roomId, sessionId: sid, kick: () => this.dropTwin(sid) }); }
+    if (prof) { const sid = client.sessionId; sessions.claim(prof.pid, { room: this.roomId, sessionId: sid, kick: () => this.dropTwin(sid), send: (t, m) => this.clients.getById(sid)?.send(t, m) }); }
     const p = new Player();
     p.name = cleanName(o.name) || 'Misafir';
     // you can only wear parts you own (free ones are always yours)
@@ -243,7 +261,7 @@ export class StudyRoom extends Room {
     const minutes = (ms * this.scale) / 60_000;
     // the player's own calendar: their day, week and the minute their counted time began
     const k = clock(now, prof.wallet.tz), start = clock(now - minutes * 60_000, prof.wallet.tz);
-    const r = rewardFocus(prof.wallet, { minutes, completed, round, others, day: k.day, week: k.week, startMin: start.minute, cat: this.categoryOf.get(id) ?? 'Diğer', longFocus: focusMin >= 90 });
+    const r = rewardFocus(prof.wallet, { minutes, completed, round, others, day: k.day, week: k.week, startMin: start.minute, cat: this.categoryOf.get(id) ?? 'Diğer', longFocus: focusMin >= 90, now });
     profiles.update(prof, r.wallet);
     const pl = this.state.players.get(id); if (pl) pl.level = levelFromXP(r.wallet.xp).level;
     this.clients.getById(id)?.send('reward', { gained: r.gained, lines: r.lines, levelUp: r.levelUp, wallet: r.wallet, completed, minutes: Math.floor(minutes) });
