@@ -134,3 +134,25 @@ describe('personal timers', () => {
     expect(c.state.players.get(c.sessionId)!.timer.phase).toBe('idle');
   });
 });
+
+// User report 2026-11-09: "ekran açık kalmadığında bağlantı hatası alıyorum". A phone that locks its screen during a
+// focus drops the line; that is how people use a pomodoro, so the focus must not be spoiled by it.
+describe('screen off during a focus', () => {
+  it('a short drop and return keeps the full-pomodoro bonus', async () => {
+    const { ca, room } = await duo();
+    ca.send('timer', { action: 'start' }); await wait(80);
+    ca.reconnection.minUptime = 0;
+    const back = new Promise<void>((r) => ca.onReconnect(() => r()));
+    (ca as any).connection.close(4010, 'screen off'); // MAY_TRY_RECONNECT
+    await back; await wait(80);
+    const got = new Promise<any>((r) => ca.onMessage('reward', r));
+    room.endPlayerPhaseIn(ca.sessionId, 50);
+    const m = await got;
+    expect(m.completed).toBe(true);
+  });
+
+  it('the seat waits at least 5 minutes for a locked phone', async () => {
+    const { RECONNECT_SECONDS } = await import('../src/rooms/StudyRoom');
+    expect(RECONNECT_SECONDS).toBeGreaterThanOrEqual(300);
+  });
+});

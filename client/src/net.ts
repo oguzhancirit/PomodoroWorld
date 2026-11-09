@@ -146,6 +146,8 @@ function wire(r: Room, screen: 'room' | 'home') {
   const joinedAt = Date.now();
   const st = useStore.getState();
   st.set({ net: 'online', mode: 'online', me: r.sessionId, screen });
+  // keep trying for about the time the server holds the seat (5 min), not the SDK's default minute
+  r.reconnection.maxRetries = 60; r.reconnection.maxDelay = 5000;
   const cb = Callbacks.get(r);
   if (screen === 'room') {
     // the old shared hall: one timer for the room
@@ -198,6 +200,7 @@ function wire(r: Room, screen: 'room' | 'home') {
     chime(m.phase === 'focus' ? 523 : 784);
   });
   r.onMessage('time', (m: { t0: number; server: number }) => {
+    lastPong = Date.now();
     const rtt = Date.now() - m.t0; useStore.getState().set({ clockOffset: m.server + rtt / 2 - Date.now() });
   });
   r.send('time', { t0: Date.now() });
@@ -216,12 +219,61 @@ function wire(r: Room, screen: 'room' | 'home') {
     // the server restarted (an update, or the free host woke it again) and forgot the room: we cannot slip back
     // into it, so in the game screen we simply join again from the start (live, 2026-11-04: stuck on "Bağlantı koptu")
     if (st.screen === 'home') {
+      // the line stayed down too long (a phone with its screen off, user report 2026-11-09): go back to the SAME
+      // place with the running timer, not home. Only my own room (or a failed return) opens home again.
+      const back = st.place;
+      if (back && !back.mine) { room = null; st.set({ net: 'reconnecting' }); comeBack(back); return; }
       room = null; useWake.setState({ state: 'idle' });
       st.set({ net: 'idle', error: '', players: {}, me: '', place: null, chat: [] }); // HomeRoom opens your room again
       return;
     }
     st.set({ net: 'offline', error: code === CloseCode.FAILED_TO_RECONNECT ? 'Bağlantı koptu.' : 'Odadan çıkıldı.' });
   });
+}
+
+type Place = NonNullable<ReturnType<typeof useStore.getState>['place']>;
+/** back into the place the dropped line was in; the timer travels with carried() */
+async function comeBack(p: Place) {
+  const st = useStore.getState();
+  let ok = false, job = homeJob;
+  for (let i = 0; i < 4 && !ok; i++) {
+    // no network yet (still asleep, or the phone has just woken): wait for it instead of giving up
+    if (!navigator.onLine) await new Promise((r) => window.addEventListener('online', r, { once: true }));
+    if (i) await new Promise((r) => setTimeout(r, 3000));
+    if (job !== homeJob || room || local) return; // the player went somewhere else meanwhile
+    ok = p.kind === 'library' ? await enterLibrary(undefined, p.hall)
+      : p.kind === 'social' ? await enterSocial(p.owner.replace(/^social:/, ''))
+      : await joinHome(p.owner, '');
+    job = homeJob; // our own try moved the counter
+  }
+  if (ok) { useStore.getState().flash('Bağlantı geri geldi. Kaldığın yerdesin, sayacın devam ediyor.', 4000); return; }
+  if (room || local) return; // a newer trip already took over
+  useWake.setState({ state: 'idle' });
+  st.set({ net: 'idle', error: '', players: {}, me: '', place: null, chat: [] }); // home opens again
+}
+
+/* ---------- a phone that wakes up (screen on again) or a network that comes back ---------- */
+let lastPong = 0, hiddenAt = 0;
+/** is the line really alive? A frozen page's socket can look open while the server already let it go. */
+function checkLine() {
+  const r = room; if (!r || useStore.getState().net !== 'online') return;
+  const asked = Date.now();
+  try { r.send('time', { t0: asked }); } catch { /* closed */ }
+  setTimeout(() => {
+    if (room !== r || lastPong >= asked) return;
+    // no answer: drop it ourselves so the SDK starts coming back now, not minutes later
+    try { (r as any).connection.close(4010, 'line check'); } catch { /* already closed */ }
+  }, 3500);
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    if (Date.now() - hiddenAt < 2000) return;
+    const r = room; if (!r) return;
+    // coming back from a long sleep: give the reconnection a fresh set of tries
+    if (r.reconnection.isReconnecting) r.reconnection.retryCount = 0; else checkLine();
+  });
+  window.addEventListener('online', () => checkLine());
 }
 
 function quit(r: Room) { r.reconnection.enabled = false; r.removeAllListeners(); r.leave(true).catch(() => {}); }
@@ -284,3 +336,5 @@ export const sendFollow = (id: string) => (local ? local.follow(id) : room?.send
 
 /** a message to the live room (friend calls); nothing in demo mode */
 export const sendRaw = (type: string, msg: unknown) => room?.send(type, msg);
+/** dev tests: the live room (main.tsx puts net on window only in dev) */
+export const currentRoom = () => room;

@@ -87,7 +87,8 @@ export class PersonalRoom extends StudyRoom {
     return k === 1 ? p : { ...p, focusMin: p.focusMin / k, shortMin: p.shortMin / k, longMin: p.longMin / k };
   }
   private freshTrack(id: string, now: number) {
-    this.track.set(id, { since: this.state.players.get(id)?.connected ? now : null, accMs: 0, fromStart: true, intact: true });
+    // a locked phone (dropped, seat still waiting) is still studying: its next focus counts too
+    this.track.set(id, { since: now, accMs: 0, fromStart: true, intact: true });
   }
   private tell(id: string, t: TimerState) { this.clients.getById(id)?.send('phase', { phase: t.phase, round: t.round, endsAt: t.phaseEndsAt }); }
 
@@ -109,7 +110,7 @@ export class PersonalRoom extends StudyRoom {
       const tr = this.track.get(id);
       if (tr && cur.phase === 'focus') {
         if (action === 'pause') { if (tr.since) tr.accMs += now - tr.since; tr.since = null; }
-        else if (p.connected) tr.since = now;
+        else tr.since = now;
       }
       this.setPlayerTimer(id, next);
     } else if (action === 'skip') {

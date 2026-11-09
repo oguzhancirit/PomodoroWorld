@@ -20,7 +20,9 @@ const CallReply = z.object({ id: z.string().max(40), accept: z.boolean() });
 interface FocusTrack { since: number | null; accMs: number; fromStart: boolean; intact: boolean }
 
 const BUBBLE_MS = 6000;
-const RECONNECT_SECONDS = 30;
+/** how long a dropped seat waits. A phone that locks its screen freezes the page and the line drops; the user
+ *  report 2026-11-09 ("ekran açık kalmadığında bağlantı hatası") showed 30 s was far too short. */
+export const RECONNECT_SECONDS = 5 * 60;
 
 export class StudyRoom extends Room {
   maxClients = STUDY_ROOM.maxClients;
@@ -152,7 +154,8 @@ export class StudyRoom extends Room {
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = false;
     const t = this.track.get(client.sessionId);
-    if (t) { if (t.since) t.accMs += Date.now() - t.since; t.since = null; t.intact = false; }
+    // the focus keeps running while the screen is off (that is how a pomodoro is used); the minutes count only if
+    // the player comes back to this seat: a seat that runs out takes its track with it (onLeave)
     const d = this.allowReconnection(client, RECONNECT_SECONDS) as unknown as Promise<unknown> & { reject(e?: unknown): void };
     this.waiting.set(client.sessionId, d);
     const done = () => { this.waiting.delete(client.sessionId); };
@@ -163,7 +166,7 @@ export class StudyRoom extends Room {
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = true;
     const t = this.track.get(client.sessionId);
-    if (t && this.focusingNow(client.sessionId)) t.since = Date.now();
+    if (t && this.focusingNow(client.sessionId) && !t.since) t.since = Date.now();
   }
 
   onLeave(client: Client) {
@@ -236,7 +239,7 @@ export class StudyRoom extends Room {
   /** everyone present right now starts a fresh focus "from the start" */
   protected startTracking() {
     const now = Date.now();
-    this.state.players.forEach((p, id) => this.track.set(id, { since: p.connected ? now : null, accMs: 0, fromStart: p.connected, intact: p.connected }));
+    this.state.players.forEach((_p, id) => this.track.set(id, { since: now, accMs: 0, fromStart: true, intact: true }));
   }
 
   /** the server decides the reward: only time really spent in the room counts */

@@ -148,7 +148,7 @@ export function DaySummary() {
 
 export function NetBanner() {
   const net = useStore((s) => s.net), error = useStore((s) => s.error);
-  if (net === 'reconnecting') return <div className="banner">Bağlantı koptu, yeniden bağlanıyor… Yerin 30 saniye korunuyor.</div>;
+  if (net === 'reconnecting') return <div className="banner">Bağlantı koptu, yeniden bağlanıyor… Yerin ve sayacın korunuyor.</div>;
   if (net === 'offline') return <div className="banner err">{error} <button onClick={leaveRoom}>{/başka bir pencerede/.test(error) ? 'Burada devam et' : 'Odama dön'}</button></div>;
   return null;
 }
