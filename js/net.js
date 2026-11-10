@@ -7,7 +7,7 @@
 (function () {
   const PW = window.PW;
   const APP_ID = 'pomodoro-world-oguzhan-v1';
-  const TRYSTERO_URL = 'https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm';
+  const TRYSTERO_URL = new URL('vendor/trystero-0.25.4.mjs', document.baseURI).href;
 
   // untrusted payload guard: oversized or non-object presence is dropped before it reaches the game
   const MAX_PRES = 20000, MAX_PEERS = 80;
