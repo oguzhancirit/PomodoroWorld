@@ -156,3 +156,38 @@ describe('screen off during a focus', () => {
     expect(RECONNECT_SECONDS).toBeGreaterThanOrEqual(300);
   });
 });
+
+// "5 dakika korunurken tekrar giriş yapınca iki hesap görünüyordu"
+describe('two windows of one account', () => {
+  it('a new window replaces the waiting ghost: only one body stays', async () => {
+    const a = await player('Ghost'); const c1 = await join(a, a.pid); await wait(60);
+    const room = await roomOf(a.pid);
+    c1.reconnection.enabled = false;
+    (c1 as any).connection.close(4010, 'screen off'); await wait(80);
+    expect(room.state.players.size).toBe(1); // the ghost waits
+    const c2 = await join(a, a.pid); await wait(80);
+    expect(room.state.players.size).toBe(1);
+    expect(room.state.players.get(c2.sessionId)!.connected).toBe(true);
+  });
+
+  it('a window that comes back after a long drop does not steal the account from a live window', async () => {
+    const a = await player('Steal'); const c1 = await join(a, a.pid); await wait(60);
+    c1.reconnection.enabled = false;
+    (c1 as any).connection.close(4010, 'screen off'); await wait(80);
+    const c2 = await join(a, a.pid); await wait(80);
+    await expect(join(a, a.pid, { resume: true })).rejects.toThrow(/başka bir pencere/);
+    const room = await roomOf(a.pid);
+    expect(room.state.players.get(c2.sessionId)!.connected).toBe(true);
+    expect(room.state.players.size).toBe(1);
+  });
+
+  it('a resume join is fine when the old seat is only a waiting ghost', async () => {
+    const a = await player('Back'); const c1 = await join(a, a.pid); await wait(60);
+    c1.reconnection.enabled = false;
+    (c1 as any).connection.close(4010, 'screen off'); await wait(80);
+    const c2 = await join(a, a.pid, { resume: true }); await wait(80);
+    const room = await roomOf(a.pid);
+    expect(room.state.players.size).toBe(1);
+    expect(room.state.players.get(c2.sessionId)!.connected).toBe(true);
+  });
+});

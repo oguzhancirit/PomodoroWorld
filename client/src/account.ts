@@ -57,6 +57,8 @@ async function signInWithGoogle(credential: string): Promise<[string, boolean?]>
     const r = await fetch(`${HTTP_BASE}/api/auth/google`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ credential, guest: identity() }) });
     const d = await r.json();
     if (!d.ok) return [d.error || 'Google girişi olmadı, tekrar dene.'];
+    // the guest body in the room leaves first, or it would stand there next to the account's own for minutes
+    try { await (await import('./net')).dropSeat(); } catch { /* ignore */ }
     setIdentity({ pid: d.pid, secret: d.secret });
     const st = useStore.getState();
     if (d.look?.name && d.look?.avatar) {
@@ -89,7 +91,8 @@ useStore.subscribe((s, prev) => {
 });
 
 /** signs out of Google on this device: the next person starts fresh here */
-export function signOut() {
+export async function signOut() {
+  try { await (await import('./net')).dropSeat(); } catch { /* the page reloads anyway */ }
   try { (window as unknown as { google?: Gis }).google?.accounts.id.disableAutoSelect(); } catch { /* ignore */ }
   for (const k of ['pw2.identity', 'pw2.profile', KEY]) try { localStorage.removeItem(k); } catch { /* ignore */ }
   location.reload();

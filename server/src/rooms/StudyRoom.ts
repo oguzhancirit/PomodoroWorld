@@ -124,12 +124,20 @@ export class StudyRoom extends Room {
     c?.leave();
   }
 
+  /** "come back to my place" after a long drop (client sends resume): if the player has since opened the game in
+   *  another window that is online, this old one must not push it out again (two windows would fight forever) */
+  protected guardResume(options: unknown) {
+    const o = parseJoin(options);
+    if (o.pid && (options as { resume?: unknown } | undefined)?.resume === true && profiles.open(o.pid, o.secret) && sessions.liveSeat(o.pid)) throw new Error('Oyun başka bir pencerede açıldı.');
+  }
+
   onJoin(client: Client, options: unknown) {
     const o = parseJoin(options);
     let prof: Profile | null = null;
+    this.guardResume(options);
     if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.replaceTwins(prof.pid); this.profileOf.set(client.sessionId, prof); }
     // one account, one place across the whole server: another room (other timer length, library, Odam…) lets go of you
-    if (prof) { const sid = client.sessionId; sessions.claim(prof.pid, { room: this.roomId, sessionId: sid, kick: () => this.dropTwin(sid), send: (t, m) => this.clients.getById(sid)?.send(t, m) }); }
+    if (prof) { const sid = client.sessionId; sessions.claim(prof.pid, { room: this.roomId, sessionId: sid, kick: () => this.dropTwin(sid), send: (t, m) => this.clients.getById(sid)?.send(t, m), live: () => !!this.state.players.get(sid)?.connected }); }
     const p = new Player();
     p.name = cleanName(o.name) || 'Misafir';
     // you can only wear parts you own (free ones are always yours)

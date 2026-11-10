@@ -87,6 +87,7 @@ export class HomeRoom extends PersonalRoom {
     const { pid, token } = o.data;
     // only the owner can open the room; a guest arriving first finds it offline
     if (pid !== this.owner && !this.state.players.size) throw new Error('Bu oda şu an çevrimiçi değil.');
+    this.guardResume(options);
     // your old self (a reload) does not hold a chair against you
     if (profiles.open(pid, parseJoin(options).secret)) this.replaceTwins(pid);
     const count = this.state.players.size;

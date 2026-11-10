@@ -33,7 +33,7 @@ export function BackupBox() {
       if (!res.ok) return flash(REASON[res.reason], 6000);
       if (!confirm('Bu yedek, bu tarayıcıdaki hesabın yerine geçecek. Devam edilsin mi?')) return;
       try { for (const k of BACKUP_KEYS) localStorage.removeItem(k); for (const [k, v] of Object.entries(res.data)) localStorage.setItem(k, v); } catch { return flash('Yedek yazılamadı (tarayıcı depolaması kapalı).', 5000); }
-      location.reload();
+      import('../net').then((n) => n.dropSeat()).catch(() => {}).finally(() => location.reload());
     };
     r.readAsText(f);
   };

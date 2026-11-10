@@ -23,6 +23,8 @@ function carried() {
 }
 /** the latest join wins: an older, slower join is dropped */
 let homeJob = 0;
+/** set while we are coming back to a place after a long drop: the server then refuses if another window took over */
+let resuming = false, lastJoinMsg = '';
 
 const NOTICES: Record<string, string> = {
   chat_closed: 'Odak sırasında sohbet kapalı. Molada açılır.',
@@ -43,11 +45,11 @@ async function enterLibrary(roomId?: string, hallId = 'library'): Promise<boolea
   try {
     await wakeServer(); // a sleeping free server first wakes up (banner on top)
     const client = new Client(SERVER);
-    const opts = { ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
+    const opts = { ...identity(), name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried(), resume: resuming || undefined };
     r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate(hall.id, opts);
   } catch (e) {
     if (job !== homeJob) return false;
-    console.warn('library join failed', e);
+    lastJoinMsg = (e as Error)?.message || ''; console.warn('library join failed', e);
     st.flash(roomId ? `${hall.name} dolu ya da kapandı. Dünya’dan tekrar dene.` : `${hall.to} bağlanılamadı. İnternetini kontrol edip tekrar dene.`, 5000);
     return false;
   }
@@ -70,11 +72,11 @@ async function enterSocial(space: string, roomId?: string): Promise<boolean> {
   try {
     await wakeServer(); // a sleeping free server first wakes up (banner on top)
     const client = new Client(SERVER);
-    const opts = { ...identity(), space, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
+    const opts = { ...identity(), space, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried(), resume: resuming || undefined };
     r = roomId ? await client.joinById(roomId, opts) : await client.joinOrCreate('social', opts);
   } catch (e) {
     if (job !== homeJob) return false;
-    console.warn('social join failed', e);
+    lastJoinMsg = (e as Error)?.message || ''; console.warn('social join failed', e);
     st.flash('Oraya şu an girilemedi. Biraz sonra tekrar dene.', 5000);
     return false;
   }
@@ -114,11 +116,11 @@ async function joinHome(owner: string, token: string): Promise<boolean> {
   try {
     await wakeServer();
     const client = new Client(SERVER);
-    const opts = { ...identity(), owner, token: token || undefined, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried() };
+    const opts = { ...identity(), owner, token: token || undefined, name: profile.name, avatar: encodeAvatar(profile.avatar), preset: carried()?.preset ?? profile.preset, activity: activityFor(profile.category), category: profile.category, timer: carried(), resume: resuming || undefined };
     r = mine ? await client.joinOrCreate('home', opts) : await client.join('home', opts);
   } catch (e) {
     if (job !== homeJob) return false;
-    const msg = (e as Error)?.message || '';
+    const msg = (e as Error)?.message || ''; lastJoinMsg = msg;
     if (mine) {
       // no server: my room still works in this browser with a local timer
       console.warn('home join failed, local room', e); local?.leave(); local = new LocalRoom(st.profile.fast ? 60 : 1, 'home', false); return true;
@@ -236,6 +238,8 @@ type Place = NonNullable<ReturnType<typeof useStore.getState>['place']>;
 async function comeBack(p: Place) {
   const st = useStore.getState();
   let ok = false, job = homeJob;
+  resuming = true; lastJoinMsg = '';
+  try {
   for (let i = 0; i < 4 && !ok; i++) {
     // no network yet (still asleep, or the phone has just woken): wait for it instead of giving up
     if (!navigator.onLine) await new Promise((r) => window.addEventListener('online', r, { once: true }));
@@ -245,6 +249,13 @@ async function comeBack(p: Place) {
       : p.kind === 'social' ? await enterSocial(p.owner.replace(/^social:/, ''))
       : await joinHome(p.owner, '');
     job = homeJob; // our own try moved the counter
+    // the account is open in another window that is online: stay out, do not fight over it
+    if (!ok && /başka bir pencere/.test(lastJoinMsg)) break;
+  }
+  } finally { resuming = false; }
+  if (!ok && /başka bir pencere/.test(lastJoinMsg) && !room && !local) {
+    st.set({ net: 'offline', error: 'Oyun başka bir pencerede açıldı.', players: {}, me: '', place: null, chat: [] });
+    return;
   }
   if (ok) { useStore.getState().flash('Bağlantı geri geldi. Kaldığın yerdesin, sayacın devam ediyor.', 4000); return; }
   if (room || local) return; // a newer trip already took over
@@ -276,6 +287,18 @@ if (typeof document !== 'undefined') {
   window.addEventListener('online', () => checkLine());
 }
 
+/** leave the current room for good and wait (a moment) until the server has freed the seat. Used before the
+ *  account changes on this device (sign out, sign in): otherwise the old account's body waits 5 minutes in the
+ *  room next to the new one (user report 2026-11-10: "iki hesap birden gözüküyor") */
+export async function dropSeat(): Promise<void> {
+  const r = room; room = null; homeJob++;
+  local?.leave(); local = null;
+  if (r) {
+    r.reconnection.enabled = false; r.removeAllListeners();
+    await Promise.race([r.leave(true).catch(() => {}), new Promise((ok) => setTimeout(ok, 1200))]);
+  }
+  useStore.getState().set({ net: 'idle', error: '', players: {}, me: '', place: null, chat: [] });
+}
 function quit(r: Room) { r.reconnection.enabled = false; r.removeAllListeners(); r.leave(true).catch(() => {}); }
 function leaveQuiet() {
   const r = room; room = null;
