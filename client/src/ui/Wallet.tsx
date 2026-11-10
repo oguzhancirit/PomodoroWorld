@@ -33,7 +33,7 @@ export function PartPic({ it, base }: { it: Item; base: string }) {
 }
 
 /** things added in the big shop update (user 2026-11-03), shown with a "Yeni" badge */
-const NEW_IDS = new Set(['f_console', 'w_neon_text', 'w_poster_art', 'w_garland', 'f_doormat', 'f_flower_vase', 'f_bird_paradise', 'f_succulents', 'f_lamp_mushroom', 'f_lantern', 'f_skateboard', 'f_vase_tall', 'f_easel', 'f_yoga_mat', 'f_camera', 'f_bunny', 'f_fishbowl', 'f_parrot', 'f_hammock', 'f_pouf', 'f_rug_shag', 'f_rug_checker', 'f_rug_rainbow', 'w_ivy', 'w_moon', 'w_star_lights', 'w_hoop', 'w_vinyl', 'w_polaroid', 'w_mirror', 'd_hourglass', 'd_crystal', 'd_photo', 'd_headphones']);
+const NEW_IDS = new Set(['f_console', 'w_neon_text', 'w_poster_art', 'w_garland', 'f_doormat', 'f_flower_vase', 'f_bird_paradise', 'f_succulents', 'f_lamp_mushroom', 'f_lantern', 'f_skateboard', 'f_vase_tall', 'f_easel', 'f_yoga_mat', 'f_camera', 'f_bunny', 'f_fishbowl', 'f_parrot', 'f_hammock', 'f_pouf', 'f_rug_shag', 'f_rug_checker', 'f_rug_rainbow', 'w_ivy', 'w_moon', 'w_star_lights', 'w_hoop', 'w_vinyl', 'w_polaroid', 'w_mirror', 'd_hourglass', 'd_crystal', 'd_photo', 'd_headphones', 'f_set_barista', 'f_set_reading', 'f_set_tea', 'f_set_music', 'f_set_greenhouse', 'f_set_zen', 'd_espresso', 'd_typewriter', 'd_zen_garden', 'd_record_player', 'd_fan', 'd_snowglobe', 'v_balcony_rain', 'v_balcony_snow', 'v_storm']);
 /** what you can make your own on a room item: colour, own text, a design */
 const touchesOf = (it: Item) => { const f = it as Item & { tint?: number; text?: number; vars?: number }; return { tint: !!f.tint, text: !!f.text, vars: !!f.vars }; };
 const isPersonal = (it: Item) => { const t = touchesOf(it); return t.tint || t.text || t.vars; };

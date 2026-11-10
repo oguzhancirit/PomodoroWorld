@@ -137,6 +137,18 @@
   it('f_piano', 'Hobi', 'Dijital Piyano', 650, 8, { fp: [1.4, 0.5] });
   it('f_console', 'Hobi', 'Oyun Konsolu ve TV', 900, 6, { fp: [1.5, 0.55] });
   it('f_coffee', 'Mutfak', 'Kahve Köşesi', 200, 3, { fp: [0.8, 0.5] });
+  it('f_set_barista', 'Setler', 'Barista Köşesi', 950, 6, { back: 1, light: 1, fp: [1.9, 1.1] });
+  it('f_set_reading', 'Setler', 'Okuma Köşesi', 720, 5, { back: 1, light: 1, fp: [2.2, 1.7] });
+  it('f_set_tea', 'Setler', 'Çay Köşesi', 560, 4, { fp: [2.3, 2.0] });
+  it('f_set_music', 'Setler', 'Müzik Köşesi', 880, 8, { back: 1, light: 1, fp: [2.0, 1.3] });
+  it('f_set_greenhouse', 'Setler', 'Mini Sera', 640, 7, { back: 1, light: 1, fp: [1.5, 0.6] });
+  it('f_set_zen', 'Setler', 'Zen Köşesi', 780, 10, { fp: [1.6, 1.6], light: 1 });
+  it('d_espresso', 'Masaüstü', 'Espresso Makinesi', 140, 4, { top: 1, fp: [0.22, 0.2] });
+  it('d_typewriter', 'Masaüstü', 'Daktilo', 160, 5, { top: 1, fp: [0.32, 0.28] });
+  it('d_zen_garden', 'Masaüstü', 'Mini Zen Bahçesi', 90, 3, { top: 1, fp: [0.36, 0.26] });
+  it('d_record_player', 'Masaüstü', 'Mini Pikap', 170, 6, { top: 1, fp: [0.36, 0.28] });
+  it('d_fan', 'Masaüstü', 'Masa Pervanesi', 80, 2, { top: 1, fp: [0.22, 0.22] });
+  it('d_snowglobe', 'Masaüstü', 'Kar Küresi', 70, 2, { top: 1, fp: [0.2, 0.2] });
   it('f_fridge', 'Mutfak', 'Mini Buzdolabı', 260, 4, { fp: [0.6, 0.6] });
   // tabletop (top: placed on desks if possible)
   // shop expansion (user 2026-11-03: a room that shows your own style) — many take your colour (c)
@@ -255,8 +267,11 @@
     { id: 'v_bosphorus', name: 'İstanbul Boğazı', price: 350, lvl: 4 },
     { id: 'v_beach', name: 'Sahilde Gün Batımı', price: 300, lvl: 5 },
     { id: 'v_cappadocia', name: 'Kapadokya Balonları', price: 450, lvl: 6 },
+    { id: 'v_balcony_rain', name: 'Yağmurlu Balkon', price: 350, lvl: 3 },
+    { id: 'v_balcony_snow', name: 'Karlı Balkon', price: 400, lvl: 4 },
     { id: 'v_snow', name: 'Karlı Orman', price: 400, lvl: 7 },
     { id: 'v_rain', name: 'Yağmurlu Gece', price: 500, lvl: 8 },
+    { id: 'v_storm', name: 'Fırtına Gecesi', price: 650, lvl: 9 },
     { id: 'v_clouds', name: 'Bulutların Üstü', price: 700, lvl: 9 },
     { id: 'v_aurora', name: 'Kuzey Işıkları', price: 900, lvl: 11 },
     { id: 'v_space', name: 'Yörüngeden Dünya', price: 1500, lvl: 15 },
