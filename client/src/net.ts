@@ -201,6 +201,8 @@ function wire(r: Room, screen: 'room' | 'home') {
     useStore.getState().addChat({ id: 'sys', name: '', text, at: Date.now(), system: true });
     chime(m.phase === 'focus' ? 523 : 784);
   });
+  // the server's "still here" every 40 s keeps the line from going silent while this tab sleeps in the background
+  r.onMessage('beat', () => { lastPong = Date.now(); });
   r.onMessage('time', (m: { t0: number; server: number }) => {
     lastPong = Date.now();
     const rtt = Date.now() - m.t0; useStore.getState().set({ clockOffset: m.server + rtt / 2 - Date.now() });
@@ -270,11 +272,13 @@ function checkLine() {
   const r = room; if (!r || useStore.getState().net !== 'online') return;
   const asked = Date.now();
   try { r.send('time', { t0: asked }); } catch { /* closed */ }
+  // a page that just woke up first runs everything it missed (and the 3D room draws again), so an answer can be a
+  // few seconds late; 3.5 s cut healthy lines and showed "Bağlantı koptu" (user 2026-11-12)
   setTimeout(() => {
     if (room !== r || lastPong >= asked) return;
     // no answer: drop it ourselves so the SDK starts coming back now, not minutes later
     try { (r as any).connection.close(4010, 'line check'); } catch { /* already closed */ }
-  }, 3500);
+  }, 10_000);
 }
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {

@@ -24,6 +24,9 @@ const BUBBLE_MS = 6000;
  *  report 2026-11-09 ("ekran açık kalmadığında bağlantı hatası") showed 30 s was far too short. */
 export const RECONNECT_SECONDS = 5 * 60;
 
+/** how often the server says "still here" to every player (well under the host's 5-minute idle door) */
+export const BEAT = { ms: 40_000 };
+
 export class StudyRoom extends Room {
   maxClients = STUDY_ROOM.maxClients;
   // a slow phone may need longer than the default 15 s to open its connection after a seat is reserved
@@ -102,6 +105,14 @@ export class StudyRoom extends Room {
     this.setTimer(startTimer(Date.now(), this.preset));
     this.startTracking();
     this.setMetadata({ preset: this.preset.id });
+    this.keepLinesAwake();
+  }
+
+  /** a background tab freezes its own timers, so its "time" messages stop; the host closes a line after 5 silent
+   *  minutes (user 2026-11-12: "Bağlantı koptu" after a while in the background). The server's clock never sleeps:
+   *  a tiny "beat" to everyone keeps every line talking, whatever the tab is doing. */
+  protected keepLinesAwake() {
+    this.clock.setInterval(() => this.broadcast('beat', 0), BEAT.ms);
   }
 
   /** one player, one body (live 2026-11-04: every reload added a copy of you, even in a full room). A reload looks

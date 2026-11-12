@@ -43,6 +43,7 @@ export class PersonalRoom extends StudyRoom {
     // the room clock is not used: every player has their own
     this.setTimer(IDLE);
     this.clock.setInterval(() => this.tickPlayers(), 250);
+    this.keepLinesAwake();
   }
 
   onJoin(client: Client, options: unknown) {

@@ -20,6 +20,8 @@ export class SessionRegistry {
   liveSeat(pid: string) { const s = this.active.get(pid); return !!s && (s.live ? s.live() : true); }
   /** send to wherever this player is; false when they are not online */
   sendTo(pid: string, type: string, msg: unknown) { const s = this.active.get(pid); if (!s?.send) return false; s.send(type, msg); return true; }
+  /** how many players have a seat (online or waiting after a drop) */
+  get count() { return this.active.size; }
   release(pid: string, room: string, sessionId: string) {
     if (this.holds(pid, room, sessionId)) this.active.delete(pid);
   }

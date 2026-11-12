@@ -148,7 +148,14 @@ export function DaySummary() {
 
 export function NetBanner() {
   const net = useStore((s) => s.net), error = useStore((s) => s.error);
-  if (net === 'reconnecting') return <div className="banner">Bağlantı koptu, yeniden bağlanıyor… Yerin ve sayacın korunuyor.</div>;
+  // a short drop comes back by itself in a second or two (a tab waking up, Wi-Fi switching): say nothing then.
+  // The strip only shows when coming back really takes a while (user 2026-11-12: the strip scared people).
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (net !== 'reconnecting') return setSlow(false);
+    const t = setTimeout(() => setSlow(true), 6000); return () => clearTimeout(t);
+  }, [net]);
+  if (net === 'reconnecting' && slow) return <div className="banner">Bağlantı koptu, yeniden bağlanıyor… Yerin ve sayacın korunuyor.</div>;
   if (net === 'offline') return <div className="banner err">{error} <button onClick={leaveRoom}>{/başka bir pencerede/.test(error) ? 'Burada devam et' : 'Odama dön'}</button></div>;
   return null;
 }
