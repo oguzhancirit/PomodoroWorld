@@ -4,6 +4,7 @@ import { server } from '../src/app.config';
 import type { StudyRoom } from '../src/rooms/StudyRoom';
 import { encodeAvatar, defaultAvatar } from '@pw/shared';
 import { CloseCode } from '@colyseus/core';
+import { profiles } from '../src/profiles';
 
 let colyseus: ColyseusTestServer;
 beforeAll(async () => { colyseus = await boot(server); });
@@ -181,6 +182,56 @@ describe('StudyRoom', () => {
     expect((await got).wallet.stats.pomos).toBe(0);
   });
 
+  it('one player in two study rooms (25 and 50 min) is paid only once: the newer room wins', async () => {
+    const r25 = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const r50 = await colyseus.createRoom<StudyRoom>('study_room', { preset: 'p50' });
+    const who = { pid: 'pidtwice00001', secret: 't'.repeat(32) };
+    const a = await colyseus.connectTo(r25, { name: 'Tab1', ...who });
+    let replaced = false; a.onMessage('replaced', () => { replaced = true; });
+    const b = await colyseus.connectTo(r50, { name: 'Tab2', ...who });
+    await wait(80);
+    r25.forcePhase('focus'); r50.forcePhase('focus');
+    let paidOld = 0; a.onMessage('reward', () => { paidOld++; });
+    const got = b.waitForMessage('reward');
+    r25.endPhaseIn(30); r50.endPhaseIn(30);
+    const m = await got; await wait(80);
+    expect(paidOld).toBe(0);
+    expect(m.wallet.stats.pomos).toBe(1);
+    expect(profiles.get(who.pid)!.wallet.stats.pomos).toBe(1);
+    expect(replaced).toBe(true);
+    expect(r25.state.players.size).toBe(0);
+  });
+
+  it('a study room and a library are one place too: joining the library takes you out of the study room', async () => {
+    const hall = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const who = { pid: 'pidtwice00002', secret: 't'.repeat(32) };
+    const a = await colyseus.connectTo(hall, { name: 'Tab1', ...who });
+    let replaced = false; a.onMessage('replaced', () => { replaced = true; });
+    await colyseus.sdk.joinOrCreate('library', { name: 'Tab2', preset: 'p25', ...who });
+    await wait(80);
+    expect(replaced).toBe(true);
+    expect(hall.state.players.size).toBe(0);
+    let paid = 0; a.onMessage('reward', () => { paid++; });
+    hall.forcePhase('focus'); hall.endPhaseIn(30); await wait(120);
+    expect(paid).toBe(0);
+  });
+
+  it('a dropped tab whose player opened another room cannot come back into the old room', async () => {
+    const r25 = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const r50 = await colyseus.createRoom<StudyRoom>('study_room', { preset: 'p50' });
+    const who = { pid: 'pidtwice00003', secret: 't'.repeat(32) };
+    const a = await colyseus.connectTo(r25, { name: 'Old', ...who });
+    await wait(50);
+    a.reconnection.enabled = false;           // the old tab's line is down, its seat waits 30 s
+    a.connection.close(CloseCode.MAY_TRY_RECONNECT, 'network glitch');
+    await wait(80);
+    expect(r25.state.players.get(a.sessionId)?.connected).toBe(false);
+    await colyseus.connectTo(r50, { name: 'New', ...who });
+    await wait(80);
+    expect(r25.state.players.size).toBe(0);
+    await expect(colyseus.sdk.reconnect(a.reconnectionToken)).rejects.toBeTruthy();
+  });
+
   it('a wrong secret for a known player id is refused', async () => {
     const room = await colyseus.createRoom<StudyRoom>('study_room', {});
     await colyseus.connectTo(room, { name: 'A', pid: 'pidsecret0001', secret: 'a'.repeat(32) });
@@ -209,17 +260,68 @@ describe('StudyRoom', () => {
   it('saves the personal room, keeping only what the player owns', async () => {
     const id = 'pidroom000001', secret = 'r'.repeat(32);
     const prof = await colyseus.http.post('/api/profile', { body: { pid: id, secret } });
-    expect(prof.data.room.items.map((i: { id: string }) => i.id)).toEqual(['f_desk_wood', 'f_chair_wood']);
+    expect(prof.data.room.items.map((i: { id: string }) => i.id)).toEqual(['f_desk_wood', 'f_chair_wood', 'f_chair_wood']);
     const items = [{ id: 'f_desk_wood', x: 1, z: 1, r: 1 }, { id: 'f_sofa', x: 0, z: 0, r: 0 }, ...Array.from({ length: 300 }, () => ({ id: 'f_chair_wood', x: 0, z: 0, r: 0 }))];
     const saved = await colyseus.http.post('/api/room', { body: { pid: id, secret, room: { name: 'Benim <b>odam</b>', theme: 'th_space', items } } });
     expect(saved.data.ok).toBe(true);
     expect(saved.data.room.name).not.toContain('<');
     expect(saved.data.room.theme).toBe('th_wood');
-    expect(saved.data.room.items).toEqual([{ id: 'f_desk_wood', x: 1, z: 1, r: 1 }, { id: 'f_chair_wood', x: 0, z: 0, r: 0 }]);
+    expect(saved.data.room.items).toEqual([{ id: 'f_desk_wood', x: 1, z: 1, r: 1 }, { id: 'f_chair_wood', x: 0, z: 0, r: 0 }, { id: 'f_chair_wood', x: 0, z: 0, r: 0 }]);
     const again = await colyseus.http.post('/api/profile', { body: { pid: id, secret } });
     expect(again.data.room.items[0]).toEqual({ id: 'f_desk_wood', x: 1, z: 1, r: 1 });
     const bad = await colyseus.http.post('/api/room', { body: { pid: id, secret: 'z'.repeat(32), room: {} } }).catch((e) => e);
     expect(bad.statusCode ?? bad.status).toBe(403);
+  });
+
+  it('logging in moves the login quest; quests and the login reward pay over HTTP, once', async () => {
+    const id = 'pidquest00001', secret = 'q'.repeat(32);
+    const prof = await colyseus.http.post('/api/profile', { body: { pid: id, secret, tz: 180 } });
+    expect(prof.data.wallet.tz).toBe(180);
+    expect(prof.data.wallet.q.daily.d_login).toEqual({ p: 1, c: false });
+    const login = await colyseus.http.post('/api/quest', { body: { pid: id, secret, action: 'login' } });
+    expect(login.data.ok).toBe(true); expect(login.data.wallet.coins).toBe(150 + 15);
+    const q = await colyseus.http.post('/api/quest', { body: { pid: id, secret, action: 'claim', id: 'd_login' } });
+    expect(q.data.ok).toBe(true); expect(q.data.wallet.xp).toBe(10);
+    const twice = await colyseus.http.post('/api/quest', { body: { pid: id, secret, action: 'claim', id: 'd_login' } }).catch((e) => e);
+    expect(twice.data?.ok ?? twice.response?.data?.ok).toBe(false);
+    const notYet = await colyseus.http.post('/api/quest', { body: { pid: id, secret, action: 'claim', id: 'd_pomo' } }).catch((e) => e);
+    expect(notYet.data?.ok ?? notYet.response?.data?.ok).toBe(false);
+    const pl = await colyseus.http.post('/api/quest', { body: { pid: id, secret, action: 'pledge', min: 25, days: 3 } });
+    expect(pl.data.wallet.q.pledge).toMatchObject({ min: 25, days: 3 });
+    const un = await colyseus.http.post('/api/quest', { body: { pid: id, secret, action: 'unpledge' } });
+    expect(un.data.wallet.q.pledge).toBeNull();
+    const bad = await colyseus.http.post('/api/quest', { body: { pid: id, secret: 'z'.repeat(32), action: 'login' } }).catch((e) => e);
+    expect(bad.statusCode ?? bad.status).toBe(403);
+  });
+
+  it('a focus is logged with what the player works on; break chat counts for the social quest', async () => {
+    const room = await colyseus.createRoom<StudyRoom>('study_room', {});
+    const c = await colyseus.connectTo(room, { name: 'Ali', pid: 'pidstats00001', secret: 's'.repeat(32), category: 'Kodlama' });
+    await wait(50);
+    room.forcePhase('focus');
+    (room as any).track.get(c.sessionId).accMs = 25 * 60_000; // as if 25 minutes went by
+    const got = c.waitForMessage('reward');
+    room.endPhaseIn(30);
+    const m = await got;
+    expect(m.completed).toBe(true); expect(m.minutes).toBe(25);
+    expect(m.wallet.stats.log.at(-1).c).toBe('Kodlama');
+    expect(m.wallet.q.daily.d_pomo.p).toBe(1);
+    c.send('activity', { activity: 'read', category: 'Okuma' }); await wait(50);
+    room.forcePhase('short_break');
+    const w = c.waitForMessage('wallet');
+    c.send('chat', { text: 'selam' });
+    expect((await w).wallet.q.daily.d_social.p).toBe(1);
+  });
+
+  it('placing new furniture in the room counts for the decorator quest', async () => {
+    const id = 'pidroom000002', secret = 'r'.repeat(32);
+    await colyseus.http.post('/api/profile', { body: { pid: id, secret } });
+    await colyseus.http.post('/api/buy', { body: { pid: id, secret, itemId: 'f_cactus' } });
+    const items = [{ id: 'f_desk_wood', x: 0, z: 0, r: 0 }, { id: 'f_chair_wood', x: 0, z: 1, r: 0 }, { id: 'f_cactus', x: 1, z: 1, r: 0 }];
+    const saved = await colyseus.http.post('/api/room', { body: { pid: id, secret, room: { items } } });
+    expect(saved.data.wallet.q.weekly.w_decor.p).toBe(1);
+    const same = await colyseus.http.post('/api/room', { body: { pid: id, secret, room: { items } } });
+    expect(same.data.wallet.q.weekly.w_decor.p).toBe(1);
   });
 
   it('rooms are grouped by preset', async () => {

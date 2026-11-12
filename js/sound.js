@@ -75,7 +75,7 @@
 
   const S = (PW.sound = { LAYERS, playing: false });
   S.ok = () => !!(window.AudioContext || window.webkitAudioContext);
-  S.suggest = (view) => ({ v_rain: ['rain'], v_beach: ['waves'], v_bosphorus: ['waves', 'cafe'], v_snow: ['fire', 'forest'], v_mountain: ['forest'], v_cappadocia: ['forest'], v_aurora: ['fire'], v_space: ['brown'], v_clouds: ['brown'], v_city_night: ['rain'], v_city_day: ['cafe'] }[view] || ['rain']);
+  S.suggest = (view) => ({ v_rain: ['rain'], v_balcony_rain: ['rain'], v_storm: ['rain'], v_balcony_snow: ['fire', 'forest'], v_beach: ['waves'], v_bosphorus: ['waves', 'cafe'], v_snow: ['fire', 'forest'], v_mountain: ['forest'], v_cappadocia: ['forest'], v_aurora: ['fire'], v_space: ['brown'], v_clouds: ['brown'], v_city_night: ['rain'], v_city_day: ['cafe'] }[view] || ['rain']);
   S.setMaster = (v) => { if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.1); };
   // bring the running layers in line with the desired mix
   S.apply = (mix, play, vol) => {

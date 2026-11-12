@@ -3,45 +3,79 @@
 import { Room, validate, type Client } from '@colyseus/core';
 import { z } from 'zod';
 import {
-  presetById, startTimer, settle, isChatAllowed, type Phase, type TimerState,
+  presetById, startTimer, settle, chatOpenFor, isPaused, type Phase, type TimerState,
   cleanText, censor, cleanName, CHAT_MAX, RateLimiter,
   decodeAvatar, encodeAvatar, firstFreeSeat, isSeatFree, STUDY_ROOM,
   ChatMsg, EmoteMsg, SitMsg, ActivityMsg, parseJoin,
-  rewardFocus, avatarAllowed, levelFromXP, defaultAvatar, durationOf,
+  rewardFocus, avatarAllowed, levelFromXP, defaultAvatar, durationOf, clock, noteChat, inviteCode,
 } from '@pw/shared';
 import { StudyRoomState, Player } from './state';
 import { profiles, type Profile } from '../profiles';
+import { sessions } from '../sessions';
+import { calls } from '../calls';
+
+const CallReply = z.object({ id: z.string().max(40), accept: z.boolean() });
 
 // how long each player was really here during the current focus
 interface FocusTrack { since: number | null; accMs: number; fromStart: boolean; intact: boolean }
 
 const BUBBLE_MS = 6000;
-const RECONNECT_SECONDS = 30;
+/** how long a dropped seat waits. A phone that locks its screen freezes the page and the line drops; the user
+ *  report 2026-11-09 ("ekran açık kalmadığında bağlantı hatası") showed 30 s was far too short. */
+export const RECONNECT_SECONDS = 5 * 60;
+
+/** how often the server says "still here" to every player (well under the host's 5-minute idle door) */
+export const BEAT = { ms: 40_000 };
 
 export class StudyRoom extends Room {
   maxClients = STUDY_ROOM.maxClients;
+  // a slow phone may need longer than the default 15 s to open its connection after a seat is reserved
+  seatReservationTimeout = 45;
   state = new StudyRoomState();
 
-  private preset = presetById('p25');
+  protected preset = presetById('p25');
   private phaseTimer: { clear(): void } | null = null;
   private chatLimit = new RateLimiter(1, 3000);       // 1 message / 3 s per player
   private emoteLimit = new RateLimiter(6, 10_000);
   private timeLimit = new RateLimiter(5, 10_000);
-  private scale = 1;
-  private track = new Map<string, FocusTrack>();
-  private profileOf = new Map<string, Profile>();
+  protected scale = 1;
+  protected track = new Map<string, FocusTrack>();
+  protected profileOf = new Map<string, Profile>();
+  /** sent away by the owner: no reconnection window */
+  protected gone = new Set<string>();
+  /** what each player works on (Ders, Kodlama…), for their statistics */
+  private categoryOf = new Map<string, string>();
+  /** dropped players' reconnection seats, so a replaced one can be cancelled */
+  private waiting = new Map<string, { reject(e?: unknown): void }>();
 
   messages = {
+    // "Arkadaşını çağır": the called friend answers from whatever room they are in (user 2026-11-09)
+    call_reply: validate(CallReply, (client: Client, { id, accept }) => {
+      const prof = this.profileOf.get(client.sessionId); if (!prof) return;
+      const c = calls.answer(id, prof.pid); if (!c) return;
+      const owner = profiles.get(c.owner);
+      if (!accept || !owner || !sessions.roomOf(c.owner)) {
+        calls.drop(c.id);
+        if (accept) client.send('call_gone', { name: c.ownerName });
+        else sessions.sendTo(c.owner, 'call_status', { status: 'declined', name: c.targetName });
+        return;
+      }
+      calls.accept(c);
+      client.send('call_go', { code: inviteCode(c.owner, owner.room.token), name: c.ownerName });
+      sessions.sendTo(c.owner, 'call_status', { status: 'coming', name: c.targetName });
+    }),
     chat: validate(ChatMsg, (client: Client, { text }) => {
       const p = this.state.players.get(client.sessionId);
       if (!p) return;
-      if (!isChatAllowed(this.state.timer.phase as Phase)) { client.send('notice', { code: 'chat_closed' }); return; }
+      if (!this.chatOpen(client.sessionId)) { client.send('notice', { code: 'chat_closed' }); return; }
       const clean = censor(cleanText(text, CHAT_MAX));
       if (!clean) return;
       if (!this.chatLimit.allow(client.sessionId, Date.now())) { client.send('notice', { code: 'slow_down' }); return; }
       p.bubble = clean;
       this.broadcast('chat', { id: client.sessionId, name: p.name, text: clean, at: Date.now() });
       this.clock.setTimeout(() => { if (p.bubble === clean) p.bubble = ''; }, BUBBLE_MS);
+      const prof = this.profileOf.get(client.sessionId);
+      if (prof) { profiles.update(prof, noteChat(prof.wallet, clock(Date.now(), prof.wallet.tz))); client.send('wallet', { wallet: prof.wallet }); }
     }),
     emote: validate(EmoteMsg, (client: Client, { e }) => {
       if (!this.state.players.has(client.sessionId)) return;
@@ -50,12 +84,13 @@ export class StudyRoom extends Room {
     }),
     sit: validate(SitMsg, (client: Client, { seatIndex }) => {
       const p = this.state.players.get(client.sessionId);
-      if (!p || !isSeatFree(seatIndex, this.takenSeats(client.sessionId), STUDY_ROOM.seats.length)) return;
+      if (!p || !isSeatFree(seatIndex, this.takenSeats(client.sessionId), this.seatCount())) return;
       p.seatIndex = seatIndex;
     }),
-    activity: validate(ActivityMsg, (client: Client, { activity }) => {
+    activity: validate(ActivityMsg, (client: Client, { activity, category }) => {
       const p = this.state.players.get(client.sessionId);
       if (p) p.activity = activity;
+      if (p && category) this.categoryOf.set(client.sessionId, cleanText(category, 20) || 'Diğer');
     }),
     time: validate(z.object({ t0: z.number() }), (client: Client, { t0 }) => {
       if (!this.timeLimit.allow(client.sessionId, Date.now())) return;
@@ -64,82 +99,150 @@ export class StudyRoom extends Room {
   };
 
   onCreate(options: unknown) {
-    this.preset = presetById(parseJoin(options).preset);
     // ops/testing only: PW_TIME_SCALE=60 makes a 25-minute focus last 25 seconds (never set in production)
-    const scale = Number(process.env.PW_TIME_SCALE) || 1;
-    this.scale = scale;
-    if (scale !== 1) this.preset = { ...this.preset, focusMin: this.preset.focusMin / scale, shortMin: this.preset.shortMin / scale, longMin: this.preset.longMin / scale };
-    this.state.preset = this.preset.id;
+    this.scale = Number(process.env.PW_TIME_SCALE) || 1;
+    this.usePreset(parseJoin(options).preset);
     this.setTimer(startTimer(Date.now(), this.preset));
     this.startTracking();
     this.setMetadata({ preset: this.preset.id });
+    this.keepLinesAwake();
+  }
+
+  /** a background tab freezes its own timers, so its "time" messages stop; the host closes a line after 5 silent
+   *  minutes (user 2026-11-12: "Bağlantı koptu" after a while in the background). The server's clock never sleeps:
+   *  a tiny "beat" to everyone keeps every line talking, whatever the tab is doing. */
+  protected keepLinesAwake() {
+    this.clock.setInterval(() => this.broadcast('beat', 0), BEAT.ms);
+  }
+
+  /** one player, one body (live 2026-11-04: every reload added a copy of you, even in a full room). A reload looks
+   *  like a dropped line, so the old self waited 30 s for a comeback; when the same player arrives again, the old
+   *  copies leave at once. An old tab that is still open is told why, so it does not jump back in. */
+  protected replaceTwins(pid: string) {
+    for (const [sid, prof] of [...this.profileOf]) if (prof.pid === pid) this.dropTwin(sid);
+  }
+
+  /** this seat's player opened the game somewhere else (here or in another room): it earns nothing more,
+   *  keeps no reconnection seat and is told why, so the old tab does not jump back in */
+  private dropTwin(sid: string) {
+    this.gone.add(sid);
+    const c = this.clients.getById(sid);
+    // cancel a waiting reconnection seat first (onLeave forgets it)
+    const w = this.waiting.get(sid);
+    if (w) { this.waiting.delete(sid); w.reject(new Error('replaced')); }
+    c?.send('replaced', {});
+    this.onLeave(c ?? ({ sessionId: sid } as Client));
+    c?.leave();
+  }
+
+  /** "come back to my place" after a long drop (client sends resume): if the player has since opened the game in
+   *  another window that is online, this old one must not push it out again (two windows would fight forever) */
+  protected guardResume(options: unknown) {
+    const o = parseJoin(options);
+    if (o.pid && (options as { resume?: unknown } | undefined)?.resume === true && profiles.open(o.pid, o.secret) && sessions.liveSeat(o.pid)) throw new Error('Oyun başka bir pencerede açıldı.');
   }
 
   onJoin(client: Client, options: unknown) {
     const o = parseJoin(options);
     let prof: Profile | null = null;
-    if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.profileOf.set(client.sessionId, prof); }
+    this.guardResume(options);
+    if (o.pid) { prof = profiles.open(o.pid, o.secret); if (!prof) throw new Error('Oyuncu kimliği doğrulanamadı.'); this.replaceTwins(prof.pid); this.profileOf.set(client.sessionId, prof); }
+    // one account, one place across the whole server: another room (other timer length, library, Odam…) lets go of you
+    if (prof) { const sid = client.sessionId; sessions.claim(prof.pid, { room: this.roomId, sessionId: sid, kick: () => this.dropTwin(sid), send: (t, m) => this.clients.getById(sid)?.send(t, m), live: () => !!this.state.players.get(sid)?.connected }); }
     const p = new Player();
     p.name = cleanName(o.name) || 'Misafir';
     // you can only wear parts you own (free ones are always yours)
     const look = decodeAvatar(o.avatar);
     p.avatar = encodeAvatar(prof && !avatarAllowed(prof.wallet, look) ? defaultAvatar(look.g) : look);
     p.level = prof ? levelFromXP(prof.wallet.xp).level : 1;
+    p.code = prof ? prof.pid : '';
     p.activity = o.activity ?? 'type';
-    p.seatIndex = firstFreeSeat(this.takenSeats(), STUDY_ROOM.seats.length);
+    if (o.category) this.categoryOf.set(client.sessionId, cleanText(o.category, 20) || 'Diğer');
+    p.seatIndex = firstFreeSeat(this.takenSeats(), this.seatCount());
     p.pose = 'sit';
     p.bubble = '';
     p.connected = true;
     this.state.players.set(client.sessionId, p);
-    const inFocus = this.state.timer.phase === 'focus';
+    const inFocus = this.focusingNow(client.sessionId);
     this.track.set(client.sessionId, { since: inFocus ? Date.now() : null, accMs: 0, fromStart: false, intact: true });
     if (prof) client.send('wallet', { wallet: prof.wallet });
   }
 
   onDrop(client: Client) {
+    if (this.gone.has(client.sessionId)) return;
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = false;
     const t = this.track.get(client.sessionId);
-    if (t) { if (t.since) t.accMs += Date.now() - t.since; t.since = null; t.intact = false; }
-    this.allowReconnection(client, RECONNECT_SECONDS);
+    // the focus keeps running while the screen is off (that is how a pomodoro is used); the minutes count only if
+    // the player comes back to this seat: a seat that runs out takes its track with it (onLeave)
+    const d = this.allowReconnection(client, RECONNECT_SECONDS) as unknown as Promise<unknown> & { reject(e?: unknown): void };
+    this.waiting.set(client.sessionId, d);
+    const done = () => { this.waiting.delete(client.sessionId); };
+    d.then?.(done, done);
   }
 
   onReconnect(client: Client) {
     const p = this.state.players.get(client.sessionId);
     if (p) p.connected = true;
     const t = this.track.get(client.sessionId);
-    if (t && this.state.timer.phase === 'focus') t.since = Date.now();
+    if (t && this.focusingNow(client.sessionId) && !t.since) t.since = Date.now();
   }
 
   onLeave(client: Client) {
+    const prof = this.profileOf.get(client.sessionId);
+    if (prof) sessions.release(prof.pid, this.roomId, client.sessionId);
+    this.waiting.delete(client.sessionId);
     this.state.players.delete(client.sessionId);
-    this.track.delete(client.sessionId); this.profileOf.delete(client.sessionId);
+    this.track.delete(client.sessionId); this.profileOf.delete(client.sessionId); this.categoryOf.delete(client.sessionId);
     this.chatLimit.forget(client.sessionId); this.emoteLimit.forget(client.sessionId); this.timeLimit.forget(client.sessionId);
   }
 
   onDispose() { this.phaseTimer?.clear(); }
 
+  /** may this player chat now? (the shared hall: the room's phase; personal rooms: their own) */
+  protected chatOpen(_id: string) { return chatOpenFor(this.current()); }
+  /** is this player's focus time running right now? */
+  protected focusingNow(_id: string) { return this.state.timer.phase === 'focus' && !isPaused(this.current()); }
+
+  /** how many chairs this room has (seat indexes 0..n-1) */
+  protected seatCount() { return STUDY_ROOM.seats.length; }
+
+  /** who is here: player id → name (friends list "where") */
+  whoIsHere(): Map<string, string> {
+    const out = new Map<string, string>();
+    this.state.players.forEach((p) => { if (p.code && p.connected) out.set(p.code, p.name); });
+    return out;
+  }
+
   /* ---------- timer ---------- */
-  private setTimer(t: TimerState) {
+  protected usePreset(id: string | undefined) {
+    const p = presetById(id), k = this.scale;
+    this.preset = k === 1 ? p : { ...p, focusMin: p.focusMin / k, shortMin: p.shortMin / k, longMin: p.longMin / k };
+    this.state.preset = this.preset.id;
+  }
+  protected setTimer(t: TimerState) {
     this.state.timer.phase = t.phase;
     this.state.timer.phaseEndsAt = t.phaseEndsAt;
     this.state.timer.round = t.round;
+    this.state.timer.pausedLeft = t.pausedLeft ?? 0;
     this.schedule();
   }
 
-  private current(): TimerState {
+  protected current(): TimerState {
     const s = this.state.timer;
-    return { phase: s.phase as Phase, phaseEndsAt: s.phaseEndsAt, round: s.round };
+    return s.pausedLeft > 0
+      ? { phase: s.phase as Phase, phaseEndsAt: s.phaseEndsAt, round: s.round, pausedLeft: s.pausedLeft }
+      : { phase: s.phase as Phase, phaseEndsAt: s.phaseEndsAt, round: s.round };
   }
 
   private schedule() {
     this.phaseTimer?.clear();
     const t = this.current();
-    if (t.phase === 'idle') return;
+    if (t.phase === 'idle' || isPaused(t)) return;
     this.phaseTimer = this.clock.setTimeout(() => this.onPhaseEnd(), Math.max(0, t.phaseEndsAt - Date.now()));
   }
 
-  private onPhaseEnd() {
+  protected onPhaseEnd() {
     const before = this.current();
     const next = settle(before, this.preset, Date.now());
     if (before.phase === 'focus' && next.phaseEndsAt !== before.phaseEndsAt) this.payFocus(before);
@@ -153,33 +256,40 @@ export class StudyRoom extends Room {
   }
 
   /** everyone present right now starts a fresh focus "from the start" */
-  private startTracking() {
+  protected startTracking() {
     const now = Date.now();
-    this.state.players.forEach((p, id) => this.track.set(id, { since: p.connected ? now : null, accMs: 0, fromStart: p.connected, intact: p.connected }));
+    this.state.players.forEach((_p, id) => this.track.set(id, { since: now, accMs: 0, fromStart: true, intact: true }));
   }
 
   /** the server decides the reward: only time really spent in the room counts */
-  private payFocus(ended: TimerState) {
+  protected payFocus(ended: TimerState, full = true) {
     const now = Math.min(Date.now(), ended.phaseEndsAt + 5000);
     const results: [string, number, boolean][] = [];
     this.track.forEach((t, id) => {
       const ms = t.accMs + (t.since ? Math.max(0, now - t.since) : 0);
-      results.push([id, ms, t.fromStart && t.intact]);
+      results.push([id, ms, full && t.fromStart && t.intact]);
       t.accMs = 0; t.since = null;
     });
-    const day = new Date().toISOString().slice(0, 10);
     const focusMin = durationOf('focus', this.preset) * this.scale / 60_000;
     for (const [id, ms, completed] of results) {
-      const prof = this.profileOf.get(id); if (!prof) continue;
       const others = results.filter(([o, oms]) => o !== id && oms > 30_000 / this.scale).length;
-      const r = rewardFocus(prof.wallet, { minutes: (ms * this.scale) / 60_000, completed, round: ended.round + 1, others, day, longFocus: focusMin >= 90 });
-      profiles.update(prof, r.wallet);
-      const pl = this.state.players.get(id); if (pl) pl.level = levelFromXP(r.wallet.xp).level;
-      this.clients.getById(id)?.send('reward', { gained: r.gained, lines: r.lines, levelUp: r.levelUp, wallet: r.wallet });
+      this.payPlayer(id, ms, completed, ended.round + 1, others, focusMin, now);
     }
   }
 
-  private takenSeats(exceptId?: string): number[] {
+  /** one person's reward for `ms` of focus (the server decides; minutes go to their daily statistics) */
+  protected payPlayer(id: string, ms: number, completed: boolean, round: number, others: number, focusMin: number, now: number) {
+    const prof = this.profileOf.get(id); if (!prof) return;
+    const minutes = (ms * this.scale) / 60_000;
+    // the player's own calendar: their day, week and the minute their counted time began
+    const k = clock(now, prof.wallet.tz), start = clock(now - minutes * 60_000, prof.wallet.tz);
+    const r = rewardFocus(prof.wallet, { minutes, completed, round, others, day: k.day, week: k.week, startMin: start.minute, cat: this.categoryOf.get(id) ?? 'Diğer', longFocus: focusMin >= 90, now });
+    profiles.update(prof, r.wallet);
+    const pl = this.state.players.get(id); if (pl) pl.level = levelFromXP(r.wallet.xp).level;
+    this.clients.getById(id)?.send('reward', { gained: r.gained, lines: r.lines, levelUp: r.levelUp, wallet: r.wallet, completed, minutes: Math.floor(minutes) });
+  }
+
+  protected takenSeats(exceptId?: string): number[] {
     const out: number[] = [];
     this.state.players.forEach((p, id) => { if (id !== exceptId) out.push(p.seatIndex); });
     return out;

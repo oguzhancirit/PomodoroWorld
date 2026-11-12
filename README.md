@@ -29,7 +29,7 @@ Yeni sürüm eski uygulamanın yanında, ayrı klasörlerde büyüyor. Eski sür
 - **Odam (taşıma adım 2):** Eski sürümün oda motoru (`js/world.js`, `js/models.js`, `js/render.js`) yeni istemcinin içinde aynen çalışır; `client/src/legacy/shim.ts` eski kodu three r186'ya uyarlar (ışık birimleri, ton eşleme, ortam ışığı). Eski katalogdaki 67 eşya, 11 tema, 11 manzara ve 3 oda boyutu aynı fiyat ve seviyelerle mağazada (`tools/extract-room-catalog.mjs` eski `js/data.js`'ten üretir). Düzenleyici eskisiyle aynı: Stiller, Eşyalar, Duvar, Zemin, Atmosfer, Manzara, Hazır tema, Boyut; geri al/yinele, duvar görünümü, kuşbakışı, döndür/taşı/kopyala/kaldır, kumaş ve ahşap rengi, duvara asılan eşyalar. Oda sunucuda saklanır (`POST /api/room`); sunucu yalnızca sahip olduğun eşyaları ve seviyenin açtığı yüzeyleri kabul eder.
 **Taşıma sırası:** 1) Ekonomi ve mağaza ✔ 2) Kişisel oda ve eşya yerleştirme ✔ 3) Görevler, yapılacaklar, sesler, istatistikler 4) Dünya'daki sosyal alanlar ve arkadaşlar 5) Tanıtım filmi ve yedekleme. (İnternetsiz çalışma yeni sürüme alınmayacak.)
 
-**Not:** Sunucu oyuncu bilgilerini şimdilik tek bir dosyada tutar (`PW_DATA`). Render'ın ücretsiz planında bu dosya yeniden kurulumda sıfırlanır; kalıcı kullanım için ileride küçük bir veritabanı eklenecek.
+**Not:** `DATABASE_URL` verilirse oyuncular Postgres veritabanında tutulur (yayın); verilmezse tek bir dosyada (`PW_DATA`, yerel geliştirme).
 
 **Bilgisayarında çalıştırmak:**
 
@@ -44,7 +44,7 @@ Sunucuyu hızlı denemek için `PW_TIME_SCALE=30 npm run dev:server` yaz: 25 dak
 
 **İnternete açmak:**
 
-- Sunucu: `render.yaml` hazır (Render.com ücretsiz plan, kimse yokken uyur).
+- Sunucu: `render.yaml` hazır (Render.com ücretsiz plan, kimse yokken uyur); oyuncu kayıtları Neon Postgres'te (`DATABASE_URL`). Adım adım: `docs/YAYIN.md`.
 - Ekran: `VITE_SERVER_URL=wss://<sunucu-adresi> npm run build -w client`; çıkan `client/dist` herhangi bir statik barındırmaya konabilir (GitHub Pages dahil).
 
 **Lisanslar:** Kod MIT. Modeller ve animasyonlar CC0 (Quaternius, Kay Lousberg); ayrıntılar `client/public/avatars/LICENSE-Quaternius.txt` ve `client/public/models/LICENSE-KayKit-Furniture.txt` dosyalarında.

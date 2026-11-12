@@ -1,26 +1,42 @@
 // The personal room, exactly as the original game stored it (js/app.js + js/safety.js),
 // plus the rule the server needs: you may only show what you own and what your level allows.
+import { cleanText, censor } from './chat';
 import { ROOM_FURN, ROOM_THEMES, ROOM_VIEWS, ROOM_SIZES, FLOOR_TYPES, WALL_PATTERNS, MOOD_NAMES, SURFACE_LVL, MOOD_LVL, WOOD_TONE_IDS, OLD_DEFAULT_ROOM } from './roomCatalog';
 import { levelFromXP, type Wallet } from './economy';
 
 export type WallId = 'w0' | 'w1' | 'w2' | 'w3';
-export interface FloorItem { id: string; x: number; z: number; r: number; c?: string; wd?: string }
-export interface WallItem { id: string; w: WallId; x: number }
+/** personal touches (user 2026-11-03): c colour, t own short text (neon sign, garland), v design number (posters…) */
+export interface FloorItem { id: string; x: number; z: number; r: number; c?: string; wd?: string; t?: string; v?: number }
+export interface WallItem { id: string; w: WallId; x: number; c?: string; t?: string; v?: number }
+export const ITEM_TEXT_MAX = 18;
+export const ITEM_VARIANTS = 16;
 export type PlacedItem = FloorItem | WallItem;
 export interface Room {
   name: string; desc: string; cat: string; open: boolean; token: string; ban: string[];
   theme: string; view: string; size: number;
+  /** fx: a floating effect in the room (snow, petals…) */
+  fx?: string;
   mood?: string; wall?: string; wallPat?: string; floorT?: string; floorC?: string; trim?: string; curtain?: string;
   items: PlacedItem[];
 }
 /** The look of a room (what undo/redo snapshots and what a visitor needs to draw it). */
-export const ROOM_KEYS = ['items', 'theme', 'view', 'size', 'mood', 'wall', 'wallPat', 'floorT', 'floorC', 'trim', 'curtain'] as const;
+/** floating room effects (user 2026-11-03: a room that feels like you), opened by level */
+export const ROOM_FX = [
+  { id: 'snow', name: 'Kar', lvl: 1 },
+  { id: 'sakura', name: 'Sakura yaprakları', lvl: 2 },
+  { id: 'fireflies', name: 'Ateş böcekleri', lvl: 3 },
+  { id: 'leaves', name: 'Sonbahar yaprakları', lvl: 4 },
+  { id: 'stardust', name: 'Yıldız tozu', lvl: 6 },
+  { id: 'bubbles', name: 'Baloncuklar', lvl: 8 },
+] as const;
+const FX = new Map<string, number>(ROOM_FX.map((f) => [f.id, f.lvl]));
+export const ROOM_KEYS = ['items', 'theme', 'view', 'size', 'mood', 'fx', 'wall', 'wallPat', 'floorT', 'floorC', 'trim', 'curtain'] as const;
 export const ROOM_CATS = ['Genel', 'YKS', 'LGS', 'KPSS', 'ALES/YDS', 'Üniversite', 'Yazılım', 'Dil', 'Sanat & Tasarım', 'İş'];
 export const MAX_ITEMS = 400;
 const LIM = 6; // half of the largest room (11 x 11) plus a margin, like the old loader
 const HEX = /^#[0-9a-f]{6}$/i;
 const WALLS: WallId[] = ['w0', 'w1', 'w2', 'w3'];
-const FURN = new Map<string, { wall?: number }>(ROOM_FURN.map((f) => [f.id, f as { wall?: number }]));
+const FURN = new Map<string, { wall?: number; seat?: number }>(ROOM_FURN.map((f) => [f.id, f as { wall?: number; seat?: number }]));
 const THEMES = new Set<string>(ROOM_THEMES.map((t) => t.id));
 const VIEWS = new Set<string>(ROOM_VIEWS.map((t) => t.id));
 const SIZE_ID: Record<number, string> = Object.fromEntries(ROOM_SIZES.map((s) => [s.size, s.id]));
@@ -30,22 +46,42 @@ const MOODS = new Set(MOOD_NAMES.map((m) => m[0]));
 const WOODS = new Set<string>(WOOD_TONE_IDS);
 
 const newToken = () => Math.random().toString(36).slice(2, 8).padEnd(6, '0');
-export const defaultRoom = (): Room => ({ ...structuredClone(OLD_DEFAULT_ROOM), ban: [], token: newToken() } as Room);
+// Step 4: the old default room plus a second chair across the desk, so a friend can study with you from day one.
+// Both chairs sit 0.6 from the desk centre: the engine sees them as desk seats and the new avatar's hands reach the desk.
+const FRIEND_CHAIR: FloorItem = { id: 'f_chair_wood', x: 0.2, z: -0.55, r: 2 };
+export const defaultRoom = (): Room => {
+  const r = { ...structuredClone(OLD_DEFAULT_ROOM), ban: [], token: newToken() } as Room;
+  const own = r.items.find((i): i is FloorItem => i.id === 'f_chair_wood');
+  if (own) own.z = -1.75;
+  r.items.push({ ...FRIEND_CHAIR });
+  return r;
+};
 
 const obj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 const num = (v: unknown, lo: number, hi: number, def: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def);
 const str = (v: unknown, max: number, def = '') => (typeof v === 'string' ? v.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, max) : def);
 const round = (v: number) => Math.round(v * 1000) / 1000;
 
+/** colour, own text (short, clean, rude words hidden) and design number, when they are valid */
+function touches<T extends { c?: string; t?: string; v?: number }>(o: T, it: Record<string, unknown>): T {
+  if (typeof it.c === 'string' && HEX.test(it.c)) o.c = it.c;
+  const t = censor(cleanText(it.t, ITEM_TEXT_MAX).replace(/[<>]/g, '')).trim();
+  if (t) o.t = t;
+  if (typeof it.v === 'number' && Number.isInteger(it.v) && it.v >= 0 && it.v < ITEM_VARIANTS) o.v = it.v;
+  return o;
+}
+
 function cleanItem(it: unknown): PlacedItem | null {
   if (!obj(it) || typeof it.id !== 'string') return null;
   const def = FURN.get(it.id); if (!def) return null;
-  if (def.wall) return WALLS.includes(it.w as WallId) ? { id: it.id, w: it.w as WallId, x: round(num(it.x, -LIM, LIM, 0)) } : null;
+  if (def.wall) {
+    if (!WALLS.includes(it.w as WallId)) return null;
+    return touches({ id: it.id, w: it.w as WallId, x: round(num(it.x, -LIM, LIM, 0)) }, it);
+  }
   if (it.w) return null;
   const o: FloorItem = { id: it.id, x: round(num(it.x, -LIM, LIM, 0)), z: round(num(it.z, -LIM, LIM, 0)), r: Math.round(num(it.r, 0, 3, 0)) };
-  if (typeof it.c === 'string' && HEX.test(it.c)) o.c = it.c;
   if (typeof it.wd === 'string' && WOODS.has(it.wd)) o.wd = it.wd;
-  return o;
+  return touches(o, it);
 }
 
 /** Repair a room that came from storage, an old save or the network. */
@@ -62,6 +98,7 @@ export function sanitizeRoom(v: unknown): Room {
     items: (Array.isArray(v.items) ? v.items : []).slice(0, MAX_ITEMS * 2).map(cleanItem).filter((x): x is PlacedItem => !!x).slice(0, MAX_ITEMS),
   };
   if (MOODS.has(v.mood as string)) r.mood = v.mood as string;
+  if (FX.has(v.fx as string)) r.fx = v.fx as string;
   for (const k of ['wall', 'floorC', 'trim', 'curtain'] as const) if (typeof v[k] === 'string' && HEX.test(v[k] as string)) r[k] = v[k] as string;
   if (PATTERNS.has(v.wallPat as string)) r.wallPat = v.wallPat as string;
   if (FLOORS.has(v.floorT as string)) r.floorT = v.floorT as string;
@@ -83,5 +120,32 @@ export function roomAllowedFor(w: Wallet, room: unknown): Room {
   if (r.wallPat && L < (SURFACE_LVL[r.wallPat] ?? 1)) delete r.wallPat;
   if (r.floorT && L < (SURFACE_LVL[r.floorT] ?? 1)) delete r.floorT;
   if (r.mood && L < (MOOD_LVL[r.mood] ?? 1)) delete r.mood;
+  if (r.fx && L < (FX.get(r.fx) ?? 99)) delete r.fx;
   return r;
+}
+
+/* ---------- step 4: friends study in your room; small rooms on purpose ---------- */
+export const HOME_MIN = 1;
+export const HOME_MAX = 4;
+/** how many people can sit in this room (a sofa holds two, an L sofa three) */
+export const roomSeats = (room: Pick<Room, 'items'>) => room.items.reduce((n, i) => n + (FURN.get(i.id)?.seat ?? 0), 0);
+/** how many people may be in your room at once: one per seat, you too (user 2026-11-04: chairs are a must,
+ *  at most you + 3); you can always be in your own room */
+export const homeCapacity = (room: Pick<Room, 'items'>) => Math.max(HOME_MIN, Math.min(HOME_MAX, roomSeats(room)));
+
+export type HomeVerdict = 'ok' | 'banned' | 'closed' | 'full';
+/** May this player enter the owner's room now? (`count` = people already inside) */
+export function homeEntry(room: Pick<Room, 'items' | 'open' | 'token' | 'ban'>, o: { pid: string; owner: string; count: number; token?: string }): HomeVerdict {
+  if (o.pid === o.owner) return 'ok';
+  if (room.ban.includes(o.pid)) return 'banned';
+  if (!room.open && o.token !== room.token) return 'closed';
+  return o.count >= homeCapacity(room) ? 'full' : 'ok';
+}
+/** the code a friend types or opens as a link (#oda-CODE), like the original game */
+export const inviteCode = (owner: string, token: string) => `${owner}-${token}`;
+export function parseInvite(input: unknown): { owner: string; token: string } | null {
+  if (typeof input !== 'string') return null;
+  const s = input.trim().toLowerCase(); const at = s.lastIndexOf('#oda-');
+  const m = /^([a-z0-9]{12,24})(?:-([a-z0-9]{3,10}))?$/.exec(at >= 0 ? s.slice(at + 5) : s);
+  return m ? { owner: m[1], token: m[2] ?? '' } : null;
 }
